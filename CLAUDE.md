@@ -54,10 +54,34 @@ The project follows a 6-phase implementation plan (see docs/CLAUDE_TASKS.md):
 - Rate-limit comment submissions
 - Validate all input with Pydantic models
 
+## Git Workflow
+
+### Branch Strategy
+- **`main`** - Development branch (working branch, can break during development)
+- **`production`** - Stable deployment branch (only working, tested code)
+- **`feature/*`** - Short-lived feature branches (merged to main, then deleted)
+
+### Workflow Process
+1. Create feature branch from `main`: `git checkout -b feature/feature-name`
+2. Develop & test locally in feature branch
+3. When feature is complete and tested: 
+   - Merge feature → `main`
+   - Delete feature branch
+4. Test `main` branch locally and on development servers
+5. When `main` is stable and ready: merge `main` → `production`
+6. `production` branch triggers deployments to Vercel & Fly.io
+
+### Key Principles
+- Keep features small and focused
+- Test thoroughly before merging to `main`
+- Only merge stable code to `production`
+- Delete feature branches after merging
+- `main` is for development, `production` is for deployment only
+
 ## Deployment
 
-- **Web**: Vercel with Git integration (root: `apps/web`)
-- **API**: Fly.io via GitHub Actions
+- **Web**: Vercel with Git integration from `production` branch (root: `apps/web`)
+- **API**: Fly.io via GitHub Actions from `production` branch
 - **Database**: Supabase with Service Role key access only
 
 ## Key Implementation Notes

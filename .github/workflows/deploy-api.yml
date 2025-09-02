@@ -1,7 +1,7 @@
 name: Deploy API (Fly.io)
 on:
   push:
-    branches: [ main ]
+    branches: [ production ]
     paths:
       - 'apps/api/**'
       - '.github/workflows/deploy-api.yml'
