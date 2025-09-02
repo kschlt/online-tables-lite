@@ -2,24 +2,13 @@
 
 A collaborative table editing application with real-time synchronization. Create and share editable tables with secure token-based access control.
 
-## ✨ Features
+**Current Status**: Phase 1 complete - basic table creation and viewing functional.
 
-- **Real-time Collaboration**: Live editing with Socket.IO synchronization
-- **Secure Access**: Token-based authentication with admin/editor roles  
-- **Mobile-First Design**: Responsive interface optimized for all devices
-- **Phase-based Development**: Currently in Phase 1 (Create & Read)
+## 🏗️ Tech Stack
 
-## 🏗️ Architecture
-
-**Monorepo Structure:**
-- `apps/web` - Next.js frontend (App Router + Tailwind + TypeScript)
-- `apps/api` - FastAPI backend with Socket.IO for real-time updates
-- `docs/` - Technical documentation and implementation phases
-
-**Technology Stack:**
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS, Socket.IO Client
-- **Backend**: FastAPI, Python 3.12, Socket.IO, Pydantic v2
-- **Database**: Supabase Postgres (server-only access)
+- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
+- **Backend**: FastAPI + Socket.IO + Pydantic v2  
+- **Database**: Supabase Postgres
 - **Deployment**: Vercel (frontend) + Fly.io (backend)
 
 ## 🚀 Quick Start
@@ -88,45 +77,29 @@ npm run dev
 
 ## 🌍 Deployment
 
-### Production Deployment
-
-The project uses a 3-branch strategy:
-- **`main`** - Development branch (working branch, can break)
-- **`production`** - Stable deployment branch (triggers deploys)
-- **`feature/*`** - Short-lived feature branches
+### Git Workflow
+- **`main`** - Development branch
+- **`production`** - Deployment branch (triggers auto-deploy)
+- **`feature/*`** - Feature branches (merge to main, then delete)
 
 ### Frontend (Vercel)
-1. Connect your Vercel account to the GitHub repository
+1. Connect GitHub repo to Vercel
 2. Set root directory to `apps/web`
-3. Configure auto-deploy from `production` branch
-4. Environment variables: (none required for basic setup)
+3. Auto-deploy from `production` branch
 
 ### Backend (Fly.io)
 1. Install [Fly CLI](https://fly.io/docs/hands-on/install-flyctl/)
-2. Login: `flyctl auth login`
-3. Set secrets:
-```bash
-cd apps/api
-flyctl secrets set SUPABASE_URL="https://your-project.supabase.co"
-flyctl secrets set SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
-flyctl secrets set CORS_ORIGIN="https://your-vercel-app.vercel.app"
-```
-4. Deploy: `flyctl deploy`
+2. Set secrets: `flyctl secrets set SUPABASE_URL="..." SUPABASE_SERVICE_ROLE_KEY="..." CORS_ORIGIN="https://your-app.vercel.app"`
+3. Deploy: `flyctl deploy`
 
-**GitHub Actions**: Automated deployment from `production` branch is configured.
+## 🚧 Development Roadmap
 
-## 📋 Current Status
-
-**✅ Phase 0 & 1 Complete:**
-- Monorepo setup with FastAPI + Next.js
-- Token-based authentication with SHA-256 hashing
-- Basic table creation and viewing
-- Read-only table interface with headers
-
-**🚧 Coming Next (Phase 2):**
-- Live collaborative editing
-- Real-time cell updates with Socket.IO
-- Optimistic UI updates
+**✅ Completed**: Table creation and viewing  
+**🔄 Phase 2**: Live collaborative editing with Socket.IO  
+**📋 Phase 3**: Admin controls and table configuration  
+**📊 Phase 4**: CSV import/export  
+**💾 Phase 5**: Snapshots and backup/restore  
+**✨ Phase 6**: Comments, sharing, polish
 
 ## 🔧 Environment Variables
 
@@ -150,95 +123,19 @@ flyctl secrets set CORS_ORIGIN="https://your-vercel-app.vercel.app"
 
 ## 🔄 Development Workflow
 
-### Working with Features
-1. **Create feature branch**: `git checkout -b feature/your-feature-name`
-2. **Develop and test** locally in the feature branch
-3. **When complete**: 
-   - Test thoroughly
-   - Merge to `main`: `git checkout main && git merge feature/your-feature-name`
-   - Delete feature branch: `git branch -d feature/your-feature-name`
-4. **Test `main`** branch locally and on development servers
-5. **Deploy to production**: `git checkout production && git merge main && git push origin production`
-
-### Key Principles
-- Keep features small and focused
-- Test thoroughly before merging to `main`
-- Only merge stable, working code to `production`
-- Delete feature branches after merging
+1. Create feature branch: `git checkout -b feature/feature-name`
+2. Develop and test locally
+3. Merge to `main`, delete feature branch
+4. When stable: merge `main` → `production` (triggers deployment)
 
 ## 📚 Documentation
 
-- **[CLAUDE.md](./CLAUDE.md)** - AI assistant guidance and project overview
-- **[docs/CLAUDE_TASKS.md](./docs/CLAUDE_TASKS.md)** - Phased implementation plan
-- **[docs/TECHNOTES.md](./docs/TECHNOTES.md)** - Technical implementation details
-- **[docs/CI-DI.md](./docs/CI-DI.md)** - Deployment configuration
+- **[docs/](./docs/)** - Technical implementation details and phases
+- **[CLAUDE.md](./CLAUDE.md)** - AI assistant guidance and architecture
 
-## 🔒 Security
+## 🔒 Key Security Notes
 
-- Raw tokens in URLs, SHA-256 hashes stored in database
-- No direct client-to-database access (all through FastAPI)
-- CORS properly configured
-- No raw token logging
-- Role-based permissions (Admin/Editor only)
-
-## 🛠️ Development Commands
-
-### Backend
-```bash
-cd apps/api
-python main.py              # Start development server
-pip install -r requirements.txt  # Install dependencies
-```
-
-### Frontend  
-```bash
-cd apps/web
-npm run dev                 # Start development server
-npm run build              # Build for production
-npm run lint               # Run ESLint
-npm run typecheck          # Run TypeScript checks
-```
-
-## 📦 Project Structure
-
-```
-online-tables-lite/
-├── apps/
-│   ├── api/              # FastAPI backend
-│   │   ├── main.py       # Main application file
-│   │   ├── requirements.txt
-│   │   ├── Dockerfile    # Fly.io deployment
-│   │   └── fly.toml      # Fly.io configuration
-│   └── web/              # Next.js frontend  
-│       ├── src/app/      # App Router pages
-│       ├── package.json
-│       └── tailwind.config.ts
-├── docs/                 # Technical documentation
-├── .github/workflows/    # CI/CD automation
-├── CLAUDE.md            # AI assistant guidance
-└── README.md            # This file
-```
-
-## 🎯 Roadmap
-
-The project follows a 6-phase implementation plan:
-
-1. **✅ Bootstrap & Create/Read** - Basic setup and viewing
-2. **🚧 Edit + Realtime** - Live collaborative editing  
-3. **📋 Admin Config** - Table configuration and limits
-4. **📊 CSV Import/Export** - Data exchange features
-5. **💾 Snapshots** - Table state backup/restore
-6. **✨ Polish** - Comments, sharing, accessibility
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and test locally
-4. Commit your changes: `git commit -m 'Add amazing feature'`
-5. Push to your branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request to `main`
-
-## 📄 License
-
-This project is private and proprietary.
+- Token-based authentication (no cookies)
+- SHA-256 hashed tokens in database (never log raw tokens)
+- All database access through FastAPI (no direct client access)
+- Role-based permissions: Admin/Editor only
