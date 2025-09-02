@@ -84,10 +84,53 @@ The project follows a 6-phase implementation plan (see docs/CLAUDE_TASKS.md):
 - **API**: Fly.io via GitHub Actions from `production` branch
 - **Database**: Supabase with Service Role key access only
 
+## Development Commands
+
+### Backend (`apps/api`)
+```bash
+python main.py                    # Start dev server (localhost:8000, auto-reload)
+pip install -r requirements.txt  # Install dependencies
+source venv/bin/activate         # Activate virtual environment
+```
+
+### Frontend (`apps/web`)  
+```bash
+npm run dev        # Start dev server (localhost:3000)
+npm run build      # Production build
+npm run typecheck  # TypeScript validation
+npm run lint       # ESLint validation
+```
+
+## Architecture Patterns
+
+### Authentication Flow
+- Raw tokens in URLs (`?t=token`), SHA-256 hashes in database
+- `verify_token(slug, token)` returns `(table_data, role)` tuple
+- Roles: "admin" or "editor" only (no viewer role)
+- All API calls require token in header or URL parameter
+
+### API Structure
+- **Hybrid ASGI**: `socket_app = socketio.ASGIApp(sio, app)` combines FastAPI + Socket.IO
+- **Database**: Supabase client with service role key (no direct client access)
+- **CORS**: Dynamic origin handling with/without trailing slash
+- **Pydantic v2**: Strict request/response validation
+
+### Frontend Integration
+- **Next.js 15 App Router**: `/table/[slug]/page.tsx` for table viewing
+- **Socket.IO ready**: Client imported but real-time features in Phase 2
+- **API calls**: Custom fetch with token headers to FastAPI backend
+
+### Database Connection
+```python
+# Supabase pattern
+result = supabase.table("tables").select("*").eq("slug", slug).execute()
+table = result.data[0]
+```
+
 ## Key Implementation Notes
 
 - Debounced optimistic updates on frontend
-- Socket.IO patch emissions for real-time sync
+- Socket.IO patch emissions for real-time sync  
 - CSV round-trip must be deterministic
 - Snapshots must be idempotent
 - "Saving/Saved/Error" status UX required
