@@ -88,10 +88,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS middleware
+# CORS middleware - handle both with/without trailing slash
+cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:3000")
+allowed_origins = [cors_origin]
+if cors_origin.endswith("/"):
+    allowed_origins.append(cors_origin.rstrip("/"))
+else:
+    allowed_origins.append(cors_origin + "/")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("CORS_ORIGIN", "http://localhost:3000")],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -154,7 +161,7 @@ async def create_table(request: CreateTableRequest):
 @app.get("/api/table/{slug}", response_model=TableResponse)
 async def get_table(
     slug: str, 
-    t: str = Header(..., description="Token")
+    t: str = Header(..., description="Token", alias="t")
 ):
     """Get table data with admin or editor token"""
     
