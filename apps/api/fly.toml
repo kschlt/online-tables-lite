@@ -1,5 +1,5 @@
-app = "bull-lite-api"   # change to your app name
-primary_region = "fra"
+app = "online-table-lite-api"
+primary_region = "de"
 
 [http_service]
   internal_port = 8080
