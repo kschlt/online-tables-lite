@@ -54,6 +54,42 @@ The project follows a 6-phase implementation plan (see docs/CLAUDE_TASKS.md):
 - Rate-limit comment submissions
 - Validate all input with Pydantic models
 
+## Development Guidelines & Dependency Management
+
+### **Frontend Stack (Locked-In)**
+- **UI Framework**: Next.js 15 App Router - no other React frameworks
+- **Styling**: Tailwind CSS only - no CSS-in-JS, styled-components, or other CSS libraries  
+- **State Management**: React hooks (useState, useEffect) - no Redux, Zustand unless absolutely required
+- **HTTP Client**: Native `fetch()` only - no axios, SWR, or React Query
+- **Real-time**: `socket.io-client` for WebSocket communication
+- **TypeScript**: Strict mode enabled - all components must be typed
+
+### **Backend Stack (Locked-In)**
+- **Framework**: FastAPI with Pydantic v2 - no Django, Flask, or other frameworks
+- **Database**: Supabase client only - no direct SQL, SQLAlchemy ORM usage
+- **Async**: Native async/await - no Celery, asyncio beyond basic usage
+- **WebSockets**: `python-socketio` for real-time features
+- **Validation**: Pydantic models for all request/response - no manual validation
+
+### **Dependency Rules**
+1. **NO new dependencies** without explicit justification
+2. **Before adding any library**: Check if existing tools can solve the problem
+3. **UI Components**: Use native HTML + Tailwind - no component libraries (MUI, Ant Design, etc.)
+4. **Icons**: Use Unicode/emoji or SVG - no icon libraries unless critical
+5. **Utilities**: Prefer native JavaScript/Python over utility libraries
+
+### **Code Style Enforcement**
+- **ESLint**: Next.js config extended with strict rules (see below)
+- **TypeScript**: `--strict` mode, no `any` types allowed
+- **Prettier**: Consistent formatting (see below)
+- **File Organization**: Feature-based structure in `src/` directories
+
+### **Architecture Constraints**
+- **No server components mixing**: Keep client components in `'use client'` files only
+- **API route pattern**: All FastAPI routes follow `/api/{resource}` pattern
+- **Component structure**: One component per file, named exports only
+- **Error handling**: Consistent error boundaries and HTTP error responses
+
 ## Git Workflow
 
 ### Branch Strategy
@@ -86,20 +122,47 @@ The project follows a 6-phase implementation plan (see docs/CLAUDE_TASKS.md):
 
 ## Development Commands
 
-### Backend (`apps/api`)
+### **CRITICAL: Always Activate Backend Virtual Environment First**
+
+**Backend (`apps/api`)** - **ALWAYS run these commands in order:**
 ```bash
-python main.py                    # Start dev server (localhost:8000, auto-reload)
-pip install -r requirements.txt  # Install dependencies
-source venv/bin/activate         # Activate virtual environment
+cd apps/api
+source venv/bin/activate         # MUST activate venv first!
+pip install -r requirements.txt  # Install dependencies (if needed)
+python main.py                   # Start dev server (localhost:8000, auto-reload)
 ```
+
+**Important Notes:**
+- **NEVER** run `python` or `python3` commands without activating the virtual environment first
+- The system may not have `python` command - use `python3` if `python` fails
+- Always `cd apps/api && source venv/bin/activate` before any Python commands
+- Virtual environment contains all required dependencies (FastAPI, Supabase, etc.)
 
 ### Frontend (`apps/web`)  
 ```bash
-npm run dev        # Start dev server (localhost:3000)
-npm run build      # Production build
-npm run typecheck  # TypeScript validation
-npm run lint       # ESLint validation
+cd apps/web
+npm install                      # Install dependencies (if needed)
+npm run dev                      # Start dev server (localhost:3000)
+npm run build                    # Production build
+npm run typecheck                # TypeScript validation
+npm run lint                     # ESLint validation
+npm run lint:fix                 # Auto-fix ESLint issues
+npm run format                   # Format code with Prettier
+npm run format:check             # Check Prettier formatting
 ```
+
+### **Quality Assurance Commands**
+```bash
+# Before committing - run all checks:
+npm run typecheck && npm run lint && npm run format:check
+# Auto-fix issues:  
+npm run lint:fix && npm run format
+```
+
+### **Development Startup Checklist:**
+1. **Backend:** `cd apps/api && source venv/bin/activate && python main.py`
+2. **Frontend:** `cd apps/web && npm run dev`  
+3. **Test:** Health check `curl http://localhost:8000/healthz`
 
 ## Architecture Patterns
 
