@@ -1,4 +1,4 @@
-import { PageLayout } from '@/components/ui';
+import { PageLayout } from '@/components/ui'
 
 export default function Home() {
   return (
@@ -17,5 +17,5 @@ export default function Home() {
         </p>
       </div>
     </PageLayout>
-  );
+  )
 }

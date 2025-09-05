@@ -21,21 +21,25 @@ src/
 ## Key Features
 
 ### Type Safety
+
 - Centralized TypeScript types in `types/`
 - Strict type checking enabled
 - Proper interface definitions for API responses
 
 ### Component Architecture
+
 - Separation of UI components from business logic
 - Reusable components with consistent styling
 - Custom hooks for data fetching and state management
 
 ### API Integration
+
 - Native fetch() only (per CLAUDE.md requirements)
 - Centralized API client with error handling
 - Type-safe request/response handling
 
 ### Code Organization
+
 - Barrel exports for clean imports
 - Consistent naming conventions
 - Path aliases for clean import statements

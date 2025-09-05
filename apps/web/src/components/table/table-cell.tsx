@@ -2,59 +2,59 @@
  * Editable table cell component with optimistic updates.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { CellData } from '@/types';
+import { useState, useEffect, useCallback } from 'react'
+import { CellData } from '@/types'
 
 interface TableCellProps {
-  row: number;
-  col: number;
-  value?: string | null;
-  width?: number | null;
-  onCellChange: (row: number, col: number, value: string | null) => void;
-  isReadonly?: boolean;
+  row: number
+  col: number
+  value?: string | null
+  width?: number | null
+  onCellChange: (row: number, col: number, value: string | null) => void
+  isReadonly?: boolean
 }
 
-export function TableCell({ 
-  row, 
-  col, 
-  value = null, 
-  width, 
-  onCellChange, 
-  isReadonly = false 
+export function TableCell({
+  row,
+  col,
+  value = null,
+  width,
+  onCellChange,
+  isReadonly = false,
 }: TableCellProps) {
-  const [localValue, setLocalValue] = useState(value || '');
-  const [isEditing, setIsEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value || '')
+  const [isEditing, setIsEditing] = useState(false)
 
   // Sync external value changes (from real-time updates)
   useEffect(() => {
     if (!isEditing) {
-      setLocalValue(value || '');
+      setLocalValue(value || '')
     }
-  }, [value, isEditing]);
+  }, [value, isEditing])
 
   const handleChange = useCallback((newValue: string) => {
-    setLocalValue(newValue);
+    setLocalValue(newValue)
     // Debounced save will happen on blur
-  }, []);
+  }, [])
 
   const handleFocus = useCallback(() => {
-    setIsEditing(true);
-  }, []);
+    setIsEditing(true)
+  }, [])
 
   const handleBlur = useCallback(() => {
-    setIsEditing(false);
+    setIsEditing(false)
     // Only save if value changed
     if (localValue !== (value || '')) {
-      onCellChange(row, col, localValue || null);
+      onCellChange(row, col, localValue || null)
     }
-  }, [localValue, value, row, col, onCellChange]);
+  }, [localValue, value, row, col, onCellChange])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      (e.target as HTMLInputElement).blur();
+      e.preventDefault()
+      ;(e.target as HTMLInputElement).blur()
     }
-  }, []);
+  }, [])
 
   if (isReadonly) {
     return (
@@ -64,7 +64,7 @@ export function TableCell({
       >
         <span className="text-gray-600">{localValue}</span>
       </div>
-    );
+    )
   }
 
   return (
@@ -75,7 +75,7 @@ export function TableCell({
       <input
         type="text"
         value={localValue}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={e => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -85,5 +85,5 @@ export function TableCell({
         placeholder=""
       />
     </div>
-  );
+  )
 }

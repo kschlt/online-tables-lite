@@ -5,9 +5,9 @@ import socketio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.tables import router as tables_router
-from app.api.v1.cells import router as cells_router
 from app.api.dependencies import set_socketio_server
+from app.api.v1.cells import router as cells_router
+from app.api.v1.tables import router as tables_router
 from app.core.config import settings
 
 # Socket.IO setup

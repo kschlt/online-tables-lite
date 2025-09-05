@@ -3,8 +3,8 @@
  */
 
 interface ErrorMessageProps {
-  message: string;
-  className?: string;
+  message: string
+  className?: string
 }
 
 export function ErrorMessage({ message, className = '' }: ErrorMessageProps) {
@@ -13,5 +13,5 @@ export function ErrorMessage({ message, className = '' }: ErrorMessageProps) {
       <p className="text-sm font-medium">Error</p>
       <p className="text-sm">{message}</p>
     </div>
-  );
+  )
 }

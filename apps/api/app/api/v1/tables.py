@@ -3,7 +3,18 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.api.dependencies import get_table_service
 from app.core.security import verify_token
-from app.models.table import CreateTableRequest, CreateTableResponse, TableResponse, TableConfigRequest, TableConfigResponse
+from app.models.table import (
+    AddColumnRequest,
+    AddRowRequest,
+    CreateTableRequest,
+    CreateTableResponse,
+    RemoveColumnRequest,
+    RemoveRowRequest,
+    RowColumnResponse,
+    TableConfigRequest,
+    TableConfigResponse,
+    TableResponse,
+)
 from app.services.table_service import TableService
 
 router = APIRouter(prefix="/tables", tags=["tables"])
@@ -38,10 +49,82 @@ async def update_table_config(
 ):
     """Update table configuration (admin only)."""
     table, role = await verify_token(slug, t)
-    
+
     # Only admin can update configuration
     if role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     result = await table_service.update_table_config(table["id"], request)
     return TableConfigResponse(**result)
+
+
+@router.post("/{slug}/rows", response_model=RowColumnResponse)
+async def add_rows(
+    slug: str,
+    request: AddRowRequest,
+    t: str = Header(..., description="Token", alias="t"),
+    table_service: TableService = Depends(get_table_service),
+):
+    """Add rows to table (admin only)."""
+    table, role = await verify_token(slug, t)
+
+    # Only admin can add rows
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    result = await table_service.add_rows(table["id"], request)
+    return RowColumnResponse(**result)
+
+
+@router.delete("/{slug}/rows", response_model=RowColumnResponse)
+async def remove_rows(
+    slug: str,
+    request: RemoveRowRequest,
+    t: str = Header(..., description="Token", alias="t"),
+    table_service: TableService = Depends(get_table_service),
+):
+    """Remove rows from table (admin only)."""
+    table, role = await verify_token(slug, t)
+
+    # Only admin can remove rows
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    result = await table_service.remove_rows(table["id"], request)
+    return RowColumnResponse(**result)
+
+
+@router.post("/{slug}/columns", response_model=RowColumnResponse)
+async def add_columns(
+    slug: str,
+    request: AddColumnRequest,
+    t: str = Header(..., description="Token", alias="t"),
+    table_service: TableService = Depends(get_table_service),
+):
+    """Add columns to table (admin only)."""
+    table, role = await verify_token(slug, t)
+
+    # Only admin can add columns
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    result = await table_service.add_columns(table["id"], request)
+    return RowColumnResponse(**result)
+
+
+@router.delete("/{slug}/columns", response_model=RowColumnResponse)
+async def remove_columns(
+    slug: str,
+    request: RemoveColumnRequest,
+    t: str = Header(..., description="Token", alias="t"),
+    table_service: TableService = Depends(get_table_service),
+):
+    """Remove columns from table (admin only)."""
+    table, role = await verify_token(slug, t)
+
+    # Only admin can remove columns
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    result = await table_service.remove_columns(table["id"], request)
+    return RowColumnResponse(**result)

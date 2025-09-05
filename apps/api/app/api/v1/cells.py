@@ -1,7 +1,7 @@
 """Cell management endpoints."""
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from app.api.dependencies import get_table_service, get_socketio_server
+from app.api.dependencies import get_socketio_server, get_table_service
 from app.core.security import verify_token
 from app.models.table import CellBatchUpdateRequest
 from app.services.table_service import TableService
@@ -21,26 +21,26 @@ async def update_cells(
 ):
     """Batch update cells in a table."""
     table, role = await verify_token(slug, t)
-    
+
     # Only admin and editor can update cells
     if role not in ["admin", "editor"]:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
-    
+
     # Update cells in database
     await table_service.update_cells(table["id"], request.cells)
-    
+
     # Emit real-time update to other clients in the table room
     sio = get_socketio_server()
     room = f"table:{table['id']}"
     cell_updates = [{"row": cell.row, "col": cell.col, "value": cell.value} for cell in request.cells]
-    
+
     await sio.emit("cell_update", {
         "table_id": table["id"],
         "cells": cell_updates
     }, room=room)
-    
+
     print(f"Emitted cell update to room {room}: {len(cell_updates)} cells")
-    
+
     return {"success": True, "updated_cells": len(request.cells)}
 
 

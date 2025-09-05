@@ -1,13 +1,22 @@
 """Table business logic service."""
 from typing import Any
 
+from app.core.config import settings
 from app.core.database import get_supabase_client
 from app.core.security import generate_slug, generate_token, hash_token
 from app.models.table import (
-    CreateTableRequest, CreateTableResponse, TableColumn, TableResponse, 
-    CellUpdateRequest, CellData, TableConfigRequest, ColumnConfigUpdate
+    AddColumnRequest,
+    AddRowRequest,
+    CellData,
+    CellUpdateRequest,
+    CreateTableRequest,
+    CreateTableResponse,
+    RemoveColumnRequest,
+    RemoveRowRequest,
+    TableColumn,
+    TableConfigRequest,
+    TableResponse,
 )
-from app.core.config import settings
 
 
 class TableService:
@@ -89,7 +98,7 @@ class TableService:
             .eq("table_id", table_id)
             .execute()
         )
-        
+
         cells_data = [
             CellData(row=cell["r"], col=cell["c"], value=cell["value"])
             for cell in cells_result.data
@@ -116,7 +125,7 @@ class TableService:
                 "c": cell.col,
                 "value": cell.value,
             }
-            
+
             # Try to update existing cell first
             existing = (
                 self.supabase.table("cells")
@@ -126,7 +135,7 @@ class TableService:
                 .eq("c", cell.col)
                 .execute()
             )
-            
+
             if existing.data:
                 # Update existing cell
                 self.supabase.table("cells").update({"value": cell.value}).eq("id", existing.data[0]["id"]).execute()
@@ -142,7 +151,7 @@ class TableService:
             .eq("table_id", table_id)
             .execute()
         )
-        
+
         return [
             {"row": cell["r"], "col": cell["c"], "value": cell["value"]}
             for cell in result.data
@@ -152,19 +161,19 @@ class TableService:
         """Update table configuration (admin only)."""
         # Validate limits
         errors = []
-        
+
         if config.rows is not None:
             if config.rows < 1:
                 errors.append("Rows must be at least 1")
             elif config.rows > settings.table_row_limit:
                 errors.append(f"Rows cannot exceed {settings.table_row_limit}")
-        
+
         if config.cols is not None:
             if config.cols < 1:
                 errors.append("Columns must be at least 1")
             elif config.cols > settings.table_col_limit:
                 errors.append(f"Columns cannot exceed {settings.table_col_limit}")
-        
+
         if errors:
             return {
                 "success": False,
@@ -174,7 +183,7 @@ class TableService:
                     "max_cols": settings.table_col_limit
                 }
             }
-        
+
         # Update table metadata
         update_data = {}
         if config.title is not None:
@@ -185,10 +194,10 @@ class TableService:
             update_data["rows"] = config.rows
         if config.cols is not None:
             update_data["cols"] = config.cols
-        
+
         if update_data:
             self.supabase.table("tables").update(update_data).eq("id", table_id).execute()
-        
+
         # Update column configurations
         if config.columns:
             for col_update in config.columns:
@@ -199,15 +208,15 @@ class TableService:
                     col_data["width"] = col_update.width
                 if col_update.today_hint is not None:
                     col_data["today_hint"] = col_update.today_hint
-                
+
                 if col_data:
                     self.supabase.table("columns").update(col_data).eq("table_id", table_id).eq("idx", col_update.idx).execute()
-        
+
         # Handle column count changes
         if config.cols is not None:
             current_result = self.supabase.table("columns").select("idx").eq("table_id", table_id).execute()
             current_cols = len(current_result.data)
-            
+
             if config.cols > current_cols:
                 # Add new columns
                 new_columns = []
@@ -221,12 +230,12 @@ class TableService:
                     })
                 if new_columns:
                     self.supabase.table("columns").insert(new_columns).execute()
-            
+
             elif config.cols < current_cols:
                 # Remove excess columns and their cells
                 self.supabase.table("columns").delete().eq("table_id", table_id).gte("idx", config.cols).execute()
                 self.supabase.table("cells").delete().eq("table_id", table_id).gte("c", config.cols).execute()
-        
+
         return {
             "success": True,
             "message": "Configuration updated successfully",
@@ -234,4 +243,149 @@ class TableService:
                 "max_rows": settings.table_row_limit,
                 "max_cols": settings.table_col_limit
             }
+        }
+
+    async def add_rows(self, table_id: str, request: AddRowRequest) -> dict[str, Any]:
+        """Add rows to a table."""
+        # Get current table data
+        table_result = self.supabase.table("tables").select("rows").eq("id", table_id).execute()
+        if not table_result.data:
+            return {
+                "success": False,
+                "message": "Table not found",
+                "new_rows": None
+            }
+
+        current_rows = table_result.data[0]["rows"]
+        new_rows = current_rows + request.count
+
+        # Check limits
+        if new_rows > settings.table_row_limit:
+            return {
+                "success": False,
+                "message": f"Cannot add {request.count} rows. Would exceed limit of {settings.table_row_limit}",
+                "new_rows": current_rows
+            }
+
+        # Update table row count
+        self.supabase.table("tables").update({"rows": new_rows}).eq("id", table_id).execute()
+
+        return {
+            "success": True,
+            "message": f"Added {request.count} rows",
+            "new_rows": new_rows
+        }
+
+    async def remove_rows(self, table_id: str, request: RemoveRowRequest) -> dict[str, Any]:
+        """Remove rows from a table."""
+        # Get current table data
+        table_result = self.supabase.table("tables").select("rows").eq("id", table_id).execute()
+        if not table_result.data:
+            return {
+                "success": False,
+                "message": "Table not found",
+                "new_rows": None
+            }
+
+        current_rows = table_result.data[0]["rows"]
+        new_rows = current_rows - request.count
+
+        # Check minimum
+        if new_rows < 1:
+            return {
+                "success": False,
+                "message": f"Cannot remove {request.count} rows. Must have at least 1 row",
+                "new_rows": current_rows
+            }
+
+        # Remove cells from deleted rows
+        self.supabase.table("cells").delete().eq("table_id", table_id).gte("r", new_rows).execute()
+
+        # Update table row count
+        self.supabase.table("tables").update({"rows": new_rows}).eq("id", table_id).execute()
+
+        return {
+            "success": True,
+            "message": f"Removed {request.count} rows",
+            "new_rows": new_rows
+        }
+
+    async def add_columns(self, table_id: str, request: AddColumnRequest) -> dict[str, Any]:
+        """Add columns to a table."""
+        # Get current table data
+        table_result = self.supabase.table("tables").select("cols").eq("id", table_id).execute()
+        if not table_result.data:
+            return {
+                "success": False,
+                "message": "Table not found",
+                "new_cols": None
+            }
+
+        current_cols = table_result.data[0]["cols"]
+        new_cols = current_cols + request.count
+
+        # Check limits
+        if new_cols > settings.table_col_limit:
+            return {
+                "success": False,
+                "message": f"Cannot add {request.count} columns. Would exceed limit of {settings.table_col_limit}",
+                "new_cols": current_cols
+            }
+
+        # Create new column entries
+        new_columns = []
+        for i in range(current_cols, new_cols):
+            header = request.header if request.header and i == current_cols else f"Column {i + 1}"
+            new_columns.append({
+                "table_id": table_id,
+                "idx": i,
+                "header": header,
+                "width": None,
+                "today_hint": False,
+            })
+
+        self.supabase.table("columns").insert(new_columns).execute()
+
+        # Update table column count
+        self.supabase.table("tables").update({"cols": new_cols}).eq("id", table_id).execute()
+
+        return {
+            "success": True,
+            "message": f"Added {request.count} columns",
+            "new_cols": new_cols
+        }
+
+    async def remove_columns(self, table_id: str, request: RemoveColumnRequest) -> dict[str, Any]:
+        """Remove columns from a table."""
+        # Get current table data
+        table_result = self.supabase.table("tables").select("cols").eq("id", table_id).execute()
+        if not table_result.data:
+            return {
+                "success": False,
+                "message": "Table not found",
+                "new_cols": None
+            }
+
+        current_cols = table_result.data[0]["cols"]
+        new_cols = current_cols - request.count
+
+        # Check minimum
+        if new_cols < 1:
+            return {
+                "success": False,
+                "message": f"Cannot remove {request.count} columns. Must have at least 1 column",
+                "new_cols": current_cols
+            }
+
+        # Remove columns and their cells
+        self.supabase.table("columns").delete().eq("table_id", table_id).gte("idx", new_cols).execute()
+        self.supabase.table("cells").delete().eq("table_id", table_id).gte("c", new_cols).execute()
+
+        # Update table column count
+        self.supabase.table("tables").update({"cols": new_cols}).eq("id", table_id).execute()
+
+        return {
+            "success": True,
+            "message": f"Removed {request.count} columns",
+            "new_cols": new_cols
         }

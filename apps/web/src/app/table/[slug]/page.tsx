@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import { useParams, useSearchParams } from 'next/navigation';
-import { useTable } from '@/hooks';
-import { PageLayout, LoadingSpinner, ErrorMessage } from '@/components/ui';
-import { TableGrid } from '@/components/table';
+import { useParams, useSearchParams } from 'next/navigation'
+import { useTable } from '@/hooks'
+import { PageLayout, LoadingSpinner, ErrorMessage } from '@/components/ui'
+import { TableGrid } from '@/components/table'
 
 export default function TablePage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
+  const params = useParams()
+  const searchParams = useSearchParams()
 
-  const slug = params.slug as string;
-  const token = searchParams.get('t');
+  const slug = params.slug as string
+  const token = searchParams.get('t')
 
-  const { tableData, isLoading, error } = useTable({ slug, token });
+  const { tableData, isLoading, error } = useTable({ slug, token })
 
   if (isLoading) {
     return (
@@ -21,7 +21,7 @@ export default function TablePage() {
           <LoadingSpinner size="lg" />
         </div>
       </PageLayout>
-    );
+    )
   }
 
   if (error) {
@@ -31,7 +31,7 @@ export default function TablePage() {
           <ErrorMessage message={error} className="max-w-md" />
         </div>
       </PageLayout>
-    );
+    )
   }
 
   if (!tableData) {
@@ -41,7 +41,7 @@ export default function TablePage() {
           <div className="text-gray-600">Table not found</div>
         </div>
       </PageLayout>
-    );
+    )
   }
 
   return (
@@ -52,5 +52,5 @@ export default function TablePage() {
     >
       <TableGrid tableData={tableData} />
     </PageLayout>
-  );
+  )
 }

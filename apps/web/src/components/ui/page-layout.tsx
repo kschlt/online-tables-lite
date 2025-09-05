@@ -2,14 +2,14 @@
  * Common page layout component with consistent styling.
  */
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from 'react'
 
 interface PageLayoutProps {
-  children: ReactNode;
-  title?: string;
-  description?: string;
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
-  className?: string;
+  children: ReactNode
+  title?: string
+  description?: string
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  className?: string
 }
 
 const maxWidthClasses = {
@@ -18,7 +18,7 @@ const maxWidthClasses = {
   lg: 'max-w-6xl',
   xl: 'max-w-7xl',
   full: 'max-w-full',
-};
+}
 
 export function PageLayout({
   children,
@@ -32,18 +32,12 @@ export function PageLayout({
       <div className={`mx-auto ${maxWidthClasses[maxWidth]}`}>
         {(title || description) && (
           <div className="mb-6">
-            {title && (
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {title}
-              </h1>
-            )}
-            {description && (
-              <p className="text-gray-600">{description}</p>
-            )}
+            {title && <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>}
+            {description && <p className="text-gray-600">{description}</p>}
           </div>
         )}
         {children}
       </div>
     </main>
-  );
+  )
 }

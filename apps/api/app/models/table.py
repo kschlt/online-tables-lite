@@ -32,7 +32,7 @@ class TableColumn(BaseModel):
 
 class CellData(BaseModel):
     """Cell data model."""
-    
+
     row: int
     col: int
     value: Optional[str]
@@ -67,7 +67,7 @@ class CellBatchUpdateRequest(BaseModel):
 
 class ColumnConfigUpdate(BaseModel):
     """Request model for updating column configuration."""
-    
+
     idx: int
     header: Optional[str] = None
     width: Optional[int] = None
@@ -76,7 +76,7 @@ class ColumnConfigUpdate(BaseModel):
 
 class TableConfigRequest(BaseModel):
     """Request model for updating table configuration."""
-    
+
     title: Optional[str] = None
     description: Optional[str] = None
     rows: Optional[int] = None
@@ -86,7 +86,41 @@ class TableConfigRequest(BaseModel):
 
 class TableConfigResponse(BaseModel):
     """Response model for table configuration."""
-    
+
     success: bool
     message: str
     limits: dict[str, int] = {}
+
+
+class AddRowRequest(BaseModel):
+    """Request model for adding rows to a table."""
+
+    count: int = 1
+
+
+class RemoveRowRequest(BaseModel):
+    """Request model for removing rows from a table."""
+
+    count: int = 1
+
+
+class AddColumnRequest(BaseModel):
+    """Request model for adding columns to a table."""
+
+    count: int = 1
+    header: Optional[str] = None
+
+
+class RemoveColumnRequest(BaseModel):
+    """Request model for removing columns from a table."""
+
+    count: int = 1
+
+
+class RowColumnResponse(BaseModel):
+    """Response model for row/column operations."""
+
+    success: bool
+    message: str
+    new_rows: Optional[int] = None
+    new_cols: Optional[int] = None

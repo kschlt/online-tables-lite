@@ -71,12 +71,12 @@ const eslintConfig = [
         },
       ],
 
-      // Enforce component naming patterns  
+      // Enforce component naming patterns
       'react/display-name': 'warn',
-      
+
       // Disable problematic unicorn rules for now - ESLint v9 compatibility issues
 
-      // Basic TypeScript patterns (without plugin dependency)  
+      // Basic TypeScript patterns (without plugin dependency)
       'no-unused-vars': 'warn',
     },
   },

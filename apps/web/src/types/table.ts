@@ -3,79 +3,103 @@
  */
 
 export interface TableColumn {
-  idx: number;
-  header: string | null;
-  width: number | null;
-  today_hint: boolean;
+  idx: number
+  header: string | null
+  width: number | null
+  today_hint: boolean
 }
 
 export interface CellData {
-  row: number;
-  col: number;
-  value: string | null;
+  row: number
+  col: number
+  value: string | null
 }
 
 export interface TableData {
-  id: string;
-  slug: string;
-  title: string | null;
-  description: string | null;
-  cols: number;
-  rows: number;
-  columns: TableColumn[];
-  cells: CellData[];
+  id: string
+  slug: string
+  title: string | null
+  description: string | null
+  cols: number
+  rows: number
+  columns: TableColumn[]
+  cells: CellData[]
 }
 
 export interface CreateTableRequest {
-  title?: string;
-  description?: string;
-  cols?: number;
-  rows?: number;
+  title?: string
+  description?: string
+  cols?: number
+  rows?: number
 }
 
 export interface CreateTableResponse {
-  slug: string;
-  admin_token: string;
-  edit_token: string;
+  slug: string
+  admin_token: string
+  edit_token: string
 }
 
 export interface CellUpdateRequest {
-  row: number;
-  col: number;
-  value: string | null;
+  row: number
+  col: number
+  value: string | null
 }
 
 export interface CellBatchUpdateRequest {
-  cells: CellUpdateRequest[];
+  cells: CellUpdateRequest[]
 }
 
-export type UserRole = 'admin' | 'editor';
+export type UserRole = 'admin' | 'editor'
 
 export interface LoadingState {
-  isLoading: boolean;
-  error: string | null;
+  isLoading: boolean
+  error: string | null
 }
 
 export interface ColumnConfigUpdate {
-  idx: number;
-  header?: string | null;
-  width?: number | null;
-  today_hint?: boolean | null;
+  idx: number
+  header?: string | null
+  width?: number | null
+  today_hint?: boolean | null
 }
 
 export interface TableConfigRequest {
-  title?: string | null;
-  description?: string | null;
-  rows?: number | null;
-  cols?: number | null;
-  columns?: ColumnConfigUpdate[] | null;
+  title?: string | null
+  description?: string | null
+  rows?: number | null
+  cols?: number | null
+  columns?: ColumnConfigUpdate[] | null
 }
 
 export interface TableConfigResponse {
-  success: boolean;
-  message: string;
+  success: boolean
+  message: string
   limits: {
-    max_rows: number;
-    max_cols: number;
-  };
+    max_rows: number
+    max_cols: number
+  }
+}
+
+export interface AddRowRequest {
+  count?: number
+}
+
+export interface RemoveRowRequest {
+  count?: number
+}
+
+export interface AddColumnRequest {
+  count?: number
+  header?: string
+}
+
+export interface RemoveColumnRequest {
+  count?: number
+}
+
+export interface RowColumnResponse {
+  success: boolean
+  message: string
+  new_rows?: number | null
+  new_cols?: number | null
 }

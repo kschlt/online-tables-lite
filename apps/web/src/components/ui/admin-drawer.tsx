@@ -1,35 +1,37 @@
-'use client';
+'use client'
 
 /**
  * Admin drawer component for table configuration.
  */
 
-import { useState } from 'react';
-import { TableData, TableConfigRequest, ColumnConfigUpdate } from '@/types';
-import { updateTableConfig } from '@/lib/api';
+import { useState } from 'react'
+import { TableData, TableConfigRequest, ColumnConfigUpdate } from '@/types'
+import { updateTableConfig, api } from '@/lib/api'
 
 interface AdminDrawerProps {
-  tableData: TableData;
-  token: string;
-  isOpen: boolean;
-  onClose: () => void;
-  onUpdate: (updatedTable: TableData) => void;
+  tableData: TableData
+  token: string
+  isOpen: boolean
+  onClose: () => void
+  onUpdate: (updatedTable: TableData) => void
 }
 
 export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: AdminDrawerProps) {
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState(tableData.title || '');
-  const [description, setDescription] = useState(tableData.description || '');
-  const [rows, setRows] = useState(tableData.rows);
-  const [cols, setCols] = useState(tableData.cols);
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [title, setTitle] = useState(tableData.title || '')
+  const [description, setDescription] = useState(tableData.description || '')
+  const [rows, setRows] = useState(tableData.rows)
+  const [cols, setCols] = useState(tableData.cols)
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(true);
-    setError(null);
+    e.preventDefault()
+    setIsUpdating(true)
+    setError(null)
 
     try {
       const columnUpdates: ColumnConfigUpdate[] = tableData.columns.map(col => ({
@@ -37,7 +39,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
         header: col.header,
         width: col.width,
         today_hint: col.today_hint,
-      }));
+      }))
 
       const request: TableConfigRequest = {
         title: title || null,
@@ -45,46 +47,110 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
         rows,
         cols,
         columns: columnUpdates,
-      };
+      }
 
-      const response = await updateTableConfig(tableData.slug, token, request);
-      
+      const response = await updateTableConfig(tableData.slug, token, request)
+
       if (response.success) {
         // Refresh table data - simplified approach
-        window.location.reload();
+        window.location.reload()
       } else {
-        setError(response.message);
+        setError(response.message)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update configuration');
+      setError(err instanceof Error ? err.message : 'Failed to update configuration')
     } finally {
-      setIsUpdating(false);
+      setIsUpdating(false)
     }
-  };
+  }
 
-  const addColumn = () => {
-    if (cols < 64) { // Max limit
-      setCols(cols + 1);
-    }
-  };
+  const addColumn = async () => {
+    if (cols >= 64) {
+      return
+    } // Max limit
+    setIsUpdating(true)
+    setError(null)
 
-  const removeColumn = () => {
-    if (cols > 1) { // Min limit
-      setCols(cols - 1);
+    try {
+      const response = await api.addColumns(tableData.slug, token, { count: 1 })
+      if (response.success && response.new_cols) {
+        setCols(response.new_cols)
+        // Refresh table data to get new columns
+        window.location.reload()
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add column')
+    } finally {
+      setIsUpdating(false)
     }
-  };
+  }
 
-  const addRow = () => {
-    if (rows < 500) { // Max limit
-      setRows(rows + 1);
-    }
-  };
+  const removeColumn = async () => {
+    if (cols <= 1) {
+      return
+    } // Min limit
+    setIsUpdating(true)
+    setError(null)
 
-  const removeRow = () => {
-    if (rows > 1) { // Min limit
-      setRows(rows - 1);
+    try {
+      const response = await api.removeColumns(tableData.slug, token, { count: 1 })
+      if (response.success && response.new_cols) {
+        setCols(response.new_cols)
+        // Refresh table data to reflect removed columns
+        window.location.reload()
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove column')
+    } finally {
+      setIsUpdating(false)
     }
-  };
+  }
+
+  const addRow = async () => {
+    if (rows >= 500) {
+      return
+    } // Max limit
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      const response = await api.addRows(tableData.slug, token, { count: 1 })
+      if (response.success && response.new_rows) {
+        setRows(response.new_rows)
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add row')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const removeRow = async () => {
+    if (rows <= 1) {
+      return
+    } // Min limit
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      const response = await api.removeRows(tableData.slug, token, { count: 1 })
+      if (response.success && response.new_rows) {
+        setRows(response.new_rows)
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove row')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -116,7 +182,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                 type="text"
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={e => setTitle(e.target.value)}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter table title"
               />
@@ -129,7 +195,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
               <textarea
                 id="description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={e => setDescription(e.target.value)}
                 rows={3}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter table description"
@@ -145,7 +211,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   <button
                     type="button"
                     onClick={removeRow}
-                    disabled={rows <= 1}
+                    disabled={rows <= 1 || isUpdating}
                     className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                   >
                     −
@@ -154,7 +220,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   <button
                     type="button"
                     onClick={addRow}
-                    disabled={rows >= 500}
+                    disabled={rows >= 500 || isUpdating}
                     className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                   >
                     +
@@ -171,7 +237,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   <button
                     type="button"
                     onClick={removeColumn}
-                    disabled={cols <= 1}
+                    disabled={cols <= 1 || isUpdating}
                     className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                   >
                     −
@@ -180,7 +246,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   <button
                     type="button"
                     onClick={addColumn}
-                    disabled={cols >= 64}
+                    disabled={cols >= 64 || isUpdating}
                     className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
                   >
                     +
@@ -211,5 +277,5 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
         </div>
       </div>
     </div>
-  );
+  )
 }
