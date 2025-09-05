@@ -55,6 +55,11 @@ export function TableGrid({ tableData }: TableGridProps) {
     checkAdminStatus()
   }
 
+  // Generate dynamic grid template based on column widths
+  const gridTemplateColumns = tableData.columns
+    .map(column => column.width ? `${column.width}px` : '1fr')
+    .join(' ')
+
   return (
     <div className="relative">
       <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -82,13 +87,12 @@ export function TableGrid({ tableData }: TableGridProps) {
         {/* Headers */}
         <div
           className="grid gap-0 min-w-full"
-          style={{ gridTemplateColumns: `repeat(${tableData.cols}, 1fr)` }}
+          style={{ gridTemplateColumns }}
         >
           {tableData.columns.map(column => (
             <div
               key={column.idx}
               className="border border-gray-200 p-3 bg-gray-50 font-medium text-gray-900"
-              style={{ width: column.width ? `${column.width}px` : 'auto' }}
             >
               {column.header || `Column ${column.idx + 1}`}
               {column.today_hint && (
@@ -105,7 +109,7 @@ export function TableGrid({ tableData }: TableGridProps) {
           <div
             key={rowIndex}
             className="grid gap-0"
-            style={{ gridTemplateColumns: `repeat(${tableData.cols}, 1fr)` }}
+            style={{ gridTemplateColumns }}
           >
             {tableData.columns.map(column => (
               <TableCell
@@ -113,7 +117,6 @@ export function TableGrid({ tableData }: TableGridProps) {
                 row={rowIndex}
                 col={column.idx}
                 value={getCellValue(rowIndex, column.idx)}
-                width={column.width}
                 onCellChange={updateCell}
               />
             ))}

@@ -58,20 +58,14 @@ export function TableCell({
 
   if (isReadonly) {
     return (
-      <div
-        className="border border-gray-200 p-3 min-h-[48px] bg-gray-50 flex items-center"
-        style={{ width: width ? `${width}px` : 'auto' }}
-      >
+      <div className="border border-gray-200 p-3 min-h-[48px] bg-gray-50 flex items-center">
         <span className="text-gray-600">{localValue}</span>
       </div>
     )
   }
 
   return (
-    <div
-      className="border border-gray-200 bg-white relative"
-      style={{ width: width ? `${width}px` : 'auto' }}
-    >
+    <div className="border border-gray-200 bg-white relative">
       <input
         type="text"
         value={localValue}

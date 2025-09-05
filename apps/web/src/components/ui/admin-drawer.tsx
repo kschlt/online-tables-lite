@@ -23,6 +23,14 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
   const [description, setDescription] = useState(tableData.description || '')
   const [rows, setRows] = useState(tableData.rows)
   const [cols, setCols] = useState(tableData.cols)
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfigUpdate[]>(
+    tableData.columns.map(col => ({
+      idx: col.idx,
+      header: col.header,
+      width: col.width,
+      today_hint: col.today_hint,
+    }))
+  )
 
   if (!isOpen) {
     return null
@@ -34,19 +42,12 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
     setError(null)
 
     try {
-      const columnUpdates: ColumnConfigUpdate[] = tableData.columns.map(col => ({
-        idx: col.idx,
-        header: col.header,
-        width: col.width,
-        today_hint: col.today_hint,
-      }))
-
       const request: TableConfigRequest = {
         title: title || null,
         description: description || null,
         rows,
         cols,
-        columns: columnUpdates,
+        columns: columnConfigs,
       }
 
       const response = await updateTableConfig(tableData.slug, token, request)
@@ -152,9 +153,32 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
     }
   }
 
+  // Helper functions for column configuration
+  const updateColumnHeader = (idx: number, header: string) => {
+    setColumnConfigs(prev =>
+      prev.map(col => (col.idx === idx ? { ...col, header: header || null } : col))
+    )
+  }
+
+  const updateColumnWidth = (idx: number, width: string) => {
+    const numWidth = width ? parseInt(width, 10) : null
+    if (numWidth !== null && (isNaN(numWidth) || numWidth < 50 || numWidth > 800)) {
+      return // Invalid width range
+    }
+    setColumnConfigs(prev =>
+      prev.map(col => (col.idx === idx ? { ...col, width: numWidth } : col))
+    )
+  }
+
+  const updateColumnTodayHint = (idx: number, todayHint: boolean) => {
+    setColumnConfigs(prev =>
+      prev.map(col => (col.idx === idx ? { ...col, today_hint: todayHint } : col))
+    )
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Table Configuration</h2>
@@ -253,6 +277,71 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   </button>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">Max: 64</div>
+              </div>
+            </div>
+
+            {/* Column Configuration Section */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Column Configuration</h3>
+              <div className="space-y-4">
+                {columnConfigs.map(column => (
+                  <div key={column.idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-gray-700">
+                        Column {column.idx + 1}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        Index: {column.idx}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Header */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Header
+                        </label>
+                        <input
+                          type="text"
+                          value={column.header || ''}
+                          onChange={e => updateColumnHeader(column.idx, e.target.value)}
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder={`Column ${column.idx + 1}`}
+                        />
+                      </div>
+
+                      {/* Width */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Width (px)
+                        </label>
+                        <input
+                          type="number"
+                          min="50"
+                          max="800"
+                          value={column.width || ''}
+                          onChange={e => updateColumnWidth(column.idx, e.target.value)}
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Auto"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">50-800px or leave empty for auto</div>
+                      </div>
+
+                      {/* Today Hint */}
+                      <div className="flex items-center">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={column.today_hint || false}
+                            onChange={e => updateColumnTodayHint(column.idx, e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Today date hint 📅</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
