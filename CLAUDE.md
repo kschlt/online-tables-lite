@@ -54,41 +54,251 @@ The project follows a 6-phase implementation plan (see docs/CLAUDE_TASKS.md):
 - Rate-limit comment submissions
 - Validate all input with Pydantic models
 
-## Development Guidelines & Dependency Management
+## Development Guidelines & Human-in-the-Loop Decision Making
 
-### **Frontend Stack (Locked-In)**
-- **UI Framework**: Next.js 15 App Router - no other React frameworks
-- **Styling**: Tailwind CSS only - no CSS-in-JS, styled-components, or other CSS libraries  
-- **State Management**: React hooks (useState, useEffect) - no Redux, Zustand unless absolutely required
-- **HTTP Client**: Native `fetch()` only - no axios, SWR, or React Query
-- **Real-time**: `socket.io-client` for WebSocket communication
-- **TypeScript**: Strict mode enabled - all components must be typed
+### **Core Stack (Established - Low Change Frequency)**
+- **Frontend**: Next.js 15 + Tailwind CSS + TypeScript 
+- **Backend**: FastAPI + Pydantic v2 + Supabase
+- **Real-time**: socket.io-client/python-socketio
+- **HTTP**: Native fetch() (existing choice)
 
-### **Backend Stack (Locked-In)**
-- **Framework**: FastAPI with Pydantic v2 - no Django, Flask, or other frameworks
-- **Database**: Supabase client only - no direct SQL, SQLAlchemy ORM usage
-- **Async**: Native async/await - no Celery, asyncio beyond basic usage
-- **WebSockets**: `python-socketio` for real-time features
-- **Validation**: Pydantic models for all request/response - no manual validation
+### **Pragmatic Guidelines (Flexible - Warnings, Not Blockers)**
+- **Dependencies**: Prefer existing tools first, justify new additions
+- **UI**: Use Tailwind + native HTML as default, discuss component libraries if needed
+- **State**: React hooks as default, discuss complex state management when required  
+- **Code Style**: Prettier formatting, basic ESLint rules, TypeScript strict mode
 
-### **Dependency Rules**
-1. **NO new dependencies** without explicit justification
-2. **Before adding any library**: Check if existing tools can solve the problem
-3. **UI Components**: Use native HTML + Tailwind - no component libraries (MUI, Ant Design, etc.)
-4. **Icons**: Use Unicode/emoji or SVG - no icon libraries unless critical
-5. **Utilities**: Prefer native JavaScript/Python over utility libraries
+### **Tiered Decision-Making System (Senior Developer Model)**
 
-### **Code Style Enforcement**
-- **ESLint**: Next.js config extended with strict rules (see below)
-- **TypeScript**: `--strict` mode, no `any` types allowed
-- **Prettier**: Consistent formatting (see below)
-- **File Organization**: Feature-based structure in `src/` directories
+I will act like a senior developer with autonomous decision-making authority for routine issues, escalating only major architectural decisions.
 
-### **Architecture Constraints**
-- **No server components mixing**: Keep client components in `'use client'` files only
-- **API route pattern**: All FastAPI routes follow `/api/{resource}` pattern
-- **Component structure**: One component per file, named exports only
-- **Error handling**: Consistent error boundaries and HTTP error responses
+#### **🟢 AUTO-HANDLE (No Human Loop Required)**
+*Senior developer decisions - I implement immediately and document:*
+
+- **Code Quality**: Fix ESLint warnings, formatting issues, type errors
+- **Minor Dependencies**: Add tiny utilities (lodash functions, date formatters) if clearly beneficial
+- **Code Refactoring**: Extract components, improve naming, reduce duplication
+- **Bug Fixes**: Resolve issues within existing patterns and architecture
+- **Testing**: Add unit tests, fix broken tests, improve test coverage
+- **Performance**: Optimize existing code without architectural changes
+
+#### **🟢 AUTONOMOUS ESLint RULE ADJUSTMENTS**
+*I can modify linting configurations when they block legitimate development:*
+
+**Allowed Autonomous Changes:**
+- **Disable specific rules** for individual files (`// eslint-disable-next-line rule-name`)
+- **Adjust rule severity** (error → warn, warn → off) for development productivity
+- **Add file/directory exceptions** to existing rules (e.g., allow console.log in scripts/)
+- **Modify rule parameters** (line length, complexity limits) within reasonable bounds
+- **Add new minor rules** that enforce established patterns
+
+**Process:**
+1. **Encounter ESLint blocker** during legitimate development
+2. **Assess if rule conflict** is due to valid new requirements
+3. **Make minimal rule adjustment** to unblock development
+4. **Document change** in commit with reasoning
+5. **Update guidelines** if it establishes new pattern
+
+#### **🟡 INTERNAL EVALUATION (AI Self-Assessment)**
+*When encountering decisions, I will internally assess:*
+
+1. **Impact Scope**: Does this affect multiple files/components/systems?
+2. **Reversibility**: Can this be easily undone if it doesn't work?
+3. **Precedent Setting**: Does this establish a new pattern others should follow?
+4. **Complexity Cost**: Does this add significant mental overhead?
+5. **Risk Level**: Could this break existing functionality or future scalability?
+
+#### **🔴 ESCALATE TO HUMAN (Team Lead Consultation)**
+*I will PAUSE & ASK when decisions meet these criteria:*
+
+**Code & Architecture:**
+- **Major Dependencies**: New frameworks, large libraries, or tools with lock-in
+- **Architecture Patterns**: Database schema changes, API design shifts, state management approaches  
+- **Cross-System Impact**: Changes affecting multiple apps (web + api), deployment, or external integrations
+- **Security/Performance Trade-offs**: Decisions with significant implications for either
+- **Technology Shifts**: Moving away from established stack choices
+- **Complex Business Logic**: Domain-specific rules that need product input
+
+**ESLint Configuration Changes Requiring Discussion:**
+- **Disable entire rule categories** (e.g., all TypeScript rules, all React hooks rules)
+- **Allow unrestricted imports** (removing import restrictions entirely)
+- **Major philosophy shifts** (switching from warnings to errors, or vice versa project-wide)
+- **Security-related rule changes** (disabling rules that prevent security issues)
+- **Add strict new rules** that would require major refactoring of existing code
+
+#### **📋 Escalation Format**
+*When I escalate, I'll present like in a technical meeting:*
+
+```
+🚨 ARCHITECTURAL DECISION NEEDED
+
+**Context**: [What I'm implementing and why this decision came up]
+**Problem**: [Current limitation/blocker I encountered]  
+**Impact Scope**: [What parts of system this affects]
+
+**Option A**: [My recommended approach]
+  ✅ Pros: [Benefits and why I favor this]  
+  ❌ Cons: [Downsides and risks]
+
+**Option B**: [Alternative approach]
+  ✅ Pros: [Benefits]
+  ❌ Cons: [Downsides]
+
+**My Recommendation**: [Option A/B and brief reasoning]
+**Urgency**: [Blocking/Can work around temporarily/Future iteration]
+```
+
+#### **⚡ After Decisions (Both Auto & Escalated)**
+- Document new patterns in "Current Auto-Apply Patterns" section
+- Apply consistently in future similar situations
+- Reference decision in commit messages for future context
+
+#### **🎯 Practical Examples**
+
+**✅ AUTONOMOUS ESLint Adjustments I'll Make:**
+```javascript
+// Scenario: Need console.log for debugging Socket.IO in development
+// Auto-adjustment: Add exception for specific file
+{
+  "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  },
+  "overrides": [{
+    "files": ["src/utils/socket-debug.ts"],
+    "rules": { "no-console": "off" }
+  }]
+}
+```
+
+**❌ ESCALATION Required - Major Rule Change:**
+```javascript
+// Scenario: Want to disable all TypeScript strict rules project-wide
+// This would require discussion:
+{
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off", // Major policy change
+    "@typescript-eslint/strict-boolean-expressions": "off" // Affects code quality
+  }
+}
+```
+
+**🤝 How I'll Present Escalations:**
+> 🚨 **ESLINT CONFIGURATION DECISION NEEDED**
+> 
+> **Context**: Implementing Socket.IO real-time features requires dynamic event handling
+> **Problem**: Current ESLint rules prevent `any` types, but Socket.IO events are inherently dynamic
+> **Impact Scope**: All real-time features, 3-4 files
+> 
+> **Option A**: Disable `@typescript-eslint/no-explicit-any` for socket files only
+>   ✅ Pros: Unblocks Socket.IO development, contained to specific use case  
+>   ❌ Cons: Less type safety in socket handling code
+> 
+> **Option B**: Create strict Socket.IO type definitions
+>   ✅ Pros: Maintains type safety, better long-term code quality
+>   ❌ Cons: Significant upfront time investment, may be over-engineering
+> 
+> **My Recommendation**: Option A - focused exception for this specific use case
+> **Urgency**: Blocking Phase 2 implementation
+
+## **Naming Conventions & File Organization Best Practices**
+
+### **Backend (FastAPI) Structure**
+```
+apps/api/
+├── main.py                 # Entry point, app setup
+├── app/
+│   ├── __init__.py
+│   ├── core/              # Core configuration
+│   │   ├── config.py      # Settings, environment vars
+│   │   ├── database.py    # Supabase client setup
+│   │   └── security.py    # Auth, token hashing
+│   ├── models/            # Pydantic models
+│   │   ├── __init__.py
+│   │   ├── table.py       # Table-related models
+│   │   └── base.py        # Base model classes
+│   ├── api/               # API routes
+│   │   ├── __init__.py
+│   │   ├── v1/            # API versioning
+│   │   │   ├── __init__.py
+│   │   │   ├── tables.py  # Table endpoints
+│   │   │   └── cells.py   # Cell endpoints
+│   │   └── dependencies.py # Shared dependencies
+│   ├── services/          # Business logic
+│   │   ├── __init__.py
+│   │   ├── table_service.py
+│   │   └── auth_service.py
+│   └── utils/             # Shared utilities
+│       ├── __init__.py
+│       └── helpers.py
+├── tests/                 # Test files
+└── alembic/              # DB migrations (if needed)
+```
+
+### **Frontend (Next.js 15) Structure** 
+```
+apps/web/src/
+├── app/                   # App Router (Next.js 15)
+│   ├── globals.css
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx          # Home page
+│   ├── table/            # Table feature
+│   │   └── [slug]/
+│   │       └── page.tsx
+│   └── api/              # API routes (if needed)
+├── components/           # Reusable components
+│   ├── ui/              # Base UI components
+│   │   ├── Button.tsx
+│   │   └── Input.tsx
+│   ├── table/           # Table-specific components
+│   │   ├── TableGrid.tsx
+│   │   ├── TableCell.tsx
+│   │   └── TableHeader.tsx
+│   └── layout/          # Layout components
+│       ├── Header.tsx
+│       └── Footer.tsx
+├── lib/                 # Shared utilities
+│   ├── api.ts           # API client functions
+│   ├── socket.ts        # Socket.IO client
+│   ├── types.ts         # TypeScript types
+│   └── utils.ts         # Helper functions
+├── hooks/               # Custom React hooks
+│   ├── useTable.ts
+│   └── useSocket.ts
+└── styles/             # Additional styles (if needed)
+```
+
+### **Naming Conventions**
+
+**Files & Directories:**
+- **snake_case**: Python files (`table_service.py`, `auth_service.py`)
+- **kebab-case**: Directories and config files (`api/v1/`, `.eslintrc.json`)
+- **PascalCase**: React components (`TableGrid.tsx`, `Button.tsx`)
+- **camelCase**: TypeScript files (`api.ts`, `utils.ts`)
+
+**Code Naming:**
+- **snake_case**: Python functions, variables (`create_table`, `user_id`)
+- **PascalCase**: Python classes, React components (`TableService`, `TableGrid`)
+- **camelCase**: JavaScript/TypeScript functions, variables (`createTable`, `userId`)
+- **SCREAMING_SNAKE_CASE**: Constants (`API_BASE_URL`, `DEFAULT_ROWS`)
+
+**API Patterns:**
+- **REST**: `/api/v1/tables`, `/api/v1/tables/{id}/cells`
+- **Resources**: Plural nouns for collections (`/tables`, `/cells`)
+- **Actions**: HTTP verbs (GET, POST, PUT, DELETE)
+
+### **Database Access Patterns**
+- **ONLY Supabase client**: `supabase.table("tables").select("*")`
+- **NO direct SQL**: No raw SQL strings or SQLAlchemy ORM
+- **NO database imports**: Avoid `psycopg2`, `asyncpg` direct usage
+
+### **Current Auto-Apply Patterns** 
+*(Updated as we make decisions)*
+
+- **File Organization**: Feature-based structure with domain separation
+- **API Routes**: `/api/v1/{resource}` pattern with versioning
+- **Components**: PascalCase, one per file, named exports
+- **Database**: Supabase client only, no direct SQL/ORM
+- **Error Handling**: Consistent boundaries and HTTP responses
 
 ## Git Workflow
 
@@ -151,13 +361,42 @@ npm run format                   # Format code with Prettier
 npm run format:check             # Check Prettier formatting
 ```
 
+### **Backend (`apps/api`)**
+```bash
+cd apps/api && source venv/bin/activate   # Always activate venv first
+make lint                                  # Check Python code quality
+make format                               # Auto-format Python code
+make check                                # Run all quality checks
+make fix                                  # Auto-fix all issues
+```
+
 ### **Quality Assurance Commands**
 ```bash
-# Before committing - run all checks:
+# Frontend checks:
 npm run typecheck && npm run lint && npm run format:check
-# Auto-fix issues:  
-npm run lint:fix && npm run format
+npm run fix  # Auto-fix all frontend issues
+
+# Backend checks:
+make check   # Run all Python quality checks  
+make fix     # Auto-fix all Python issues
 ```
+
+### **Implemented Linting Configuration**
+
+**✅ Frontend Linting (`apps/web`):**
+- **ESLint v9** with flat config format (`eslint.config.mjs`)
+- **TypeScript strict mode** with type checking (`tsc --noEmit`)
+- **Prettier** for consistent formatting
+- **Ignores**: `.next/`, `node_modules/`, build artifacts, config files
+- **Lints only**: `src/**/*.{ts,tsx}` - actual TypeScript source code
+- **Rules**: Warnings (not blockers) for code quality guidance
+
+**✅ Backend Linting (`apps/api`):**
+- **Ruff** (modern Python linter & formatter) via `pyproject.toml`
+- **Checks**: Code style, imports, complexity, security patterns
+- **Auto-fixes**: Import sorting, formatting, common issues
+- **Lints only**: `*.py` files in project root (ignores `venv/`, `__pycache__`)
+- **Make commands** for easy usage: `make lint`, `make format`, `make fix`
 
 ### **Development Startup Checklist:**
 1. **Backend:** `cd apps/api && source venv/bin/activate && python main.py`
