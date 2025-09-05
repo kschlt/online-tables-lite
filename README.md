@@ -98,8 +98,8 @@ npm run dev
 
 **✅ Phase 1**: Table creation and viewing  
 **✅ Phase 2**: Live collaborative editing with Socket.IO  
-**✅ Phase 3**: Admin controls and row/column management  
-**🔄 Phase 3**: Header width configuration and today date highlighting (remaining)  
+**✅ Phase 3**: Admin controls, row/column management, and header width configuration  
+**🔄 Phase 3**: Today date highlighting (remaining)  
 **📊 Phase 4**: CSV import/export  
 **💾 Phase 5**: Snapshots and backup/restore  
 **✨ Phase 6**: Comments, sharing, polish
