@@ -2,7 +2,7 @@
 
 A collaborative table editing application with real-time synchronization. Create and share editable tables with secure token-based access control.
 
-**Current Status**: Phase 1 complete - basic table creation and viewing functional.
+**Current Status**: Phase 2 & 3 complete - collaborative editing with real-time sync and admin controls functional.
 
 ## 🏗️ Tech Stack
 
@@ -72,8 +72,10 @@ npm run dev
 ```
 
 ### 5. Test the Application
-1. Create a table: `POST http://localhost:8000/api/table`
+1. Create a table: `POST http://localhost:8000/api/v1/tables`
 2. Use the returned tokens to view: `http://localhost:3000/table/{slug}?t={token}`
+3. Edit cells in real-time with collaborative features
+4. Use admin token to access table configuration (add/remove rows/columns)
 
 ## 🌍 Deployment
 
@@ -94,9 +96,10 @@ npm run dev
 
 ## 🚧 Development Roadmap
 
-**✅ Completed**: Table creation and viewing  
-**🔄 Phase 2**: Live collaborative editing with Socket.IO  
-**📋 Phase 3**: Admin controls and table configuration  
+**✅ Phase 1**: Table creation and viewing  
+**✅ Phase 2**: Live collaborative editing with Socket.IO  
+**✅ Phase 3**: Admin controls and row/column management  
+**🔄 Phase 3**: Header width configuration and today date highlighting (remaining)  
 **📊 Phase 4**: CSV import/export  
 **💾 Phase 5**: Snapshots and backup/restore  
 **✨ Phase 6**: Comments, sharing, polish
