@@ -2,7 +2,7 @@
  * Table grid component for displaying table data.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useCellEditor } from '@/hooks/use-cell-editor'
 import { AdminDrawer } from '@/components/ui'
@@ -21,14 +21,22 @@ export function TableGrid({ tableData }: TableGridProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [isUpdatingStructure, setIsUpdatingStructure] = useState(false)
   const [structureError, setStructureError] = useState<string | null>(null)
+  
+  // Local state for table data to enable immediate updates
+  const [localTableData, setLocalTableData] = useState<TableData>(tableData)
 
   const { getCellValue, updateCell, isUpdating, error, hasPendingUpdates, isConnected } =
     useCellEditor({
-      tableId: tableData.id,
-      tableSlug: tableData.slug,
+      tableId: localTableData.id,
+      tableSlug: localTableData.slug,
       token: token || '',
-      initialCells: tableData.cells || [],
+      initialCells: localTableData.cells || [],
     })
+
+  // Update local state when props change
+  useEffect(() => {
+    setLocalTableData(tableData)
+  }, [tableData])
 
   if (!token) {
     return (
@@ -46,7 +54,7 @@ export function TableGrid({ tableData }: TableGridProps) {
 
     try {
       const { updateTableConfig } = await import('@/lib/api')
-      await updateTableConfig(tableData.slug, token, {}) // Empty request to test permissions
+      await updateTableConfig(localTableData.slug, token, {}) // Empty request to test permissions
       setIsAdmin(true)
     } catch (err) {
       setIsAdmin(false)
@@ -60,15 +68,19 @@ export function TableGrid({ tableData }: TableGridProps) {
 
   // Admin actions for row/column management
   const addRow = async () => {
-    if (!isAdmin || !token || tableData.fixed_rows) return
+    if (!isAdmin || !token || localTableData.fixed_rows) return
     
     setIsUpdatingStructure(true)
     setStructureError(null)
     
     try {
-      const response = await api.addRows(tableData.slug, token, { count: 1 })
+      const response = await api.addRows(localTableData.slug, token, { count: 1 })
       if (response.success) {
-        window.location.reload() // Refresh to show new row
+        // Update local state immediately for instant UI feedback
+        setLocalTableData(prev => ({
+          ...prev,
+          rows: prev.rows + 1
+        }))
       } else {
         setStructureError(response.message)
       }
@@ -86,9 +98,21 @@ export function TableGrid({ tableData }: TableGridProps) {
     setStructureError(null)
     
     try {
-      const response = await api.addColumns(tableData.slug, token, { count: 1 })
+      const response = await api.addColumns(localTableData.slug, token, { count: 1 })
       if (response.success) {
-        window.location.reload() // Refresh to show new column
+        // Update local state immediately for instant UI feedback
+        setLocalTableData(prev => ({
+          ...prev,
+          columns: [
+            ...prev.columns,
+            {
+              idx: prev.columns.length,
+              header: `Column ${prev.columns.length + 1}`,
+              width: null,
+              format: 'text'
+            }
+          ]
+        }))
       } else {
         setStructureError(response.message)
       }
@@ -100,7 +124,7 @@ export function TableGrid({ tableData }: TableGridProps) {
   }
 
   // Generate dynamic grid template based on column widths
-  const gridTemplateColumns = tableData.columns
+  const gridTemplateColumns = localTableData.columns
     .map(column => column.width ? `${column.width}px` : '1fr')
     .join(' ')
 
@@ -134,7 +158,7 @@ export function TableGrid({ tableData }: TableGridProps) {
           className="grid gap-0 min-w-full"
           style={{ gridTemplateColumns }}
         >
-          {tableData.columns.map(column => (
+          {localTableData.columns.map(column => (
             <div
               key={column.idx}
               className="border border-gray-200 p-3 bg-gray-50 font-medium text-gray-900"
@@ -150,13 +174,13 @@ export function TableGrid({ tableData }: TableGridProps) {
         </div>
 
         {/* Data rows */}
-        {Array.from({ length: tableData.rows }).map((_, rowIndex) => (
+        {Array.from({ length: localTableData.rows }).map((_, rowIndex) => (
           <div
             key={rowIndex}
             className="grid gap-0"
             style={{ gridTemplateColumns }}
           >
-            {tableData.columns.map(column => (
+            {localTableData.columns.map(column => (
               <TableCell
                 key={`${rowIndex}-${column.idx}`}
                 row={rowIndex}
@@ -170,7 +194,7 @@ export function TableGrid({ tableData }: TableGridProps) {
         ))}
 
         {/* Add Row Button - Inline at bottom of table */}
-        {isAdmin && !tableData.fixed_rows && (
+        {isAdmin && !localTableData.fixed_rows && (
           <div
             className="border-2 border-dashed border-gray-300 rounded-lg p-6 m-4 hover:border-gray-400 transition-colors cursor-pointer"
             onClick={addRow}
@@ -199,12 +223,13 @@ export function TableGrid({ tableData }: TableGridProps) {
       {/* Admin drawer */}
       {isAdmin && token && (
         <AdminDrawer
-          tableData={tableData}
+          tableData={localTableData}
           token={token}
           isOpen={isAdminDrawerOpen}
           onClose={() => setIsAdminDrawerOpen(false)}
           onUpdate={() => {
-            // Table data will be refreshed by the drawer
+            // Refresh local table data when admin drawer updates
+            setLocalTableData(tableData)
           }}
         />
       )}
