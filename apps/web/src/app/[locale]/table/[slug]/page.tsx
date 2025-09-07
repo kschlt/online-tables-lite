@@ -1,13 +1,13 @@
 'use client'
 
 import { useParams, useSearchParams } from 'next/navigation'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { useTable } from '@/hooks'
 import { PageLayout, LoadingSpinner, ErrorMessage, LanguageSwitcher } from '@/components/ui'
 import { TableGrid } from '@/components/table'
 
 export default function TablePage() {
-  const { t } = useTranslations()
+  const t = useTranslations()
   const params = useParams()
   const searchParams = useSearchParams()
 

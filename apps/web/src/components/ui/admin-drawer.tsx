@@ -1,11 +1,7 @@
 'use client'
 
-/**
- * Admin drawer component for table configuration.
- */
-
 import { useState } from 'react'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { TableData, TableConfigRequest, ColumnConfigUpdate, ColumnFormat } from '@/types'
 import { updateTableConfig, api } from '@/lib/api'
 
@@ -18,7 +14,7 @@ interface AdminDrawerProps {
 }
 
 export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: AdminDrawerProps) {
-  const { t } = useTranslations()
+  const t = useTranslations()
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [title, setTitle] = useState(tableData.title || '')

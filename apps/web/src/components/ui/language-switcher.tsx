@@ -1,17 +1,21 @@
-/**
- * Language switcher component for i18n support.
- */
-
 'use client'
 
-import { useTranslations } from '@/hooks/use-translations'
+import { useRouter, usePathname } from 'next/navigation'
+import { useLocale } from 'next-intl'
 
 interface LanguageSwitcherProps {
   className?: string
 }
 
 export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
-  const { locale, changeLanguage } = useTranslations()
+  const router = useRouter()
+  const pathname = usePathname()
+  const locale = useLocale()
+
+  const changeLanguage = (newLocale: string) => {
+    const pathWithoutLocale = pathname.replace(`/${locale}`, '')
+    router.push(`/${newLocale}${pathWithoutLocale}`)
+  }
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>

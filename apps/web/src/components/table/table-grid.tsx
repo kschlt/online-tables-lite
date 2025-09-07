@@ -1,12 +1,8 @@
-/**
- * Table grid component for displaying table data.
- */
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { useCellEditor } from '@/hooks/use-cell-editor'
 import { AdminDrawer } from '@/components/ui'
 import { TableCell } from './table-cell'
@@ -18,7 +14,7 @@ interface TableGridProps {
 }
 
 export function TableGrid({ tableData }: TableGridProps) {
-  const { t } = useTranslations()
+  const t = useTranslations()
   const searchParams = useSearchParams()
   const token = searchParams.get('t')
   const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false)
