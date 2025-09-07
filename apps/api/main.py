@@ -10,8 +10,24 @@ from app.api.v1.cells import router as cells_router
 from app.api.v1.tables import router as tables_router
 from app.core.config import settings
 
-# Socket.IO setup
-sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=settings.cors_origin)
+# Socket.IO setup - allow multiple origins for development
+cors_origins = [settings.cors_origin]
+if settings.cors_origin.endswith("/"):
+    cors_origins.append(settings.cors_origin.rstrip("/"))
+else:
+    cors_origins.append(settings.cors_origin + "/")
+
+# Add common development ports
+cors_origins.extend([
+    "http://localhost:3000",
+    "http://localhost:3001", 
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:3004",
+    "http://localhost:3005"
+])
+
+sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins=cors_origins)
 
 
 @sio.event
@@ -67,12 +83,6 @@ def create_app() -> FastAPI:
     )
 
     # CORS middleware
-    cors_origins = [settings.cors_origin]
-    if settings.cors_origin.endswith("/"):
-        cors_origins.append(settings.cors_origin.rstrip("/"))
-    else:
-        cors_origins.append(settings.cors_origin + "/")
-
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
