@@ -119,12 +119,7 @@ make install-all
 The application supports English and German with:
 - **Dynamic Language Switching**: Toggle between languages without page reload
 - **Complete Translation Coverage**: All UI elements translated
-- **Informal German**: Uses "du" address form for better user experience
 - **URL-based Locales**: `/en` for English, `/de` for German
-
-### Supported Languages
-- 🇺🇸 **English** (`/en`) - Default language
-- 🇩🇪 **German** (`/de`) - Complete translation
 
 ## 🔧 Environment Variables
 
@@ -189,7 +184,7 @@ Configure these secrets in your GitHub repository settings:
 - **[CLAUDE.md](./CLAUDE.md)** - AI assistant guidance and architecture
 - **[apps/web/DESIGN_SYSTEM.md](./apps/web/DESIGN_SYSTEM.md)** - UI component design system
 
-## �� Key Security Notes
+## Key Security Notes
 
 - Token-based authentication (no cookies)
 - SHA-256 hashed tokens in database (never log raw tokens)
@@ -197,7 +192,7 @@ Configure these secrets in your GitHub repository settings:
 - Role-based permissions: Admin/Editor only
 - CORS protection for API endpoints
 
-## ��️ Tech Details
+## Tech Details
 
 ### Frontend Architecture
 - **Next.js 15** with App Router
