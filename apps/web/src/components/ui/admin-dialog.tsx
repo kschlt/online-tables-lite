@@ -5,19 +5,20 @@ import { useTranslations } from 'next-intl'
 import { TableData, TableConfigRequest, ColumnConfigUpdate, ColumnFormat } from '@/types'
 import { updateTableConfig, api } from '@/lib/api'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Plus, Trash2, Settings } from 'lucide-react'
 
-interface AdminDrawerProps {
+interface AdminDialogProps {
   tableData: TableData
   token: string
   isOpen: boolean
@@ -25,7 +26,7 @@ interface AdminDrawerProps {
   onUpdate: (updatedTable: TableData) => void
 }
 
-export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: AdminDrawerProps) {
+export function AdminDialog({ tableData, token, isOpen, onClose, onUpdate }: AdminDialogProps) {
   const t = useTranslations()
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -131,17 +132,17 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-4xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2 text-heading-3">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-heading-3">
             <Settings className="h-5 w-5" />
             {t('admin.tableSettings')}
-          </SheetTitle>
-          <SheetDescription className="text-body text-muted-foreground">
+          </DialogTitle>
+          <DialogDescription className="text-body text-muted-foreground">
             {t('admin.tableSettingsDescription')}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           {/* Error message */}
@@ -283,23 +284,32 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-border">
-            <Button type="button" variant="outline" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isUpdating} className="btn-primary">
-              {isUpdating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  {t('common.saving')}
-                </>
-              ) : (
-                t('common.save')
-              )}
-            </Button>
-          </div>
         </form>
-      </SheetContent>
-    </Sheet>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            {t("common.cancel")}
+          </Button>
+          <Button 
+            type="button" 
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit(e as any);
+            }}
+            disabled={isUpdating} 
+            className="btn-primary"
+          >
+            {isUpdating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                {t("common.saving")}
+              </>
+            ) : (
+              t("common.save")
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -1,10 +1,14 @@
 /**
- * Loading spinner component with consistent styling.
+ * Loading spinner component using Shadcn/UI styling and Lucide icons.
  */
+
+import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  text?: string
 }
 
 const sizeClasses = {
@@ -13,11 +17,17 @@ const sizeClasses = {
   lg: 'w-8 h-8',
 }
 
-export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
+export function LoadingSpinner({ 
+  size = 'md', 
+  className = '', 
+  text 
+}: LoadingSpinnerProps) {
   return (
-    <div
-      className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${sizeClasses[size]} ${className}`}
-      aria-label="Loading..."
-    />
+    <div className={cn('flex items-center justify-center gap-2', className)}>
+      <Loader2 className={cn('animate-spin text-primary', sizeClasses[size])} />
+      {text && (
+        <span className="text-sm text-muted-foreground">{text}</span>
+      )}
+    </div>
   )
 }

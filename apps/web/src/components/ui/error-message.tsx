@@ -1,6 +1,9 @@
 /**
- * Error message component with consistent styling.
+ * Error message component using Shadcn/UI Alert.
  */
+
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 interface ErrorMessageProps {
   message: string
@@ -9,9 +12,11 @@ interface ErrorMessageProps {
 
 export function ErrorMessage({ message, className = '' }: ErrorMessageProps) {
   return (
-    <div className={`text-red-600 bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>
-      <p className="text-sm font-medium">Error</p>
-      <p className="text-sm">{message}</p>
-    </div>
+    <Alert variant="destructive" className={className}>
+      <AlertCircle className="h-4 w-4" />
+      <AlertDescription>
+        <strong>Error:</strong> {message}
+      </AlertDescription>
+    </Alert>
   )
 }

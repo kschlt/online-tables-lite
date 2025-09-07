@@ -4,27 +4,27 @@
 
 # Install dependencies
 install:
-	pip install -r requirements.txt
+	source venv/bin/activate && pip install -r requirements.txt
 
 # Run development server  
 dev:
-	python main.py
+	source venv/bin/activate && python3 main.py
 
 # Lint code (check for issues)
 lint:
-	ruff check .
+	source venv/bin/activate && ruff check .
 
 # Auto-fix linting issues
 lint-fix:
-	ruff check . --fix
+	source venv/bin/activate && ruff check . --fix
 
 # Format code
 format:
-	ruff format .
+	source venv/bin/activate && ruff format .
 
 # Check formatting without changing files
 format-check:
-	ruff format . --check
+	source venv/bin/activate && ruff format . --check
 
 # Run all quality checks
 check: lint format-check

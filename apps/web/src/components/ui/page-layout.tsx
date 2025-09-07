@@ -1,8 +1,9 @@
 /**
- * Common page layout component with consistent styling.
+ * Common page layout component using Shadcn/UI styling.
  */
 
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 interface PageLayoutProps {
   children: ReactNode
@@ -28,12 +29,18 @@ export function PageLayout({
   className = '',
 }: PageLayoutProps) {
   return (
-    <main className={`min-h-screen bg-gray-50 p-4 ${className}`}>
-      <div className={`mx-auto ${maxWidthClasses[maxWidth]}`}>
+    <main className={cn('min-h-screen bg-background p-4', className)}>
+      <div className={cn('mx-auto', maxWidthClasses[maxWidth])}>
         {(title || description) && (
-          <div className="mb-6">
-            {title && <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>}
-            {description && <p className="text-gray-600">{description}</p>}
+          <div className="mb-6 space-y-2">
+            {title && (
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {title}
+              </h1>
+            )}
+            {description && (
+              <p className="text-muted-foreground">{description}</p>
+            )}
           </div>
         )}
         {children}

@@ -1,16 +1,26 @@
 'use client'
 
-import { useState } from 'react'
-import { useTranslations } from 'next-intl'
-import { PageLayout, LanguageSwitcher } from '@/components/ui'
+import { useState, useEffect } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { PageLayout, LanguageSwitcher, ErrorMessage } from '@/components/ui'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createTable } from '@/lib/api'
+import { CheckCircle, Settings, Edit } from 'lucide-react'
 import type { CreateTableRequest, CreateTableResponse } from '@/types'
 
 export default function Home() {
   const t = useTranslations()
+  const locale = useLocale()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<CreateTableResponse | null>(null)
+  const [isClient, setIsClient] = useState(false)
   
   const [formData, setFormData] = useState<CreateTableRequest>({
     title: '',
@@ -18,6 +28,26 @@ export default function Home() {
     cols: 3,
     rows: 5
   })
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // Check for success state in URL parameters
+  useEffect(() => {
+    if (!isClient) return
+    
+    const successData = searchParams.get('success')
+    if (successData) {
+      try {
+        const parsedData = JSON.parse(decodeURIComponent(successData))
+        setResult(parsedData)
+      } catch (err) {
+        console.error('Failed to parse success data:', err)
+      }
+    }
+  }, [searchParams, isClient])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,6 +57,11 @@ export default function Home() {
     try {
       const response = await createTable(formData)
       setResult(response)
+      
+      // Store success state in URL parameters
+      const successData = encodeURIComponent(JSON.stringify(response))
+      const newUrl = `/${locale}?success=${successData}`
+      router.replace(newUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.failedToCreateTable'))
     } finally {
@@ -34,9 +69,18 @@ export default function Home() {
     }
   }
 
-  if (result) {
-    const adminUrl = `${window.location.origin}/table/${result.slug}?t=${result.admin_token}`
-    const editUrl = `${window.location.origin}/table/${result.slug}?t=${result.edit_token}`
+  const resetForm = () => {
+    setResult(null)
+    setFormData({ title: '', description: '', cols: 3, rows: 5 })
+    // Clear URL parameters
+    router.replace(`/${locale}`)
+  }
+
+  // Don't render success state until client-side hydration is complete
+  if (result && isClient) {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    const adminUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.admin_token}`
+    const editUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.edit_token}`
     
     return (
       <PageLayout
@@ -44,43 +88,53 @@ export default function Home() {
         description={t('app.description')}
         maxWidth="xl"
       >
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-green-800">✅ {t('errors.tableCreatedSuccessfully')}</h2>
+        <div className="card-elevated p-6">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-6 h-6 text-success" />
+              <h2 className="text-heading-2 text-success">{t('errors.tableCreatedSuccessfully')}</h2>
+            </div>
             <LanguageSwitcher />
           </div>
           
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">🔧 Admin Link (Configure Table)</h3>
-              <p className="text-sm text-blue-700 mb-2">Use this link to configure table settings, add/remove rows and columns:</p>
-              <div className="bg-white border border-blue-200 rounded p-2 font-mono text-sm break-all">
-                <a href={adminUrl} className="text-blue-600 hover:text-blue-800">
-                  {adminUrl}
-                </a>
-              </div>
-            </div>
+          <div className="space-y-6">
+            <Alert className="status-info">
+              <Settings className="h-4 w-4" />
+              <AlertDescription>
+                <div>
+                  <h3 className="font-semibold text-body mb-2">{t('links.adminTitle')}</h3>
+                  <p className="text-body-sm mb-2">{t('links.adminDescription')}</p>
+                  <div className="bg-background border border-border rounded p-2 font-mono text-sm break-all">
+                    <a href={adminUrl} className="text-primary hover:text-primary-hover">
+                      {adminUrl}
+                    </a>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
             
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h3 className="font-semibold text-green-900 mb-2">✏️ Editor Link (Edit Table)</h3>
-              <p className="text-sm text-green-700 mb-2">Share this link with others to allow them to edit the table:</p>
-              <div className="bg-white border border-green-200 rounded p-2 font-mono text-sm break-all">
-                <a href={editUrl} className="text-green-600 hover:text-green-800">
-                  {editUrl}
-                </a>
-              </div>
-            </div>
+            <Alert className="status-success">
+              <Edit className="h-4 w-4" />
+              <AlertDescription>
+                <div>
+                  <h3 className="font-semibold text-body mb-2">{t('links.editorTitle')}</h3>
+                  <p className="text-body-sm mb-2">{t('links.editorDescription')}</p>
+                  <div className="bg-background border border-border rounded p-2 font-mono text-sm break-all">
+                    <a href={editUrl} className="text-success hover:opacity-80">
+                      {editUrl}
+                    </a>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
             
             <div className="flex space-x-4">
-              <button
-                onClick={() => {
-                  setResult(null)
-                  setFormData({ title: '', description: '', cols: 3, rows: 5 })
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              <Button
+                variant="secondary"
+                onClick={resetForm}
               >
-                {t('common.add')} {t('table.columns')}
-              </button>
+                {t('links.createAnother')}
+              </Button>
             </div>
           </div>
         </div>
@@ -94,89 +148,83 @@ export default function Home() {
       description={t('app.description')}
       maxWidth="xl"
     >
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card-elevated p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{t('app.createTable')}</h1>
+          <h1 className="text-heading-2">{t('app.createTable')}</h1>
           <LanguageSwitcher />
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-body font-medium">
                 {t('table.title')}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder={t('table.title')}
               />
             </div>
             
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-body font-medium">
                 {t('table.description')}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="text"
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder={t('table.description')}
               />
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="cols" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <Label htmlFor="cols" className="text-body font-medium">
                 {t('table.columns')}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="number"
                 id="cols"
                 min="1"
                 max="64"
                 value={formData.cols}
                 onChange={(e) => setFormData(prev => ({ ...prev, cols: parseInt(e.target.value) || 1 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
-            <div>
-              <label htmlFor="rows" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <Label htmlFor="rows" className="text-body font-medium">
                 {t('table.rows')}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="number"
                 id="rows"
                 min="1"
                 max="500"
                 value={formData.rows}
                 onChange={(e) => setFormData(prev => ({ ...prev, rows: parseInt(e.target.value) || 1 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
           
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-700">{error}</p>
-            </div>
+            <ErrorMessage message={error} />
           )}
           
           <div className="flex justify-end">
-            <button
+            <Button
               type="submit"
               disabled={isCreating}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn-primary"
             >
               {isCreating ? t('common.loading') : t('app.createTable')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

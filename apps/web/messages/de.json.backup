@@ -2,7 +2,6 @@
   "common": {
     "loading": "Lädt...",
     "saving": "Speichert...",
-    "save": "Speichern",
     "cancel": "Abbrechen",
     "error": "Fehler",
     "connecting": "Versuche erneut zu verbinden...",
@@ -15,7 +14,7 @@
     "noAccessToken": "Kein Zugriffstoken bereitgestellt",
     "failedToCreateTable": "Tabelle konnte nicht erstellt werden",
     "tableCreatedSuccessfully": "Tabelle erfolgreich erstellt!",
-    "genericError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
+    "genericError": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
     "errorLabel": "Fehler"
   },
   "app": {
@@ -43,28 +42,13 @@
     "insertToday": "Heutiges Datum einfügen",
     "today": "Heute",
     "relativeDate": "{description}",
-    "columnNumber": "Spalte {number}",
-    "dateFormatIcon": "📅"
+    "columnNumber": "Spalte {number}"
   },
   "admin": {
     "adminSettings": "Admin-Einstellungen",
     "settings": "Admin-Einstellungen",
     "tableSettings": "Tabelleneinstellungen",
-    "tableSettingsDescription": "Konfiguriere deine Tabelleneinstellungen und Spalteneigenschaften",
-    "basicSettings": "Grundeinstellungen",
-    "tableTitle": "Tabellentitel",
-    "tableTitlePlaceholder": "Tabellentitel eingeben...",
-    "tableDescription": "Tabellenbeschreibung",
-    "tableDescriptionPlaceholder": "Tabellenbeschreibung eingeben...",
-    "fixedRows": "Fixierte Zeilen",
-    "numberOfRows": "Anzahl der Zeilen",
     "columnSettings": "Spalteneinstellungen",
-    "columnManagement": "Spaltenverwaltung",
-    "columnHeader": "Überschrift",
-    "columnWidth": "Breite",
-    "columnFormat": "Format",
-    "formatText": "Text",
-    "formatDate": "Datum",
     "addNewColumn": "Neue Spalte hinzufügen",
     "addColumn": "Spalte hinzufügen",
     "removeColumn": "Spalte entfernen",
@@ -83,12 +67,5 @@
     "disconnected": "Getrennt",
     "unsavedChanges": "Ungespeicherte Änderungen",
     "updatingStructure": "Tabellenstruktur wird aktualisiert..."
-  },
-  "links": {
-    "adminTitle": "Admin-Link (Tabelle konfigurieren)",
-    "adminDescription": "Verwende diesen Link, um Tabelleneinstellungen zu konfigurieren, Zeilen und Spalten hinzuzufügen/zu entfernen:",
-    "editorTitle": "Editor-Link (Tabelle bearbeiten)",
-    "editorDescription": "Teile diesen Link mit anderen, um ihnen zu ermöglichen, die Tabelle zu bearbeiten:",
-    "createAnother": "Weitere Tabelle erstellen"
   }
 }

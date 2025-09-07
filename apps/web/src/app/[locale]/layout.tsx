@@ -15,15 +15,11 @@ export default async function LocaleLayout({
   
   if (!locales.includes(locale as any)) notFound()
 
-  const messages = await getMessages()
+  const messages = await getMessages({ locale })
 
   return (
-    <html lang={locale}>
-      <body>
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider messages={messages}>
+      {children}
+    </NextIntlClientProvider>
   )
 }

@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { CellData, ColumnFormat } from '@/types'
 import { getTodayDate, formatDateForDisplay, isToday, getRelativeDateDescription, parseDate } from '@/lib/date-utils'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 interface TableCellProps {
   row: number
@@ -79,18 +82,16 @@ export function TableCell({
 
   if (isReadonly) {
     return (
-      <div
-        className={`border border-gray-200 p-3 min-h-[48px] flex items-center ${
-          isDateFormat ? 'bg-blue-50' : ''
-        }`}
-      >
-        <span className={`text-gray-600 ${isValueToday ? 'font-medium text-blue-700' : ''}`}>
+      <div className={`border border-border p-3 min-h-[48px] flex items-center ${
+        isDateFormat ? 'bg-primary-light' : 'bg-muted'
+      }`}>
+        <span className={`text-muted-foreground ${isValueToday ? 'font-medium text-primary' : ''}`}>
           {displayValue}
         </span>
         {relativeDateDesc && (
-          <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+          <Badge variant="secondary" className="ml-2 text-xs">
             {t('table.relativeDate', { description: relativeDateDesc })}
-          </span>
+          </Badge>
         )}
       </div>
     )
@@ -98,37 +99,39 @@ export function TableCell({
 
   return (
     <div className="relative">
-      <input
+      <Input
         type="text"
         value={localValue}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        className={`w-full border border-gray-200 p-3 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-          isDateFormat ? 'bg-blue-50' : ''
+        className={`w-full min-h-[48px] ${
+          isDateFormat ? 'bg-primary-light' : ''
         } ${
-          isEditing ? 'bg-blue-50 ring-2 ring-blue-200 ring-inset' : isDateFormat ? 'hover:bg-blue-50' : 'hover:bg-gray-50'
-        } ${isValueToday && !isEditing ? 'font-medium text-blue-700' : ''}`}
+          isEditing ? 'bg-primary-light ring-2 ring-primary/20' : isDateFormat ? 'hover:bg-primary-light' : ''
+        } ${isValueToday && !isEditing ? 'font-medium text-primary' : ''}`}
         placeholder={isDateFormat ? t('table.dateFormat') : ''}
       />
       
       {/* Today date helper button */}
       {isDateFormat && isEditing && (
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={insertTodayDate}
-          className="absolute right-1 top-1 p-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-200 transition-colors"
+          className="absolute right-1 top-1 text-xs"
           title={t('table.insertToday')}
         >
           {t('table.today')}
-        </button>
+        </Button>
       )}
       
       {/* Relative date indicator when not editing */}
       {isDateFormat && !isEditing && relativeDateDesc && (
-        <div className="absolute right-1 top-1 p-1 text-xs text-blue-600 bg-blue-100 rounded">
+        <Badge variant="secondary" className="absolute right-1 top-1 text-xs">
           {t('table.relativeDate', { description: relativeDateDesc })}
-        </div>
+        </Badge>
       )}
     </div>
   )

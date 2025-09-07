@@ -2,7 +2,6 @@
   "common": {
     "loading": "Loading...",
     "saving": "Saving...",
-    "save": "Save",
     "cancel": "Cancel",
     "error": "Error",
     "connecting": "Attempting to reconnect...",
@@ -43,28 +42,13 @@
     "insertToday": "Insert today's date",
     "today": "Today",
     "relativeDate": "{description}",
-    "columnNumber": "Column {number}",
-    "dateFormatIcon": "📅"
+    "columnNumber": "Column {number}"
   },
   "admin": {
     "adminSettings": "Admin Settings",
     "settings": "Admin Settings",
     "tableSettings": "Table Settings",
-    "tableSettingsDescription": "Configure your table settings and column properties",
-    "basicSettings": "Basic Settings",
-    "tableTitle": "Table Title",
-    "tableTitlePlaceholder": "Enter table title...",
-    "tableDescription": "Table Description",
-    "tableDescriptionPlaceholder": "Enter table description...",
-    "fixedRows": "Fixed Rows",
-    "numberOfRows": "Number of Rows",
     "columnSettings": "Column Settings",
-    "columnManagement": "Column Management",
-    "columnHeader": "Header",
-    "columnWidth": "Width",
-    "columnFormat": "Format",
-    "formatText": "Text",
-    "formatDate": "Date",
     "addNewColumn": "Add new column",
     "addColumn": "Add Column",
     "removeColumn": "Remove Column",
@@ -83,12 +67,5 @@
     "disconnected": "Disconnected",
     "unsavedChanges": "Unsaved changes",
     "updatingStructure": "Updating table structure..."
-  },
-  "links": {
-    "adminTitle": "Admin Link (Configure Table)",
-    "adminDescription": "Use this link to configure table settings, add/remove rows and columns:",
-    "editorTitle": "Editor Link (Edit Table)",
-    "editorDescription": "Share this link with others to allow them to edit the table:",
-    "createAnother": "Create Another Table"
   }
 }
