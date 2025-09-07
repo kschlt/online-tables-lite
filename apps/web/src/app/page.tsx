@@ -3,16 +3,12 @@
 import { useState } from 'react'
 import { PageLayout } from '@/components/ui'
 import { createTable } from '@/lib/api'
-import type { CreateTableRequest } from '@/types'
+import type { CreateTableRequest, CreateTableResponse } from '@/types'
 
 export default function Home() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<{
-    slug: string
-    adminToken: string
-    editToken: string
-  } | null>(null)
+  const [result, setResult] = useState<CreateTableResponse | null>(null)
   
   const [formData, setFormData] = useState<CreateTableRequest>({
     title: '',
@@ -37,14 +33,14 @@ export default function Home() {
   }
 
   if (result) {
-    const adminUrl = `${window.location.origin}/table/${result.slug}?t=${result.adminToken}`
-    const editUrl = `${window.location.origin}/table/${result.slug}?t=${result.editToken}`
+    const adminUrl = `${window.location.origin}/table/${result.slug}?t=${result.admin_token}`
+    const editUrl = `${window.location.origin}/table/${result.slug}?t=${result.edit_token}`
     
     return (
       <PageLayout
         title="Online Tables Lite"
         description="Collaborative table editing application"
-        maxWidth="2xl"
+        maxWidth="xl"
       >
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-green-800 mb-4">✅ Table Created Successfully!</h2>

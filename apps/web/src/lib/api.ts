@@ -156,5 +156,6 @@ export const api = {
 export { ApiError }
 
 // Convenience exports
+export const createTable = api.createTable
 export const updateCells = api.updateCells
 export const updateTableConfig = api.updateTableConfig
