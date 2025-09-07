@@ -168,44 +168,22 @@ export function TableGrid({ tableData }: TableGridProps) {
             ))}
           </div>
         ))}
-      </div>
 
-      {/* Elegant Admin Controls */}
-      {isAdmin && (
-        <div className="fixed bottom-6 left-6 space-y-3 z-40">
-          {/* Add Row Button */}
-          {!tableData.fixed_rows && (
-            <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-3 shadow-sm hover:border-gray-400 transition-colors">
-              <button
-                onClick={addRow}
-                disabled={isUpdatingStructure}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Add Row"
-              >
-                <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium">+</span>
-                </div>
-                <span className="text-sm font-medium">Add Row</span>
-              </button>
-            </div>
-          )}
-
-          {/* Add Column Button */}
-          <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-3 shadow-sm hover:border-gray-400 transition-colors">
-            <button
-              onClick={addColumn}
-              disabled={isUpdatingStructure}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Add Column"
-            >
-              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium">+</span>
+        {/* Add Row Button - Inline at bottom of table */}
+        {isAdmin && !tableData.fixed_rows && (
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-lg p-6 m-4 hover:border-gray-400 transition-colors cursor-pointer"
+            onClick={addRow}
+          >
+            <div className="flex flex-col items-center justify-center text-gray-500 hover:text-gray-700">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-blue-600 font-medium text-lg">+</span>
               </div>
-              <span className="text-sm font-medium">Add Column</span>
-            </button>
+              <span className="text-sm font-medium">Add new row</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Admin Settings Button */}
       {isAdmin && (
