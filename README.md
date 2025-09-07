@@ -1,15 +1,33 @@
 # Online Tables Lite
 
-A collaborative table editing application with real-time synchronization. Create and share editable tables with secure token-based access control.
+A collaborative table editing application with real-time synchronization and internationalization support. Create and share editable tables with secure token-based access control.
 
-**Current Status**: Phase 2 & 3 complete - collaborative editing with real-time sync and admin controls functional.
+## �� Features
+
+- **Real-time Collaboration**: Multiple users can edit tables simultaneously with live updates
+- **Internationalization**: Full English/German language support with dynamic language switching
+- **Admin Controls**: Configure table settings, add/remove rows and columns
+- **Token-based Security**: Secure access control with admin and editor tokens
+- **Responsive Design**: Modern UI with Tailwind CSS and Radix UI components
+- **Date Formatting**: Special date column formatting with today's date insertion
+- **Column Management**: Configurable column widths and data types
+
+## 🚀 Roadmap
+
+- **CSV Import/Export**: Import data from CSV files and export tables to CSV
+- **Snapshots and Backup**: Save table states and restore previous versions
+- **Comments System**: Add comments to cells for collaboration
+- **Advanced Sharing**: Public links and user management
+- **Data Validation**: Cell-level validation rules
+- **Charts and Analytics**: Visualize table data with charts
 
 ## 🏗️ Tech Stack
 
-- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS
+- **Frontend**: Next.js 15 + TypeScript + Tailwind CSS + Radix UI
 - **Backend**: FastAPI + Socket.IO + Pydantic v2  
 - **Database**: Supabase Postgres
-- **Deployment**: Vercel (frontend) + Fly.io (backend)
+- **Internationalization**: next-intl
+- **Deployment**: Vercel (frontend) + Fly.io (backend) via GitHub Actions
 
 ## 🚀 Quick Start
 
@@ -71,37 +89,42 @@ npm run dev
 # Runs on http://localhost:3000
 ```
 
-### 5. Test the Application
-1. Create a table: `POST http://localhost:8000/api/v1/tables`
-2. Use the returned tokens to view: `http://localhost:3000/table/{slug}?t={token}`
-3. Edit cells in real-time with collaborative features
-4. Use admin token to access table configuration (add/remove rows/columns)
+### 5. Development Commands
+```bash
+# Start both frontend and backend
+make dev-all
 
-## 🌍 Deployment
+# Start only frontend
+make dev-frontend
 
-### Git Workflow
-- **`main`** - Development branch
-- **`production`** - Deployment branch (triggers auto-deploy)
-- **`feature/*`** - Feature branches (merge to main, then delete)
+# Start only backend  
+make dev-backend
 
-### Frontend (Vercel)
-1. Connect GitHub repo to Vercel
-2. Set root directory to `apps/web`
-3. Auto-deploy from `production` branch
+# Stop all services
+make stop
 
-### Backend (Fly.io)
-1. Install [Fly CLI](https://fly.io/docs/hands-on/install-flyctl/)
-2. Set secrets: `flyctl secrets set SUPABASE_URL="..." SUPABASE_SERVICE_ROLE_KEY="..." CORS_ORIGIN="https://your-app.vercel.app"`
-3. Deploy: `flyctl deploy`
+# Install all dependencies
+make install-all
+```
 
-## 🚧 Development Roadmap
+### 6. Test the Application
+1. Visit: `http://localhost:3000/en` (English) or `http://localhost:3000/de` (German)
+2. Create a table with title, description, columns, and rows
+3. Use the returned admin token to configure table settings
+4. Use the editor token to edit table content in real-time
+5. Switch languages using the language switcher in the top-right
 
-**✅ Phase 1**: Table creation and viewing  
-**✅ Phase 2**: Live collaborative editing with Socket.IO  
-**✅ Phase 3**: Admin controls, row/column management, header width config, and today date highlighting  
-**📊 Phase 4**: CSV import/export  
-**💾 Phase 5**: Snapshots and backup/restore  
-**✨ Phase 6**: Comments, sharing, polish
+## 🌍 Internationalization
+
+The application supports English and German with:
+- **Dynamic Language Switching**: Toggle between languages without page reload
+- **Complete Translation Coverage**: All UI elements translated
+- **Informal German**: Uses "du" address form for better user experience
+- **URL-based Locales**: `/en` for English, `/de` for German
+
+### Supported Languages
+- 🇺🇸 **English** (`/en`) - Default language
+- 🇩🇪 **German** (`/de`) - Complete translation
 
 ## 🔧 Environment Variables
 
@@ -113,15 +136,45 @@ npm run dev
 | `CORS_ORIGIN` | ✅ | Frontend URL for CORS | `http://localhost:3000` |
 | `TABLE_ROW_LIMIT` | | Maximum rows per table | `500` |
 | `TABLE_COL_LIMIT` | | Maximum columns per table | `64` |
-| `CSV_DELIMITER` | | CSV export delimiter | `;` |
-| `CSV_MAX_MB` | | CSV import size limit | `5` |
-| `ALLOW_EDITOR_EXPORT` | | Allow editors to export | `false` |
-| `ALLOW_EDITOR_IMPORT` | | Allow editors to import | `false` |
 
 ### Frontend (`apps/web/.env.local`)
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
 | `NEXT_PUBLIC_API_URL` | | Backend API URL | `http://localhost:8000` |
+
+## 🌍 Deployment
+
+### Git Workflow
+- **`main`** - Development branch
+- **`production`** - Deployment branch (triggers auto-deploy)
+- **`feature/*`** - Feature branches (merge to main, then delete)
+
+### GitHub Actions CI/CD
+The application uses GitHub Actions for automated deployment:
+
+1. **Frontend (Vercel)**: 
+   - Deploys via GitHub Actions workflow using Vercel CLI
+   - Uses Vercel project secrets stored in GitHub repository settings
+   - Triggers on `production` branch updates
+
+2. **Backend (Fly.io)**:
+   - Deploys via GitHub Actions workflow using Fly.io CLI
+   - Uses Fly.io secrets stored in GitHub repository settings
+   - Triggers on `production` branch updates
+
+### Required GitHub Secrets
+Configure these secrets in your GitHub repository settings:
+
+**For Vercel (Frontend)**:
+- `VERCEL_TOKEN` - Vercel API token
+- `VERCEL_PROJECT_ID` - Vercel project ID
+- `VERCEL_TEAM_ID` - Vercel team ID
+
+**For Fly.io (Backend)**:
+- `FLY_API_TOKEN` - Fly.io API token
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+- `CORS_ORIGIN` - Frontend URL for CORS
 
 ## 🔄 Development Workflow
 
@@ -134,10 +187,29 @@ npm run dev
 
 - **[docs/](./docs/)** - Technical implementation details and phases
 - **[CLAUDE.md](./CLAUDE.md)** - AI assistant guidance and architecture
+- **[apps/web/DESIGN_SYSTEM.md](./apps/web/DESIGN_SYSTEM.md)** - UI component design system
 
-## 🔒 Key Security Notes
+## �� Key Security Notes
 
 - Token-based authentication (no cookies)
 - SHA-256 hashed tokens in database (never log raw tokens)
 - All database access through FastAPI (no direct client access)
 - Role-based permissions: Admin/Editor only
+- CORS protection for API endpoints
+
+## ��️ Tech Details
+
+### Frontend Architecture
+- **Next.js 15** with App Router
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **Radix UI** for accessible components
+- **next-intl** for internationalization
+- **Socket.IO Client** for real-time updates
+
+### Backend Architecture  
+- **FastAPI** for REST API
+- **Socket.IO** for real-time communication
+- **SQLAlchemy** for database ORM
+- **Pydantic v2** for data validation
+- **Supabase** for PostgreSQL database
