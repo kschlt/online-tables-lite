@@ -2,7 +2,10 @@
  * Editable table cell component with optimistic updates.
  */
 
+'use client'
+
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { CellData, ColumnFormat } from '@/types'
 import { getTodayDate, formatDateForDisplay, isToday, getRelativeDateDescription, parseDate } from '@/lib/date-utils'
 
@@ -25,6 +28,7 @@ export function TableCell({
   isReadonly = false,
   format = 'text',
 }: TableCellProps) {
+  const t = useTranslations()
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
 
@@ -48,6 +52,7 @@ export function TableCell({
 
   const handleBlur = useCallback(() => {
     setIsEditing(false)
+    
     // Only save if value changed
     if (localValue !== (value || '')) {
       let valueToSave = localValue || null
@@ -65,13 +70,6 @@ export function TableCell({
     }
   }, [localValue, value, row, col, onCellChange, isDateFormat])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      ;(e.target as HTMLInputElement).blur()
-    }
-  }, [])
-
   const insertTodayDate = useCallback(() => {
     const today = getTodayDate().iso
     setLocalValue(today)
@@ -85,15 +83,17 @@ export function TableCell({
 
   if (isReadonly) {
     return (
-      <div className={`border border-gray-200 p-3 min-h-[48px] bg-gray-50 flex items-center ${
-        isDateFormat ? 'bg-blue-50' : ''
-      }`}>
+      <div
+        className={`border border-gray-200 p-3 min-h-[48px] flex items-center ${
+          isDateFormat ? 'bg-blue-50' : ''
+        }`}
+      >
         <span className={`text-gray-600 ${isValueToday ? 'font-medium text-blue-700' : ''}`}>
           {displayValue}
         </span>
         {relativeDateDesc && (
           <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-            {relativeDateDesc}
+            {t('table.relativeDate', { description: relativeDateDesc })}
           </span>
         )}
       </div>
@@ -101,20 +101,19 @@ export function TableCell({
   }
 
   return (
-    <div className={`border border-gray-200 bg-white relative ${
-      isDateFormat ? 'bg-blue-50' : ''
-    }`}>
+    <div className="relative">
       <input
         type="text"
         value={localValue}
-        onChange={e => handleChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        className={`w-full p-3 min-h-[48px] bg-transparent border-none outline-none resize-none ${
+        className={`w-full border border-gray-200 p-3 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+          isDateFormat ? 'bg-blue-50' : ''
+        } ${
           isEditing ? 'bg-blue-50 ring-2 ring-blue-200 ring-inset' : isDateFormat ? 'hover:bg-blue-50' : 'hover:bg-gray-50'
         } ${isValueToday && !isEditing ? 'font-medium text-blue-700' : ''}`}
-        placeholder={isDateFormat ? 'YYYY-MM-DD' : ''}
+        placeholder={isDateFormat ? t('table.dateFormat') : ''}
       />
       
       {/* Today date helper button */}
@@ -123,16 +122,16 @@ export function TableCell({
           type="button"
           onClick={insertTodayDate}
           className="absolute right-1 top-1 p-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-200 transition-colors"
-          title="Insert today's date"
+          title={t('table.insertToday')}
         >
-          📅 Today
+          {t('table.today')}
         </button>
       )}
       
       {/* Relative date indicator when not editing */}
       {isDateFormat && !isEditing && relativeDateDesc && (
         <div className="absolute right-1 top-1 p-1 text-xs text-blue-600 bg-blue-100 rounded">
-          {relativeDateDesc}
+          {t('table.relativeDate', { description: relativeDateDesc })}
         </div>
       )}
     </div>

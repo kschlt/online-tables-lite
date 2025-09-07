@@ -1,11 +1,13 @@
 'use client'
 
 import { useParams, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useTable } from '@/hooks'
-import { PageLayout, LoadingSpinner, ErrorMessage } from '@/components/ui'
+import { PageLayout, LoadingSpinner, ErrorMessage, LanguageSwitcher } from '@/components/ui'
 import { TableGrid } from '@/components/table'
 
 export default function TablePage() {
+  const t = useTranslations()
   const params = useParams()
   const searchParams = useSearchParams()
 
@@ -28,7 +30,12 @@ export default function TablePage() {
     return (
       <PageLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <ErrorMessage message={error} className="max-w-md" />
+          <div className="text-center">
+            <ErrorMessage message={error} className="max-w-md" />
+            <div className="mt-4">
+              <LanguageSwitcher />
+            </div>
+          </div>
         </div>
       </PageLayout>
     )
@@ -38,18 +45,22 @@ export default function TablePage() {
     return (
       <PageLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-gray-600">Table not found</div>
+          <div className="text-center">
+            <ErrorMessage message={t('errors.genericError')} className="max-w-md" />
+            <div className="mt-4">
+              <LanguageSwitcher />
+            </div>
+          </div>
         </div>
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout
-      title={tableData.title || `Table ${tableData.slug}`}
-      description={tableData.description || undefined}
-      maxWidth="full"
-    >
+    <PageLayout>
+      <div className="mb-4 flex justify-end">
+        <LanguageSwitcher />
+      </div>
       <TableGrid tableData={tableData} />
     </PageLayout>
   )

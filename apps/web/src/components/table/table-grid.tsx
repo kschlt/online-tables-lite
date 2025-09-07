@@ -2,8 +2,11 @@
  * Table grid component for displaying table data.
  */
 
+'use client'
+
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useCellEditor } from '@/hooks/use-cell-editor'
 import { AdminDrawer } from '@/components/ui'
 import { TableCell } from './table-cell'
@@ -15,6 +18,7 @@ interface TableGridProps {
 }
 
 export function TableGrid({ tableData }: TableGridProps) {
+  const t = useTranslations()
   const searchParams = useSearchParams()
   const token = searchParams.get('t')
   const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false)
@@ -41,7 +45,7 @@ export function TableGrid({ tableData }: TableGridProps) {
   if (!token) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">No access token provided</p>
+        <p className="text-red-700">{t('errors.noAccessToken')}</p>
       </div>
     )
   }
@@ -85,7 +89,7 @@ export function TableGrid({ tableData }: TableGridProps) {
         setStructureError(response.message)
       }
     } catch (err) {
-      setStructureError(err instanceof Error ? err.message : 'Failed to add row')
+      setStructureError(err instanceof Error ? err.message : t('admin.failedToAddRow'))
     } finally {
       setIsUpdatingStructure(false)
     }
@@ -107,7 +111,7 @@ export function TableGrid({ tableData }: TableGridProps) {
             ...prev.columns,
             {
               idx: prev.columns.length,
-              header: `Column ${prev.columns.length + 1}`,
+              header: t('table.columnNumber', { number: prev.columns.length + 1 }),
               width: null,
               format: 'text'
             }
@@ -117,7 +121,7 @@ export function TableGrid({ tableData }: TableGridProps) {
         setStructureError(response.message)
       }
     } catch (err) {
-      setStructureError(err instanceof Error ? err.message : 'Failed to add column')
+      setStructureError(err instanceof Error ? err.message : t('admin.failedToAddColumn'))
     } finally {
       setIsUpdatingStructure(false)
     }
@@ -140,16 +144,16 @@ export function TableGrid({ tableData }: TableGridProps) {
                 : 'bg-blue-50 border-blue-200 text-blue-700'
             }`}
           >
-            {!isConnected && '⚠️ Disconnected - '}
-            {isUpdatingStructure ? 'Updating table structure...' : 
-             isUpdating ? 'Saving...' : hasPendingUpdates ? 'Unsaved changes' : ''}
-            {!isConnected && !isUpdating && !hasPendingUpdates && !isUpdatingStructure && 'Attempting to reconnect...'}
+            {!isConnected && `⚠️ ${t('status.disconnected')} - `}
+            {isUpdatingStructure ? t('status.updatingStructure') : 
+             isUpdating ? t('common.saving') : hasPendingUpdates ? t('status.unsavedChanges') : ''}
+            {!isConnected && !isUpdating && !hasPendingUpdates && !isUpdatingStructure && t('status.connecting')}
           </div>
         )}
 
         {(error || structureError) && (
           <div className="bg-red-50 border-b border-red-200 p-2 text-sm text-red-700">
-            Error: {error || structureError}
+            {t('common.error')}: {error || structureError}
           </div>
         )}
 
@@ -163,10 +167,10 @@ export function TableGrid({ tableData }: TableGridProps) {
               key={column.idx}
               className="border border-gray-200 p-3 bg-gray-50 font-medium text-gray-900"
             >
-              {column.header || `Column ${column.idx + 1}`}
+              {column.header || t('table.columnNumber', { number: column.idx + 1 })}
               {column.format === 'date' && (
-                <span className="ml-2 text-xs text-blue-600" aria-label="Date format">
-                  📅
+                <span className="ml-2 text-xs text-blue-600" aria-label={t('table.dateFormat')}>
+                  {t('table.dateFormatIcon')}
                 </span>
               )}
             </div>
@@ -203,7 +207,7 @@ export function TableGrid({ tableData }: TableGridProps) {
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-2">
                 <span className="text-blue-600 font-medium text-lg">+</span>
               </div>
-              <span className="text-sm font-medium">Add new row</span>
+              <span className="text-sm font-medium">{t('table.addNewRow')}</span>
             </div>
           </div>
         )}
@@ -214,7 +218,7 @@ export function TableGrid({ tableData }: TableGridProps) {
         <button
           onClick={() => setIsAdminDrawerOpen(true)}
           className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full w-14 h-14 shadow-lg hover:bg-blue-700 flex items-center justify-center z-40 transition-colors"
-          title="Admin Settings"
+          title={t('admin.settings')}
         >
           <svg 
             width="24" 
