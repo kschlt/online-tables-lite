@@ -1,11 +1,10 @@
-# Disabled - Using Vercel auto-deploy instead
-# name: Deploy Web (Vercel)
-# on:
-#   push:
-#     branches: [ production ]
-#     paths:
-#       - 'apps/web/**'
-#       - '.github/workflows/deploy-web.yml'
+name: Deploy Web (Vercel)
+on:
+  push:
+    branches: [ production ]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/deploy-web.yml'
 jobs:
   deploy:
     runs-on: ubuntu-latest
