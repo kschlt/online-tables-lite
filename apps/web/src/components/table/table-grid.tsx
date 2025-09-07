@@ -118,6 +118,7 @@ export function TableGrid({ tableData }: TableGridProps) {
                 col={column.idx}
                 value={getCellValue(rowIndex, column.idx)}
                 onCellChange={updateCell}
+                todayHint={column.today_hint}
               />
             ))}
           </div>
