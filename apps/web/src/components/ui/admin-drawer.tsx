@@ -6,7 +6,7 @@
 
 import { useState } from 'react'
 import { TableData, TableConfigRequest, ColumnConfigUpdate, ColumnFormat } from '@/types'
-import { updateTableConfig } from '@/lib/api'
+import { updateTableConfig, api } from '@/lib/api'
 
 interface AdminDrawerProps {
   tableData: TableData
@@ -88,28 +88,100 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
     )
   }
 
-  const addColumn = () => {
-    const newIdx = columnConfigs.length
-    setColumnConfigs(prev => [
-      ...prev,
-      {
-        idx: newIdx,
-        header: `Column ${newIdx + 1}`,
-        width: null,
-        format: 'text' as ColumnFormat,
+  // Fixed API-based column management
+  const addColumn = async () => {
+    if (columnConfigs.length >= 64) {
+      setError('Cannot add more columns. Maximum is 64.')
+      return
+    }
+    
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      const response = await api.addColumns(tableData.slug, token, { count: 1 })
+      if (response.success) {
+        // Refresh to show new column
+        window.location.reload()
+      } else {
+        setError(response.message)
       }
-    ])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add column')
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
-  const removeColumn = (idx: number) => {
+  const removeColumn = async (idx: number) => {
     if (columnConfigs.length <= 1) {
-      return // Can't remove the last column
+      setError('Cannot remove the last column. Tables must have at least one column.')
+      return
     }
-    setColumnConfigs(prev => {
-      const filtered = prev.filter(col => col.idx !== idx)
-      // Reindex remaining columns
-      return filtered.map((col, index) => ({ ...col, idx: index }))
-    })
+    
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      const response = await api.removeColumns(tableData.slug, token, { count: 1 })
+      if (response.success) {
+        // Refresh to show removed column
+        window.location.reload()
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove column')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  // Row management functions
+  const addRow = async () => {
+    if (rows >= 500) {
+      setError('Cannot add more rows. Maximum is 500.')
+      return
+    }
+    
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      const response = await api.addRows(tableData.slug, token, { count: 1 })
+      if (response.success && response.new_rows) {
+        setRows(response.new_rows)
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add row')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const removeRow = async () => {
+    if (rows <= 1) {
+      setError('Cannot remove rows. Tables must have at least one row.')
+      return
+    }
+    
+    setIsUpdating(true)
+    setError(null)
+
+    try {
+      const response = await api.removeRows(tableData.slug, token, { count: 1 })
+      if (response.success && response.new_rows) {
+        setRows(response.new_rows)
+      } else {
+        setError(response.message)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove row')
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   return (
@@ -167,7 +239,20 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
 
             {/* Column Configuration Section */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Column Configuration</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-medium text-gray-900">Column Configuration</h3>
+                <div className="space-x-2">
+                  <button
+                    type="button"
+                    onClick={addColumn}
+                    disabled={isUpdating || columnConfigs.length >= 64}
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                  >
+                    + Add Column
+                  </button>
+                </div>
+              </div>
+              
               <div className="space-y-4">
                 {columnConfigs.map((column, index) => (
                   <div key={column.idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
@@ -179,7 +264,8 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                         <button
                           type="button"
                           onClick={() => removeColumn(column.idx)}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          disabled={isUpdating}
+                          className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
                         >
                           Remove
                         </button>
@@ -236,24 +322,33 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                     </div>
                   </div>
                 ))}
-
-                {/* Add Column Button */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <button
-                    type="button"
-                    onClick={addColumn}
-                    className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors"
-                  >
-                    <span className="text-xl">+</span>
-                  </button>
-                  <p className="text-sm text-gray-600 mt-2">Add new column</p>
-                </div>
               </div>
             </div>
 
             {/* Row Configuration Section */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Row Configuration</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-medium text-gray-900">Row Management</h3>
+                <div className="space-x-2">
+                  <button
+                    type="button"
+                    onClick={addRow}
+                    disabled={isUpdating || rows >= 500 || fixedRows}
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                  >
+                    + Add Row
+                  </button>
+                  <button
+                    type="button"
+                    onClick={removeRow}
+                    disabled={isUpdating || rows <= 1 || fixedRows}
+                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
+                  >
+                    - Remove Row
+                  </button>
+                </div>
+              </div>
+              
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <input
@@ -287,7 +382,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
 
                 {!fixedRows && (
                   <div className="ml-6 text-sm text-gray-600">
-                    <p>Auto rows is enabled. Users can add rows with the + button in the table.</p>
+                    <p>Auto rows is enabled. Current rows: {rows}. Use the buttons above to add/remove rows.</p>
                   </div>
                 )}
               </div>

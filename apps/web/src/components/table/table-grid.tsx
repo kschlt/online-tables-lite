@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { useCellEditor } from '@/hooks/use-cell-editor'
 import { AdminDrawer } from '@/components/ui'
 import { TableCell } from './table-cell'
+import { api } from '@/lib/api'
 import type { TableData } from '@/types'
 
 interface TableGridProps {
@@ -18,6 +19,8 @@ export function TableGrid({ tableData }: TableGridProps) {
   const token = searchParams.get('t')
   const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+  const [isUpdatingStructure, setIsUpdatingStructure] = useState(false)
+  const [structureError, setStructureError] = useState<string | null>(null)
 
   const { getCellValue, updateCell, isUpdating, error, hasPendingUpdates, isConnected } =
     useCellEditor({
@@ -55,6 +58,47 @@ export function TableGrid({ tableData }: TableGridProps) {
     checkAdminStatus()
   }
 
+  // Admin actions for row/column management
+  const addRow = async () => {
+    if (!isAdmin || !token || tableData.fixed_rows) return
+    
+    setIsUpdatingStructure(true)
+    setStructureError(null)
+    
+    try {
+      const response = await api.addRows(tableData.slug, token, { count: 1 })
+      if (response.success) {
+        window.location.reload() // Refresh to show new row
+      } else {
+        setStructureError(response.message)
+      }
+    } catch (err) {
+      setStructureError(err instanceof Error ? err.message : 'Failed to add row')
+    } finally {
+      setIsUpdatingStructure(false)
+    }
+  }
+
+  const addColumn = async () => {
+    if (!isAdmin || !token) return
+    
+    setIsUpdatingStructure(true)
+    setStructureError(null)
+    
+    try {
+      const response = await api.addColumns(tableData.slug, token, { count: 1 })
+      if (response.success) {
+        window.location.reload() // Refresh to show new column
+      } else {
+        setStructureError(response.message)
+      }
+    } catch (err) {
+      setStructureError(err instanceof Error ? err.message : 'Failed to add column')
+    } finally {
+      setIsUpdatingStructure(false)
+    }
+  }
+
   // Generate dynamic grid template based on column widths
   const gridTemplateColumns = tableData.columns
     .map(column => column.width ? `${column.width}px` : '1fr')
@@ -64,7 +108,7 @@ export function TableGrid({ tableData }: TableGridProps) {
     <div className="relative">
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         {/* Status indicator */}
-        {(isUpdating || hasPendingUpdates || !isConnected) && (
+        {(isUpdating || hasPendingUpdates || !isConnected || isUpdatingStructure) && (
           <div
             className={`border-b p-2 text-sm ${
               !isConnected
@@ -73,14 +117,15 @@ export function TableGrid({ tableData }: TableGridProps) {
             }`}
           >
             {!isConnected && '⚠️ Disconnected - '}
-            {isUpdating ? 'Saving...' : hasPendingUpdates ? 'Unsaved changes' : ''}
-            {!isConnected && !isUpdating && !hasPendingUpdates && 'Attempting to reconnect...'}
+            {isUpdatingStructure ? 'Updating table structure...' : 
+             isUpdating ? 'Saving...' : hasPendingUpdates ? 'Unsaved changes' : ''}
+            {!isConnected && !isUpdating && !hasPendingUpdates && !isUpdatingStructure && 'Attempting to reconnect...'}
           </div>
         )}
 
-        {error && (
+        {(error || structureError) && (
           <div className="bg-red-50 border-b border-red-200 p-2 text-sm text-red-700">
-            Error: {error}
+            Error: {error || structureError}
           </div>
         )}
 
@@ -124,6 +169,29 @@ export function TableGrid({ tableData }: TableGridProps) {
           </div>
         ))}
       </div>
+
+      {/* Admin row/column action buttons */}
+      {isAdmin && !tableData.fixed_rows && (
+        <button
+          onClick={addRow}
+          disabled={isUpdatingStructure}
+          className="fixed bottom-6 left-6 bg-green-600 text-white rounded-full w-12 h-12 shadow-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center z-40"
+          title="Add Row"
+        >
+          ➕
+        </button>
+      )}
+
+      {isAdmin && (
+        <button
+          onClick={addColumn}
+          disabled={isUpdatingStructure}
+          className="fixed bottom-20 left-6 bg-purple-600 text-white rounded-full w-12 h-12 shadow-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center z-40"
+          title="Add Column"
+        >
+          ➕
+        </button>
+      )}
 
       {/* Admin floating button */}
       {isAdmin && (
