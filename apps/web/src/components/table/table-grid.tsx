@@ -170,30 +170,44 @@ export function TableGrid({ tableData }: TableGridProps) {
         ))}
       </div>
 
-      {/* Admin row/column action buttons */}
-      {isAdmin && !tableData.fixed_rows && (
-        <button
-          onClick={addRow}
-          disabled={isUpdatingStructure}
-          className="fixed bottom-6 left-6 bg-green-600 text-white rounded-full w-12 h-12 shadow-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center z-40"
-          title="Add Row"
-        >
-          ➕
-        </button>
-      )}
-
+      {/* Elegant Admin Controls */}
       {isAdmin && (
-        <button
-          onClick={addColumn}
-          disabled={isUpdatingStructure}
-          className="fixed bottom-20 left-6 bg-purple-600 text-white rounded-full w-12 h-12 shadow-lg hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center z-40"
-          title="Add Column"
-        >
-          ➕
-        </button>
+        <div className="fixed bottom-6 left-6 space-y-3 z-40">
+          {/* Add Row Button */}
+          {!tableData.fixed_rows && (
+            <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-3 shadow-sm hover:border-gray-400 transition-colors">
+              <button
+                onClick={addRow}
+                disabled={isUpdatingStructure}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Add Row"
+              >
+                <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium">+</span>
+                </div>
+                <span className="text-sm font-medium">Add Row</span>
+              </button>
+            </div>
+          )}
+
+          {/* Add Column Button */}
+          <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-3 shadow-sm hover:border-gray-400 transition-colors">
+            <button
+              onClick={addColumn}
+              disabled={isUpdatingStructure}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Add Column"
+            >
+              <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium">+</span>
+              </div>
+              <span className="text-sm font-medium">Add Column</span>
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Admin floating button */}
+      {/* Admin Settings Button */}
       {isAdmin && (
         <button
           onClick={() => setIsAdminDrawerOpen(true)}
