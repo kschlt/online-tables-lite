@@ -5,7 +5,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { CellData, ColumnFormat } from '@/types'
 import { getTodayDate, formatDateForDisplay, isToday, getRelativeDateDescription, parseDate } from '@/lib/date-utils'
 
@@ -28,7 +28,7 @@ export function TableCell({
   isReadonly = false,
   format = 'text',
 }: TableCellProps) {
-  const t = useTranslations()
+  const { t } = useTranslations()
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
 

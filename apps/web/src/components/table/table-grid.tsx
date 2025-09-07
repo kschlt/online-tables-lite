@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useCellEditor } from '@/hooks/use-cell-editor'
 import { AdminDrawer } from '@/components/ui'
 import { TableCell } from './table-cell'
@@ -18,7 +18,7 @@ interface TableGridProps {
 }
 
 export function TableGrid({ tableData }: TableGridProps) {
-  const t = useTranslations()
+  const { t } = useTranslations()
   const searchParams = useSearchParams()
   const token = searchParams.get('t')
   const [isAdminDrawerOpen, setIsAdminDrawerOpen] = useState(false)
@@ -72,7 +72,9 @@ export function TableGrid({ tableData }: TableGridProps) {
 
   // Admin actions for row/column management
   const addRow = async () => {
-    if (!isAdmin || !token || localTableData.fixed_rows) return
+    if (!isAdmin || !token || localTableData.fixed_rows) {
+      return
+    }
     
     setIsUpdatingStructure(true)
     setStructureError(null)
@@ -90,38 +92,6 @@ export function TableGrid({ tableData }: TableGridProps) {
       }
     } catch (err) {
       setStructureError(err instanceof Error ? err.message : t('admin.failedToAddRow'))
-    } finally {
-      setIsUpdatingStructure(false)
-    }
-  }
-
-  const addColumn = async () => {
-    if (!isAdmin || !token) return
-    
-    setIsUpdatingStructure(true)
-    setStructureError(null)
-    
-    try {
-      const response = await api.addColumns(localTableData.slug, token, { count: 1 })
-      if (response.success) {
-        // Update local state immediately for instant UI feedback
-        setLocalTableData(prev => ({
-          ...prev,
-          columns: [
-            ...prev.columns,
-            {
-              idx: prev.columns.length,
-              header: t('table.columnNumber', { number: prev.columns.length + 1 }),
-              width: null,
-              format: 'text'
-            }
-          ]
-        }))
-      } else {
-        setStructureError(response.message)
-      }
-    } catch (err) {
-      setStructureError(err instanceof Error ? err.message : t('admin.failedToAddColumn'))
     } finally {
       setIsUpdatingStructure(false)
     }

@@ -4,24 +4,14 @@
 
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface LanguageSwitcherProps {
   className?: string
 }
 
 export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const locale = useLocale()
-
-  const changeLanguage = (newLocale: string) => {
-    // Remove the current locale from the pathname
-    const pathWithoutLocale = pathname.replace(`/${locale}`, '')
-    // Navigate to the new locale
-    router.push(`/${newLocale}${pathWithoutLocale}`)
-  }
+  const { locale, changeLanguage } = useTranslations()
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
