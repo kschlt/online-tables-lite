@@ -5,8 +5,8 @@
  */
 
 import { useState } from 'react'
-import { TableData, TableConfigRequest, ColumnConfigUpdate } from '@/types'
-import { updateTableConfig, api } from '@/lib/api'
+import { TableData, TableConfigRequest, ColumnConfigUpdate, ColumnFormat } from '@/types'
+import { updateTableConfig } from '@/lib/api'
 
 interface AdminDrawerProps {
   tableData: TableData
@@ -21,14 +21,14 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
   const [error, setError] = useState<string | null>(null)
   const [title, setTitle] = useState(tableData.title || '')
   const [description, setDescription] = useState(tableData.description || '')
+  const [fixedRows, setFixedRows] = useState(tableData.fixed_rows || false)
   const [rows, setRows] = useState(tableData.rows)
-  const [cols, setCols] = useState(tableData.cols)
   const [columnConfigs, setColumnConfigs] = useState<ColumnConfigUpdate[]>(
     tableData.columns.map(col => ({
       idx: col.idx,
       header: col.header,
       width: col.width,
-      today_hint: col.today_hint,
+      format: col.format,
     }))
   )
 
@@ -45,8 +45,8 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
       const request: TableConfigRequest = {
         title: title || null,
         description: description || null,
-        rows,
-        cols,
+        rows: fixedRows ? rows : null,
+        fixed_rows: fixedRows,
         columns: columnConfigs,
       }
 
@@ -60,94 +60,6 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update configuration')
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const addColumn = async () => {
-    if (cols >= 64) {
-      return
-    } // Max limit
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      const response = await api.addColumns(tableData.slug, token, { count: 1 })
-      if (response.success && response.new_cols) {
-        setCols(response.new_cols)
-        // Refresh table data to get new columns
-        window.location.reload()
-      } else {
-        setError(response.message)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add column')
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const removeColumn = async () => {
-    if (cols <= 1) {
-      return
-    } // Min limit
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      const response = await api.removeColumns(tableData.slug, token, { count: 1 })
-      if (response.success && response.new_cols) {
-        setCols(response.new_cols)
-        // Refresh table data to reflect removed columns
-        window.location.reload()
-      } else {
-        setError(response.message)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove column')
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const addRow = async () => {
-    if (rows >= 500) {
-      return
-    } // Max limit
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      const response = await api.addRows(tableData.slug, token, { count: 1 })
-      if (response.success && response.new_rows) {
-        setRows(response.new_rows)
-      } else {
-        setError(response.message)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add row')
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const removeRow = async () => {
-    if (rows <= 1) {
-      return
-    } // Min limit
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      const response = await api.removeRows(tableData.slug, token, { count: 1 })
-      if (response.success && response.new_rows) {
-        setRows(response.new_rows)
-      } else {
-        setError(response.message)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove row')
     } finally {
       setIsUpdating(false)
     }
@@ -170,15 +82,39 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
     )
   }
 
-  const updateColumnTodayHint = (idx: number, todayHint: boolean) => {
+  const updateColumnFormat = (idx: number, format: ColumnFormat) => {
     setColumnConfigs(prev =>
-      prev.map(col => (col.idx === idx ? { ...col, today_hint: todayHint } : col))
+      prev.map(col => (col.idx === idx ? { ...col, format } : col))
     )
+  }
+
+  const addColumn = () => {
+    const newIdx = columnConfigs.length
+    setColumnConfigs(prev => [
+      ...prev,
+      {
+        idx: newIdx,
+        header: `Column ${newIdx + 1}`,
+        width: null,
+        format: 'text' as ColumnFormat,
+      }
+    ])
+  }
+
+  const removeColumn = (idx: number) => {
+    if (columnConfigs.length <= 1) {
+      return // Can't remove the last column
+    }
+    setColumnConfigs(prev => {
+      const filtered = prev.filter(col => col.idx !== idx)
+      // Reindex remaining columns
+      return filtered.map((col, index) => ({ ...col, idx: index }))
+    })
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Table Configuration</h2>
@@ -197,86 +133,35 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Table Title
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter table title"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={3}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter table description"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title and Description */}
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rows ({rows})
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Table Title
                 </label>
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={removeRow}
-                    disabled={rows <= 1 || isUpdating}
-                    className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    −
-                  </button>
-                  <span className="flex-1 text-center">{rows}</span>
-                  <button
-                    type="button"
-                    onClick={addRow}
-                    disabled={rows >= 500 || isUpdating}
-                    className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Max: 500</div>
+                <input
+                  type="text"
+                  id="title"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter table title"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Columns ({cols})
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
                 </label>
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={removeColumn}
-                    disabled={cols <= 1 || isUpdating}
-                    className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    −
-                  </button>
-                  <span className="flex-1 text-center">{cols}</span>
-                  <button
-                    type="button"
-                    onClick={addColumn}
-                    disabled={cols >= 64 || isUpdating}
-                    className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Max: 64</div>
+                <textarea
+                  id="description"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter table description"
+                />
               </div>
             </div>
 
@@ -284,15 +169,21 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Column Configuration</h3>
               <div className="space-y-4">
-                {columnConfigs.map(column => (
+                {columnConfigs.map((column, index) => (
                   <div key={column.idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-gray-700">
-                        Column {column.idx + 1}
+                        Column {index + 1}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        Index: {column.idx}
-                      </span>
+                      {columnConfigs.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeColumn(column.idx)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -306,7 +197,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                           value={column.header || ''}
                           onChange={e => updateColumnHeader(column.idx, e.target.value)}
                           className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder={`Column ${column.idx + 1}`}
+                          placeholder={`Column ${index + 1}`}
                         />
                       </div>
 
@@ -327,25 +218,82 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                         <div className="text-xs text-gray-500 mt-1">50-800px or leave empty for auto</div>
                       </div>
 
-                      {/* Today Hint */}
-                      <div className="flex items-center">
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={column.today_hint || false}
-                            onChange={e => updateColumnTodayHint(column.idx, e.target.checked)}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">Today date hint 📅</span>
+                      {/* Format */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Format
                         </label>
+                        <select
+                          value={column.format || 'text'}
+                          onChange={e => updateColumnFormat(column.idx, e.target.value as ColumnFormat)}
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="text">Text</option>
+                          <option value="date">Date</option>
+                        </select>
+                        <div className="text-xs text-gray-500 mt-1">How values should be formatted</div>
                       </div>
                     </div>
                   </div>
                 ))}
+
+                {/* Add Column Button */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <button
+                    type="button"
+                    onClick={addColumn}
+                    className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors"
+                  >
+                    <span className="text-xl">+</span>
+                  </button>
+                  <p className="text-sm text-gray-600 mt-2">Add new column</p>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
+            {/* Row Configuration Section */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Row Configuration</h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="fixedRows"
+                    checked={fixedRows}
+                    onChange={e => setFixedRows(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="fixedRows" className="text-sm text-gray-700">
+                    Set fixed number of rows
+                  </label>
+                </div>
+
+                {fixedRows && (
+                  <div className="ml-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Number of rows
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="500"
+                      value={rows}
+                      onChange={e => setRows(parseInt(e.target.value, 10) || 1)}
+                      className="w-32 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Max: 500 rows</div>
+                  </div>
+                )}
+
+                {!fixedRows && (
+                  <div className="ml-6 text-sm text-gray-600">
+                    <p>Auto rows is enabled. Users can add rows with the + button in the table.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t">
               <button
                 type="button"
                 onClick={onClose}

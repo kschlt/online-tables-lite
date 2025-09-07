@@ -2,11 +2,13 @@
  * Table-related TypeScript types.
  */
 
+export type ColumnFormat = 'text' | 'date'
+
 export interface TableColumn {
   idx: number
   header: string | null
   width: number | null
-  today_hint: boolean
+  format: ColumnFormat
 }
 
 export interface CellData {
@@ -22,6 +24,7 @@ export interface TableData {
   description: string | null
   cols: number
   rows: number
+  fixed_rows: boolean
   columns: TableColumn[]
   cells: CellData[]
 }
@@ -60,14 +63,14 @@ export interface ColumnConfigUpdate {
   idx: number
   header?: string | null
   width?: number | null
-  today_hint?: boolean | null
+  format?: ColumnFormat | null
 }
 
 export interface TableConfigRequest {
   title?: string | null
   description?: string | null
   rows?: number | null
-  cols?: number | null
+  fixed_rows?: boolean | null
   columns?: ColumnConfigUpdate[] | null
 }
 

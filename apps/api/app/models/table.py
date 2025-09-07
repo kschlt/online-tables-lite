@@ -1,7 +1,14 @@
 """Table-related Pydantic models."""
-from typing import Optional
+from typing import Optional, Literal
+from enum import Enum
 
 from pydantic import BaseModel
+
+
+class ColumnFormat(str, Enum):
+    """Column format options."""
+    TEXT = "text"
+    DATE = "date"
 
 
 class CreateTableRequest(BaseModel):
@@ -27,7 +34,7 @@ class TableColumn(BaseModel):
     idx: int
     header: Optional[str]
     width: Optional[int]
-    today_hint: bool
+    format: ColumnFormat = ColumnFormat.TEXT
 
 
 class CellData(BaseModel):
@@ -47,6 +54,7 @@ class TableResponse(BaseModel):
     description: Optional[str]
     cols: int
     rows: int
+    fixed_rows: bool = False
     columns: list[TableColumn]
     cells: list[CellData] = []
 
@@ -71,7 +79,7 @@ class ColumnConfigUpdate(BaseModel):
     idx: int
     header: Optional[str] = None
     width: Optional[int] = None
-    today_hint: Optional[bool] = None
+    format: Optional[ColumnFormat] = None
 
 
 class TableConfigRequest(BaseModel):
@@ -80,7 +88,7 @@ class TableConfigRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     rows: Optional[int] = None
-    cols: Optional[int] = None
+    fixed_rows: Optional[bool] = None
     columns: Optional[list[ColumnConfigUpdate]] = None
 
 

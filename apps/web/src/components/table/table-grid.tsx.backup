@@ -95,8 +95,8 @@ export function TableGrid({ tableData }: TableGridProps) {
               className="border border-gray-200 p-3 bg-gray-50 font-medium text-gray-900"
             >
               {column.header || `Column ${column.idx + 1}`}
-              {column.format === 'date' && (
-                <span className="ml-2 text-xs text-blue-600" aria-label="Date format">
+              {column.today_hint && (
+                <span className="ml-2 text-xs text-blue-600" aria-label="Today hint">
                   📅
                 </span>
               )}
@@ -118,7 +118,7 @@ export function TableGrid({ tableData }: TableGridProps) {
                 col={column.idx}
                 value={getCellValue(rowIndex, column.idx)}
                 onCellChange={updateCell}
-                format={column.format}
+                todayHint={column.today_hint}
               />
             ))}
           </div>

@@ -9,7 +9,6 @@ from app.models.table import (
     AddRowRequest,
     CellData,
     CellUpdateRequest,
-    ColumnFormat,
     CreateTableRequest,
     CreateTableResponse,
     RemoveColumnRequest,
@@ -44,7 +43,6 @@ class TableService:
             "description": request.description,
             "cols": request.cols,
             "rows": request.rows,
-            "fixed_rows": False,  # Default to auto rows
             "admin_token_hash": admin_token_hash,
             "edit_token_hash": edit_token_hash,
         }
@@ -59,7 +57,7 @@ class TableService:
                 "idx": i,
                 "header": f"Column {i + 1}",
                 "width": None,
-                "format": "text",  # Default to text format
+                "today_hint": False,
             }
             for i in range(request.cols)
         ]
@@ -88,7 +86,7 @@ class TableService:
                 idx=col["idx"],
                 header=col["header"],
                 width=col["width"],
-                format=ColumnFormat(col.get("format", "text")),  # Handle migration
+                today_hint=col["today_hint"],
             )
             for col in columns_result.data
         ]
@@ -113,7 +111,6 @@ class TableService:
             description=table["description"],
             cols=table["cols"],
             rows=table["rows"],
-            fixed_rows=table.get("fixed_rows", False),  # Handle migration
             columns=columns_data,
             cells=cells_data,
         )
@@ -171,6 +168,12 @@ class TableService:
             elif config.rows > settings.table_row_limit:
                 errors.append(f"Rows cannot exceed {settings.table_row_limit}")
 
+        if config.cols is not None:
+            if config.cols < 1:
+                errors.append("Columns must be at least 1")
+            elif config.cols > settings.table_col_limit:
+                errors.append(f"Columns cannot exceed {settings.table_col_limit}")
+
         if errors:
             return {
                 "success": False,
@@ -189,8 +192,8 @@ class TableService:
             update_data["description"] = config.description
         if config.rows is not None:
             update_data["rows"] = config.rows
-        if config.fixed_rows is not None:
-            update_data["fixed_rows"] = config.fixed_rows
+        if config.cols is not None:
+            update_data["cols"] = config.cols
 
         if update_data:
             self.supabase.table("tables").update(update_data).eq("id", table_id).execute()
@@ -203,11 +206,35 @@ class TableService:
                     col_data["header"] = col_update.header
                 if col_update.width is not None:
                     col_data["width"] = col_update.width
-                if col_update.format is not None:
-                    col_data["format"] = col_update.format.value
+                if col_update.today_hint is not None:
+                    col_data["today_hint"] = col_update.today_hint
 
                 if col_data:
                     self.supabase.table("columns").update(col_data).eq("table_id", table_id).eq("idx", col_update.idx).execute()
+
+        # Handle column count changes
+        if config.cols is not None:
+            current_result = self.supabase.table("columns").select("idx").eq("table_id", table_id).execute()
+            current_cols = len(current_result.data)
+
+            if config.cols > current_cols:
+                # Add new columns
+                new_columns = []
+                for i in range(current_cols, config.cols):
+                    new_columns.append({
+                        "table_id": table_id,
+                        "idx": i,
+                        "header": f"Column {i + 1}",
+                        "width": None,
+                        "today_hint": False,
+                    })
+                if new_columns:
+                    self.supabase.table("columns").insert(new_columns).execute()
+
+            elif config.cols < current_cols:
+                # Remove excess columns and their cells
+                self.supabase.table("columns").delete().eq("table_id", table_id).gte("idx", config.cols).execute()
+                self.supabase.table("cells").delete().eq("table_id", table_id).gte("c", config.cols).execute()
 
         return {
             "success": True,
@@ -221,7 +248,7 @@ class TableService:
     async def add_rows(self, table_id: str, request: AddRowRequest) -> dict[str, Any]:
         """Add rows to a table."""
         # Get current table data
-        table_result = self.supabase.table("tables").select("rows, fixed_rows").eq("id", table_id).execute()
+        table_result = self.supabase.table("tables").select("rows").eq("id", table_id).execute()
         if not table_result.data:
             return {
                 "success": False,
@@ -229,17 +256,7 @@ class TableService:
                 "new_rows": None
             }
 
-        table = table_result.data[0]
-        
-        # Check if rows are fixed
-        if table.get("fixed_rows", False):
-            return {
-                "success": False,
-                "message": "Cannot add rows to a table with fixed row count",
-                "new_rows": table["rows"]
-            }
-
-        current_rows = table["rows"]
+        current_rows = table_result.data[0]["rows"]
         new_rows = current_rows + request.count
 
         # Check limits
@@ -262,7 +279,7 @@ class TableService:
     async def remove_rows(self, table_id: str, request: RemoveRowRequest) -> dict[str, Any]:
         """Remove rows from a table."""
         # Get current table data
-        table_result = self.supabase.table("tables").select("rows, fixed_rows").eq("id", table_id).execute()
+        table_result = self.supabase.table("tables").select("rows").eq("id", table_id).execute()
         if not table_result.data:
             return {
                 "success": False,
@@ -270,17 +287,7 @@ class TableService:
                 "new_rows": None
             }
 
-        table = table_result.data[0]
-        
-        # Check if rows are fixed
-        if table.get("fixed_rows", False):
-            return {
-                "success": False,
-                "message": "Cannot remove rows from a table with fixed row count",
-                "new_rows": table["rows"]
-            }
-
-        current_rows = table["rows"]
+        current_rows = table_result.data[0]["rows"]
         new_rows = current_rows - request.count
 
         # Check minimum
@@ -334,7 +341,7 @@ class TableService:
                 "idx": i,
                 "header": header,
                 "width": None,
-                "format": "text",  # Default to text format
+                "today_hint": False,
             })
 
         self.supabase.table("columns").insert(new_columns).execute()

@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { CellData, ColumnFormat } from '@/types'
+import { CellData } from '@/types'
 import { getTodayDate, formatDateForDisplay, isToday, getRelativeDateDescription, parseDate } from '@/lib/date-utils'
 
 interface TableCellProps {
@@ -13,7 +13,7 @@ interface TableCellProps {
   width?: number | null
   onCellChange: (row: number, col: number, value: string | null) => void
   isReadonly?: boolean
-  format?: ColumnFormat
+  todayHint?: boolean
 }
 
 export function TableCell({
@@ -23,12 +23,10 @@ export function TableCell({
   width,
   onCellChange,
   isReadonly = false,
-  format = 'text',
+  todayHint = false,
 }: TableCellProps) {
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
-
-  const isDateFormat = format === 'date'
 
   // Sync external value changes (from real-time updates)
   useEffect(() => {
@@ -53,7 +51,7 @@ export function TableCell({
       let valueToSave = localValue || null
       
       // For date columns, try to normalize the date format
-      if (isDateFormat && localValue) {
+      if (todayHint && localValue) {
         const parsedDate = parseDate(localValue)
         if (parsedDate) {
           valueToSave = parsedDate // Save as ISO format
@@ -63,7 +61,7 @@ export function TableCell({
       
       onCellChange(row, col, valueToSave)
     }
-  }, [localValue, value, row, col, onCellChange, isDateFormat])
+  }, [localValue, value, row, col, onCellChange, todayHint])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -79,14 +77,14 @@ export function TableCell({
   }, [row, col, onCellChange])
 
   // Format display value for date columns
-  const displayValue = isDateFormat && localValue ? formatDateForDisplay(localValue) : localValue
-  const isValueToday = isDateFormat && localValue ? isToday(localValue) : false
-  const relativeDateDesc = isDateFormat && localValue ? getRelativeDateDescription(localValue) : null
+  const displayValue = todayHint && localValue ? formatDateForDisplay(localValue) : localValue
+  const isValueToday = todayHint && localValue ? isToday(localValue) : false
+  const relativeDateDesc = todayHint && localValue ? getRelativeDateDescription(localValue) : null
 
   if (isReadonly) {
     return (
       <div className={`border border-gray-200 p-3 min-h-[48px] bg-gray-50 flex items-center ${
-        isDateFormat ? 'bg-blue-50' : ''
+        todayHint ? 'bg-blue-50' : ''
       }`}>
         <span className={`text-gray-600 ${isValueToday ? 'font-medium text-blue-700' : ''}`}>
           {displayValue}
@@ -102,7 +100,7 @@ export function TableCell({
 
   return (
     <div className={`border border-gray-200 bg-white relative ${
-      isDateFormat ? 'bg-blue-50' : ''
+      todayHint ? 'bg-blue-50' : ''
     }`}>
       <input
         type="text"
@@ -112,13 +110,13 @@ export function TableCell({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         className={`w-full p-3 min-h-[48px] bg-transparent border-none outline-none resize-none ${
-          isEditing ? 'bg-blue-50 ring-2 ring-blue-200 ring-inset' : isDateFormat ? 'hover:bg-blue-50' : 'hover:bg-gray-50'
+          isEditing ? 'bg-blue-50 ring-2 ring-blue-200 ring-inset' : todayHint ? 'hover:bg-blue-50' : 'hover:bg-gray-50'
         } ${isValueToday && !isEditing ? 'font-medium text-blue-700' : ''}`}
-        placeholder={isDateFormat ? 'YYYY-MM-DD' : ''}
+        placeholder={todayHint ? 'YYYY-MM-DD' : ''}
       />
       
       {/* Today date helper button */}
-      {isDateFormat && isEditing && (
+      {todayHint && isEditing && (
         <button
           type="button"
           onClick={insertTodayDate}
@@ -130,7 +128,7 @@ export function TableCell({
       )}
       
       {/* Relative date indicator when not editing */}
-      {isDateFormat && !isEditing && relativeDateDesc && (
+      {todayHint && !isEditing && relativeDateDesc && (
         <div className="absolute right-1 top-1 p-1 text-xs text-blue-600 bg-blue-100 rounded">
           {relativeDateDesc}
         </div>
