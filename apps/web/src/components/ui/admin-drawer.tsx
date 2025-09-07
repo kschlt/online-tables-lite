@@ -42,6 +42,29 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
     setError(null)
 
     try {
+      // First, handle any column additions/removals
+      const currentColumnCount = tableData.columns.length
+      const newColumnCount = columnConfigs.length
+      
+      if (newColumnCount > currentColumnCount) {
+        // Add columns
+        const columnsToAdd = newColumnCount - currentColumnCount
+        const addResponse = await api.addColumns(tableData.slug, token, { count: columnsToAdd })
+        if (!addResponse.success) {
+          setError(addResponse.message)
+          return
+        }
+      } else if (newColumnCount < currentColumnCount) {
+        // Remove columns
+        const columnsToRemove = currentColumnCount - newColumnCount
+        const removeResponse = await api.removeColumns(tableData.slug, token, { count: columnsToRemove })
+        if (!removeResponse.success) {
+          setError(removeResponse.message)
+          return
+        }
+      }
+
+      // Then update the configuration
       const request: TableConfigRequest = {
         title: title || null,
         description: description || null,
@@ -88,54 +111,37 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
     )
   }
 
-  // Fixed: Actually call API to add column
-  const addColumn = async () => {
+  // CORRECTED: Just add to local state, don't call API immediately
+  const addColumn = () => {
     if (columnConfigs.length >= 64) {
       setError('Cannot add more columns. Maximum is 64.')
       return
     }
     
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      const response = await api.addColumns(tableData.slug, token, { count: 1 })
-      if (response.success) {
-        // Refresh to show new column
-        window.location.reload()
-      } else {
-        setError(response.message)
+    const newIdx = columnConfigs.length
+    setColumnConfigs(prev => [
+      ...prev,
+      {
+        idx: newIdx,
+        header: `Column ${newIdx + 1}`,
+        width: null,
+        format: 'text' as ColumnFormat,
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add column')
-    } finally {
-      setIsUpdating(false)
-    }
+    ])
   }
 
-  // Fixed: Actually call API to remove column
-  const removeColumn = async (idx: number) => {
+  // CORRECTED: Just remove from local state, don't call API immediately
+  const removeColumn = (idx: number) => {
     if (columnConfigs.length <= 1) {
       setError('Cannot remove the last column. Tables must have at least one column.')
       return
     }
     
-    setIsUpdating(true)
-    setError(null)
-
-    try {
-      const response = await api.removeColumns(tableData.slug, token, { count: 1 })
-      if (response.success) {
-        // Refresh to show removed column
-        window.location.reload()
-      } else {
-        setError(response.message)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove column')
-    } finally {
-      setIsUpdating(false)
-    }
+    setColumnConfigs(prev => {
+      const filtered = prev.filter(col => col.idx !== idx)
+      // Reindex remaining columns
+      return filtered.map((col, index) => ({ ...col, idx: index }))
+    })
   }
 
   return (
@@ -205,8 +211,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                         <button
                           type="button"
                           onClick={() => removeColumn(column.idx)}
-                          disabled={isUpdating}
-                          className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
+                          className="text-red-600 hover:text-red-800 text-sm"
                         >
                           Remove
                         </button>
@@ -269,7 +274,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   <button
                     type="button"
                     onClick={addColumn}
-                    disabled={isUpdating || columnConfigs.length >= 64}
+                    disabled={columnConfigs.length >= 64}
                     className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors disabled:opacity-50"
                   >
                     <span className="text-xl">+</span>
