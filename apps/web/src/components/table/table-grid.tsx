@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Plus, Settings } from 'lucide-react'
+import { findNextUpcomingDate, isNextUpcomingDate } from '@/lib/date-utils'
 import type { TableData } from '@/types'
 
 interface TableGridProps {
@@ -48,6 +49,28 @@ export function TableGrid({ tableData }: TableGridProps) {
   useEffect(() => {
     setLocalTableData(tableData)
   }, [tableData])
+
+  // Get all date/datetime values for next date highlighting
+  const getDateColumnsAndValues = () => {
+    const dateColumns = localTableData.columns.filter(
+      col => col.format === 'date' || col.format === 'datetime'
+    )
+
+    const dateValues: string[] = []
+    dateColumns.forEach(column => {
+      for (let rowIndex = 0; rowIndex < localTableData.rows; rowIndex++) {
+        const cellValue = getCellValue(rowIndex, column.idx)
+        if (cellValue) {
+          dateValues.push(cellValue)
+        }
+      }
+    })
+
+    return { dateColumns, dateValues }
+  }
+
+  const { dateColumns, dateValues } = getDateColumnsAndValues()
+  const nextUpcomingDate = findNextUpcomingDate(dateValues)
 
   if (!token) {
     return (
@@ -94,8 +117,8 @@ export function TableGrid({ tableData }: TableGridProps) {
         ...prev,
         rows: prev.rows + 1,
       }))
-    } catch (err) {
-      setStructureError(err instanceof Error ? err.message : t('admin.failedToAddRow'))
+    } catch (error) {
+      setStructureError(error instanceof Error ? error.message : t('admin.failedToAddRow'))
     } finally {
       setIsUpdatingStructure(false)
     }
@@ -156,12 +179,16 @@ export function TableGrid({ tableData }: TableGridProps) {
                     <span className="text-body font-medium">
                       {column.header || t('table.columnNumber', { number: column.idx + 1 })}
                     </span>
-                    {column.format === 'date' && (
+                    {(column.format === 'date' || column.format === 'datetime') && (
                       <span
                         className="ml-2 text-xs text-primary"
-                        aria-label={t('table.dateFormat')}
+                        aria-label={
+                          column.format === 'datetime'
+                            ? t('table.datetimeFormat')
+                            : t('table.dateFormat')
+                        }
                       >
-                        {t('table.dateFormatIcon')}
+                        {column.format === 'datetime' ? '🕐' : t('table.dateFormatIcon')}
                       </span>
                     )}
                   </div>
@@ -170,28 +197,36 @@ export function TableGrid({ tableData }: TableGridProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: localTableData.rows }).map((_, rowIndex) => (
-              <TableRow key={rowIndex}>
-                {localTableData.columns.map(column => (
-                  <ShadcnTableCell
-                    key={`${rowIndex}-${column.idx}`}
-                    className="p-0 border border-border"
-                    style={{
-                      width: getColumnWidth(column),
-                      minWidth: '120px',
-                    }}
-                  >
-                    <TableCell
-                      row={rowIndex}
-                      col={column.idx}
-                      value={getCellValue(rowIndex, column.idx)}
-                      onCellChange={updateCell}
-                      format={column.format}
-                    />
-                  </ShadcnTableCell>
-                ))}
-              </TableRow>
-            ))}
+            {Array.from({ length: localTableData.rows }).map((_, rowIndex) => {
+              // Check if this row contains the next upcoming date
+              const isNextDateRow = dateColumns.some(column => {
+                const cellValue = getCellValue(rowIndex, column.idx)
+                return cellValue && nextUpcomingDate && isNextUpcomingDate(cellValue, dateValues)
+              })
+
+              return (
+                <TableRow key={rowIndex} className={isNextDateRow ? 'bg-primary-light' : ''}>
+                  {localTableData.columns.map(column => (
+                    <ShadcnTableCell
+                      key={`${rowIndex}-${column.idx}`}
+                      className="p-0 border border-border"
+                      style={{
+                        width: getColumnWidth(column),
+                        minWidth: '120px',
+                      }}
+                    >
+                      <TableCell
+                        row={rowIndex}
+                        col={column.idx}
+                        value={getCellValue(rowIndex, column.idx)}
+                        onCellChange={updateCell}
+                        format={column.format}
+                      />
+                    </ShadcnTableCell>
+                  ))}
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
 

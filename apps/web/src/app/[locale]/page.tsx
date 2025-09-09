@@ -71,7 +71,7 @@ export default function Home() {
         cols: Number(formData.cols),
         rows: Number(formData.rows),
       }
-      
+
       const response = await createTable(requestData)
       setResult(response)
 
@@ -205,7 +205,10 @@ export default function Home() {
                 value={formData.cols}
                 onChange={e => {
                   const value = parseInt(e.target.value, 10)
-                  setFormData(prev => ({ ...prev, cols: isNaN(value) ? 1 : Math.max(1, Math.min(64, value)) }))
+                  setFormData(prev => ({
+                    ...prev,
+                    cols: isNaN(value) ? 1 : Math.max(1, Math.min(64, value)),
+                  }))
                 }}
               />
             </div>
@@ -222,7 +225,10 @@ export default function Home() {
                 value={formData.rows}
                 onChange={e => {
                   const value = parseInt(e.target.value, 10)
-                  setFormData(prev => ({ ...prev, rows: isNaN(value) ? 1 : Math.max(1, Math.min(500, value)) }))
+                  setFormData(prev => ({
+                    ...prev,
+                    rows: isNaN(value) ? 1 : Math.max(1, Math.min(500, value)),
+                  }))
                 }}
               />
             </div>

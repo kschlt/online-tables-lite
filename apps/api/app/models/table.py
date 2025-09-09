@@ -8,6 +8,7 @@ class ColumnFormat(str, Enum):
     """Column format options."""
     TEXT = "text"
     DATE = "date"
+    DATETIME = "datetime"
 
 
 class CreateTableRequest(BaseModel):

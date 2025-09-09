@@ -1,6 +1,10 @@
 /**
- * Date utilities for today hint functionality.
+ * Date utilities for date and datetime functionality.
  */
+
+import { format, parse, isValid, startOfDay } from 'date-fns'
+import { de, enUS } from 'date-fns/locale'
+import type { ColumnFormat } from '@/types'
 
 /**
  * Get today's date in various formats.
@@ -21,71 +25,137 @@ export function getTodayDate() {
 }
 
 /**
- * Parse various date formats and return ISO date string.
+ * Parse various date and datetime formats and return ISO string.
  */
-export function parseDate(value: string): string | null {
+export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): string | null {
   if (!value || typeof value !== 'string') {
     return null
   }
 
-  // Clean the input
   const cleaned = value.trim()
   if (!cleaned) {
     return null
   }
 
-  // Try parsing different formats
-  const formats = [
-    // ISO format: YYYY-MM-DD
-    /^\d{4}-\d{2}-\d{2}$/,
-    // US format: MM/DD/YYYY or M/D/YYYY
-    /^\d{1,2}\/\d{1,2}\/\d{4}$/,
-    // EU format: DD/MM/YYYY or D/M/YYYY
-    /^\d{1,2}\/\d{1,2}\/\d{4}$/,
-    // Dash format: MM-DD-YYYY or DD-MM-YYYY
-    /^\d{1,2}-\d{1,2}-\d{4}$/,
-    // Dot format: MM.DD.YYYY or DD.MM.YYYY
-    /^\d{1,2}\.\d{1,2}\.\d{4}$/,
-  ]
+  // Handle datetime format with time ranges (e.g., "13.05.24 19:00-20:30")
+  if (columnFormat === 'datetime') {
+    const datetimeMatch = cleaned.match(
+      /^(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?:-(\d{1,2}):(\d{2}))?)?$/
+    )
+    if (datetimeMatch) {
+      const [, day, month, year, startHour, startMin, endHour, endMin] = datetimeMatch
+      const fullYear = year.length === 2 ? `20${year}` : year
 
-  // Check if it matches any expected format
-  const matchesFormat = formats.some(format => format.test(cleaned))
-  if (!matchesFormat) {
-    return null
+      try {
+        const date = parse(`${day}.${month}.${fullYear}`, 'dd.MM.yyyy', new Date())
+        if (!isValid(date)) {
+          return null
+        }
+
+        if (startHour && startMin) {
+          date.setHours(parseInt(startHour), parseInt(startMin), 0, 0)
+          // Store time range info in a custom format: ISO + time range
+          const timeRange = endHour && endMin ? `-${endHour.padStart(2, '0')}:${endMin}` : ''
+          return (
+            date.toISOString().split('T')[0] +
+            'T' +
+            `${startHour.padStart(2, '0')}:${startMin}:00` +
+            timeRange
+          )
+        }
+
+        return date.toISOString().split('T')[0]
+      } catch {
+        return null
+      }
+    }
   }
 
-  try {
-    // Try to parse with native Date constructor
-    const date = new Date(cleaned)
+  // Handle date formats: DD.MM.YY or DD.MM.YYYY
+  const dateMatch = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/)
+  if (dateMatch) {
+    const [, day, month, year] = dateMatch
+    const fullYear = year.length === 2 ? `20${year}` : year
 
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
+    try {
+      const date = parse(`${day}.${month}.${fullYear}`, 'dd.MM.yyyy', new Date())
+      if (isValid(date)) {
+        return date.toISOString().split('T')[0]
+      }
+      return null
+    } catch {
       return null
     }
-
-    // Return ISO format
-    return date.toISOString().split('T')[0]
-  } catch {
-    return null
   }
+
+  // Fallback to ISO format parsing
+  if (/^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
+    try {
+      const date = new Date(cleaned)
+      if (isNaN(date.getTime())) {
+        return null
+      }
+      return date.toISOString().split('T')[0]
+    } catch {
+      return null
+    }
+  }
+
+  return null
 }
 
 /**
- * Format date string for display.
+ * Format date/datetime string for display with locale support.
  */
-export function formatDateForDisplay(value: string): string {
-  const parsed = parseDate(value)
-  if (!parsed) {
-    return value // Return original if not a valid date
+export function formatDateForDisplay(
+  value: string,
+  columnFormat: ColumnFormat = 'date',
+  locale: string = 'en'
+): string {
+  if (!value) {
+    return ''
   }
 
   try {
-    const date = new Date(parsed)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    // Handle datetime format with time range
+    if (columnFormat === 'datetime' && value.includes('T')) {
+      const [datePart, timePart] = value.split('T')
+      const date = new Date(datePart)
+
+      if (!isValid(date)) {
+        return value
+      }
+
+      // Extract time range if present
+      let timeDisplay = ''
+      if (timePart) {
+        const timeMatch = timePart.match(/^(\d{2}):(\d{2}):00(?:-(\d{2}):(\d{2}))?$/)
+        if (timeMatch) {
+          const [, startHour, startMin, endHour, endMin] = timeMatch
+          if (endHour && endMin) {
+            timeDisplay = ` ${startHour}:${startMin}-${endHour}:${endMin}`
+          } else {
+            timeDisplay = ` ${startHour}:${startMin}`
+          }
+        }
+      }
+
+      const dateLocale = locale === 'de' ? de : enUS
+      const dateFormat = locale === 'de' ? 'EEE, d. MMM' : 'EEE, d MMM'
+
+      return format(date, dateFormat, { locale: dateLocale }) + timeDisplay
+    }
+
+    // Handle regular date format
+    const date = new Date(value)
+    if (!isValid(date)) {
+      return value
+    }
+
+    const dateLocale = locale === 'de' ? de : enUS
+    const dateFormat = locale === 'de' ? 'EEE, d. MMM' : 'EEE, d MMM'
+
+    return format(date, dateFormat, { locale: dateLocale })
   } catch {
     return value
   }
@@ -95,42 +165,57 @@ export function formatDateForDisplay(value: string): string {
  * Check if a string represents today's date.
  */
 export function isToday(value: string): boolean {
-  const parsed = parseDate(value)
-  if (!parsed) {
+  if (!value) {
     return false
   }
 
-  const today = getTodayDate().iso
-  return parsed === today
+  try {
+    const date = new Date(value.split('T')[0]) // Handle both date and datetime formats
+    const today = startOfDay(new Date())
+    return startOfDay(date).getTime() === today.getTime()
+  } catch {
+    return false
+  }
 }
 
 /**
- * Get relative date description (today, yesterday, tomorrow, etc.).
+ * Find the next upcoming date from a list of date values.
  */
-export function getRelativeDateDescription(value: string): string | null {
-  const parsed = parseDate(value)
-  if (!parsed) {
-    return null
+export function findNextUpcomingDate(dateValues: string[]): string | null {
+  const now = new Date()
+  const today = startOfDay(now)
+
+  let nextDate: Date | null = null
+  let nextDateValue: string | null = null
+
+  for (const value of dateValues) {
+    if (!value) {
+      continue
+    }
+
+    try {
+      const date = new Date(value.split('T')[0]) // Handle both date and datetime formats
+      const dateStart = startOfDay(date)
+
+      // Only consider dates that are today or in the future
+      if (dateStart >= today) {
+        if (!nextDate || dateStart < nextDate) {
+          nextDate = dateStart
+          nextDateValue = value
+        }
+      }
+    } catch {
+      continue
+    }
   }
 
-  const today = new Date()
-  const targetDate = new Date(parsed)
+  return nextDateValue
+}
 
-  // Calculate difference in days
-  const diffTime = targetDate.getTime() - today.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) {
-    return 'Today'
-  } else if (diffDays === 1) {
-    return 'Tomorrow'
-  } else if (diffDays === -1) {
-    return 'Yesterday'
-  } else if (diffDays > 0 && diffDays <= 7) {
-    return `In ${diffDays} days`
-  } else if (diffDays < 0 && diffDays >= -7) {
-    return `${Math.abs(diffDays)} days ago`
-  }
-
-  return null
+/**
+ * Check if a date value represents the next upcoming date.
+ */
+export function isNextUpcomingDate(value: string, allDateValues: string[]): boolean {
+  const nextDate = findNextUpcomingDate(allDateValues)
+  return nextDate === value
 }

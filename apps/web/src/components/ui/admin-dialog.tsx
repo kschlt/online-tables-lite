@@ -26,7 +26,7 @@ interface AdminDialogProps {
   onUpdate: (updatedTable: TableData) => void
 }
 
-export function AdminDialog({ tableData, token, isOpen, onClose, onUpdate }: AdminDialogProps) {
+export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogProps) {
   const t = useTranslations()
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -283,6 +283,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose, onUpdate }: Adm
                       >
                         <option value="text">{t('admin.formatText')}</option>
                         <option value="date">{t('admin.formatDate')}</option>
+                        <option value="datetime">{t('admin.formatDateTime')}</option>
                       </select>
                     </div>
                   </div>

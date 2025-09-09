@@ -2,7 +2,7 @@
  * Table-related TypeScript types.
  */
 
-export type ColumnFormat = 'text' | 'date'
+export type ColumnFormat = 'text' | 'date' | 'datetime'
 
 export interface TableColumn {
   idx: number

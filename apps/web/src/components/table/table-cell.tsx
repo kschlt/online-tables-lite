@@ -2,23 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { CellData, ColumnFormat } from '@/types'
-import {
-  getTodayDate,
-  formatDateForDisplay,
-  isToday,
-  getRelativeDateDescription,
-  parseDate,
-} from '@/lib/date-utils'
+import { useLocale } from 'next-intl'
+import { ColumnFormat } from '@/types'
+import { formatDateForDisplay, parseDate } from '@/lib/date-utils'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { DatePicker } from '@/components/ui/date-picker'
 
 interface TableCellProps {
   row: number
   col: number
   value?: string | null
-  width?: number | null
   onCellChange: (row: number, col: number, value: string | null) => void
   isReadonly?: boolean
   format?: ColumnFormat
@@ -28,7 +21,6 @@ export function TableCell({
   row,
   col,
   value = null,
-  width,
   onCellChange,
   isReadonly = false,
   format = 'text',
@@ -37,7 +29,8 @@ export function TableCell({
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
 
-  const isDateFormat = format === 'date'
+  const isDateFormat = format === 'date' || format === 'datetime'
+  const locale = useLocale()
 
   // Sync external value changes (from real-time updates)
   useEffect(() => {
@@ -62,9 +55,9 @@ export function TableCell({
     if (localValue !== (value || '')) {
       let valueToSave = localValue || null
 
-      // For date columns, try to normalize the date format
+      // For date/datetime columns, try to normalize the date format
       if (isDateFormat && localValue) {
-        const parsedDate = parseDate(localValue)
+        const parsedDate = parseDate(localValue, format)
         if (parsedDate) {
           valueToSave = parsedDate // Save as ISO format
           setLocalValue(parsedDate) // Update local state with normalized format
@@ -73,19 +66,30 @@ export function TableCell({
 
       onCellChange(row, col, valueToSave)
     }
-  }, [localValue, value, row, col, onCellChange, isDateFormat])
+  }, [localValue, value, row, col, onCellChange, isDateFormat, format])
 
-  const insertTodayDate = useCallback(() => {
-    const today = getTodayDate().iso
-    setLocalValue(today)
-    onCellChange(row, col, today)
-  }, [row, col, onCellChange])
+  const handleDatePickerChange = useCallback(
+    (date: Date | null) => {
+      if (date) {
+        const isoString =
+          format === 'datetime' ? date.toISOString() : date.toISOString().split('T')[0]
+        setLocalValue(isoString)
+        onCellChange(row, col, isoString)
+      } else {
+        setLocalValue('')
+        onCellChange(row, col, null)
+      }
+      setIsEditing(false)
+    },
+    [row, col, onCellChange, format]
+  )
 
-  // Format display value for date columns
-  const displayValue = isDateFormat && localValue ? formatDateForDisplay(localValue) : localValue
-  const isValueToday = isDateFormat && localValue ? isToday(localValue) : false
-  const relativeDateDesc =
-    isDateFormat && localValue ? getRelativeDateDescription(localValue) : null
+  // Format display value for date/datetime columns
+  const displayValue =
+    isDateFormat && localValue ? formatDateForDisplay(localValue, format, locale) : localValue
+
+  // Convert string value to Date object for DatePicker
+  const dateValue = isDateFormat && localValue ? new Date(localValue.split('T')[0]) : null
 
   if (isReadonly) {
     return (
@@ -94,56 +98,44 @@ export function TableCell({
           isDateFormat ? 'bg-primary-light' : 'bg-muted'
         }`}
       >
-        <span className={`text-muted-foreground ${isValueToday ? 'font-medium text-primary' : ''}`}>
-          {displayValue}
-        </span>
-        {relativeDateDesc && (
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {t('table.relativeDate', { description: relativeDateDesc })}
-          </Badge>
-        )}
+        <span className="text-muted-foreground">{displayValue}</span>
       </div>
     )
   }
 
   return (
     <div className="relative">
-      <Input
-        type="text"
-        value={localValue}
-        onChange={e => handleChange(e.target.value)}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        className={`w-full min-h-[48px] ${isDateFormat ? 'bg-primary-light' : ''} ${
-          isEditing
-            ? 'bg-primary-light ring-2 ring-primary/20'
-            : isDateFormat
-              ? 'hover:bg-primary-light'
-              : ''
-        } ${isValueToday && !isEditing ? 'font-medium text-primary' : ''}`}
-        placeholder={isDateFormat ? t('table.dateFormat') : ''}
-      />
+      <div className="flex items-center space-x-1">
+        <Input
+          type="text"
+          value={localValue}
+          onChange={e => handleChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          className={`flex-1 min-h-[48px] ${isDateFormat ? 'bg-primary-light' : ''} ${
+            isEditing
+              ? 'bg-primary-light ring-2 ring-primary/20'
+              : isDateFormat
+                ? 'hover:bg-primary-light'
+                : ''
+          }`}
+          placeholder={
+            isDateFormat ? (format === 'datetime' ? 'DD.MM.YYYY HH:MM' : 'DD.MM.YYYY') : ''
+          }
+        />
 
-      {/* Today date helper button */}
-      {isDateFormat && isEditing && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={insertTodayDate}
-          className="absolute right-1 top-1 text-xs"
-          title={t('table.insertToday')}
-        >
-          {t('table.today')}
-        </Button>
-      )}
-
-      {/* Relative date indicator when not editing */}
-      {isDateFormat && !isEditing && relativeDateDesc && (
-        <Badge variant="secondary" className="absolute right-1 top-1 text-xs">
-          {t('table.relativeDate', { description: relativeDateDesc })}
-        </Badge>
-      )}
+        {/* DatePicker button for date/datetime columns */}
+        {isDateFormat && (
+          <div className="flex-shrink-0">
+            <DatePicker
+              value={dateValue}
+              onChange={handleDatePickerChange}
+              format={format}
+              placeholder="Pick date"
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
