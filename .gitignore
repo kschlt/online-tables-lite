@@ -54,5 +54,7 @@ env/
 # TypeScript
 *.tsbuildinfo
 
-# WIP Files
-WIP/
+# Agent files
+.agent/
+.cursor/
+*.claude*
