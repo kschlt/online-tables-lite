@@ -2,11 +2,12 @@
 from contextlib import asynccontextmanager
 
 import socketio
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from app.api.dependencies import set_socketio_server
 from app.api.v1.cells import router as cells_router
@@ -128,6 +129,76 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         max_request_size=1024 * 1024,  # 1MB limit
     )
+
+    # Add exception handlers
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        """Handle Pydantic validation errors with detailed messages."""
+        import logging
+        logger = logging.getLogger("api.validation")
+        
+        logger.error("Validation error", extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "errors": exc.errors(),
+                "body": await request.body() if request.method in ["POST", "PUT", "PATCH"] else None
+            }
+        })
+        
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": "Validation error",
+                "errors": exc.errors(),
+                "message": "Please check your request format and field types"
+            }
+        )
+
+    @app.exception_handler(ValueError)
+    async def value_error_handler(request: Request, exc: ValueError):
+        """Handle ValueError exceptions."""
+        import logging
+        logger = logging.getLogger("api.error")
+        
+        logger.error("Value error", extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "error": str(exc)
+            }
+        })
+        
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": str(exc),
+                "message": "Invalid input value"
+            }
+        )
+
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception):
+        """Handle unexpected exceptions."""
+        import logging
+        logger = logging.getLogger("api.error")
+        
+        logger.error("Unexpected error", extra={
+            "extra_fields": {
+                "url": str(request.url),
+                "method": request.method,
+                "error": str(exc),
+                "type": type(exc).__name__
+            }
+        }, exc_info=exc)
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error",
+                "message": "An unexpected error occurred"
+            }
+        )
 
     # Request logging middleware (must be first for proper timing)
     app.add_middleware(RequestLoggingMiddleware)

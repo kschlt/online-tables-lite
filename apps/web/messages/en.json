@@ -16,7 +16,8 @@
     "failedToCreateTable": "Failed to create table",
     "tableCreatedSuccessfully": "Table Created Successfully!",
     "genericError": "An error occurred. Please try again.",
-    "errorLabel": "Error"
+    "errorLabel": "Error",
+    "titleRequired": "Title is required"
   },
   "app": {
     "title": "Online Tables Lite",

@@ -28,6 +28,16 @@ class TableService:
 
     async def create_table(self, request: CreateTableRequest) -> CreateTableResponse:
         """Create a new table with tokens."""
+        # Validate limits upfront
+        if request.cols > settings.table_col_limit:
+            raise ValueError(f"Columns cannot exceed {settings.table_col_limit}")
+        if request.rows > settings.table_row_limit:
+            raise ValueError(f"Rows cannot exceed {settings.table_row_limit}")
+        if request.cols < 1:
+            raise ValueError("Columns must be at least 1")
+        if request.rows < 1:
+            raise ValueError("Rows must be at least 1")
+
         # Generate tokens and slug
         slug = generate_slug()
         admin_token = generate_token()
@@ -49,8 +59,15 @@ class TableService:
             "edit_token_hash": edit_token_hash,
         }
 
-        table_result = self.supabase.table("tables").insert(table_data).execute()
-        table_id = table_result.data[0]["id"]
+        try:
+            table_result = self.supabase.table("tables").insert(table_data).execute()
+            if not table_result.data:
+                raise Exception("Failed to create table - no data returned")
+            table_id = table_result.data[0]["id"]
+        except Exception as e:
+            print(f"Database error creating table: {e}")
+            print(f"Table data: {table_data}")
+            raise
 
         # Create default columns
         columns_data = [

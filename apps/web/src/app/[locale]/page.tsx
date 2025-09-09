@@ -56,8 +56,23 @@ export default function Home() {
     setIsCreating(true)
     setError(null)
 
+    // Basic validation
+    if (!formData.title?.trim()) {
+      setError(t('errors.titleRequired'))
+      setIsCreating(false)
+      return
+    }
+
     try {
-      const response = await createTable(formData)
+      // Ensure numeric values are properly typed
+      const requestData: CreateTableRequest = {
+        title: formData.title.trim(),
+        description: formData.description?.trim() || '',
+        cols: Number(formData.cols),
+        rows: Number(formData.rows),
+      }
+      
+      const response = await createTable(requestData)
       setResult(response)
 
       // Store success state in URL parameters
@@ -156,6 +171,7 @@ export default function Home() {
               <Input
                 type="text"
                 id="title"
+                required
                 value={formData.title}
                 onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder={t('table.title')}
@@ -187,9 +203,10 @@ export default function Home() {
                 min="1"
                 max="64"
                 value={formData.cols}
-                onChange={e =>
-                  setFormData(prev => ({ ...prev, cols: parseInt(e.target.value) || 1 }))
-                }
+                onChange={e => {
+                  const value = parseInt(e.target.value, 10)
+                  setFormData(prev => ({ ...prev, cols: isNaN(value) ? 1 : Math.max(1, Math.min(64, value)) }))
+                }}
               />
             </div>
 
@@ -203,9 +220,10 @@ export default function Home() {
                 min="1"
                 max="500"
                 value={formData.rows}
-                onChange={e =>
-                  setFormData(prev => ({ ...prev, rows: parseInt(e.target.value) || 1 }))
-                }
+                onChange={e => {
+                  const value = parseInt(e.target.value, 10)
+                  setFormData(prev => ({ ...prev, rows: isNaN(value) ? 1 : Math.max(1, Math.min(500, value)) }))
+                }}
               />
             </div>
           </div>
