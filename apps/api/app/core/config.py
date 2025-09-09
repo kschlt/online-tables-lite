@@ -45,8 +45,7 @@ class Settings(BaseModel):
         if self.environment == "production":
             # Production hosts - customize for your deployment
             return [
-                "your-app.fly.dev",  # Fly.io app domain
-                "your-domain.com",   # Custom domain
+                "online-table-lite-api.fly.dev",  # Fly.io app domain
                 "*.vercel.app",      # Vercel preview domains
             ]
         else:
