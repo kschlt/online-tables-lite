@@ -58,3 +58,4 @@ env/
 .agent/
 .cursor/
 *.claude*
+CLAUDE.md
