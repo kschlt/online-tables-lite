@@ -11,11 +11,11 @@ export function getTodayDate() {
     iso: today.toISOString().split('T')[0], // YYYY-MM-DD
     us: today.toLocaleDateString('en-US'), // MM/DD/YYYY
     eu: today.toLocaleDateString('en-GB'), // DD/MM/YYYY
-    readable: today.toLocaleDateString('en-US', { 
+    readable: today.toLocaleDateString('en-US', {
       weekday: 'short',
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     }), // Fri, Dec 1, 2023
   }
 }
@@ -40,7 +40,7 @@ export function parseDate(value: string): string | null {
     /^\d{4}-\d{2}-\d{2}$/,
     // US format: MM/DD/YYYY or M/D/YYYY
     /^\d{1,2}\/\d{1,2}\/\d{4}$/,
-    // EU format: DD/MM/YYYY or D/M/YYYY  
+    // EU format: DD/MM/YYYY or D/M/YYYY
     /^\d{1,2}\/\d{1,2}\/\d{4}$/,
     // Dash format: MM-DD-YYYY or DD-MM-YYYY
     /^\d{1,2}-\d{1,2}-\d{4}$/,
@@ -57,7 +57,7 @@ export function parseDate(value: string): string | null {
   try {
     // Try to parse with native Date constructor
     const date = new Date(cleaned)
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) {
       return null
@@ -84,7 +84,7 @@ export function formatDateForDisplay(value: string): string {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   } catch {
     return value
@@ -115,7 +115,7 @@ export function getRelativeDateDescription(value: string): string | null {
 
   const today = new Date()
   const targetDate = new Date(parsed)
-  
+
   // Calculate difference in days
   const diffTime = targetDate.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))

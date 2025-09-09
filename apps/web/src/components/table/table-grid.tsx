@@ -8,13 +8,13 @@ import { useTranslations } from 'next-intl'
 import { useCellEditor } from '@/hooks/use-cell-editor'
 import { AdminDialog } from '@/components/ui'
 import { TableCell } from './table-cell'
-import { 
-  Table, 
-  TableHeader, 
-  TableBody, 
-  TableHead, 
-  TableRow, 
-  TableCell as ShadcnTableCell 
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell as ShadcnTableCell,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Plus, Settings } from 'lucide-react'
@@ -32,7 +32,7 @@ export function TableGrid({ tableData }: TableGridProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [isUpdatingStructure, setIsUpdatingStructure] = useState(false)
   const [structureError, setStructureError] = useState<string | null>(null)
-  
+
   // Local state for table data to enable immediate updates
   const [localTableData, setLocalTableData] = useState<TableData>(tableData)
 
@@ -79,18 +79,20 @@ export function TableGrid({ tableData }: TableGridProps) {
 
   // Admin actions for row/column management
   const addRow = async () => {
-    if (!token || !isAdmin) return
+    if (!token || !isAdmin) {
+      return
+    }
 
     try {
       setIsUpdatingStructure(true)
       setStructureError(null)
       const { api } = await import('@/lib/api')
       await api.addRows(localTableData.slug, token, {})
-      
+
       // Update local state immediately
       setLocalTableData(prev => ({
         ...prev,
-        rows: prev.rows + 1
+        rows: prev.rows + 1,
       }))
     } catch (err) {
       setStructureError(err instanceof Error ? err.message : t('admin.failedToAddRow'))
@@ -112,15 +114,22 @@ export function TableGrid({ tableData }: TableGridProps) {
       <div className="card-elevated">
         {/* Status indicator using design system */}
         {(isUpdating || hasPendingUpdates || !isConnected || isUpdatingStructure) && (
-          <div className={`border-b p-3 text-sm ${
-            !isConnected
-              ? 'status-warning'
-              : 'status-info'
-          }`}>
+          <div
+            className={`border-b p-3 text-sm ${!isConnected ? 'status-warning' : 'status-info'}`}
+          >
             {!isConnected && `⚠️ ${t('status.disconnected')} - `}
-            {isUpdatingStructure ? t('status.updatingStructure') : 
-             isUpdating ? t('common.saving') : hasPendingUpdates ? t('status.unsavedChanges') : ''}
-            {!isConnected && !isUpdating && !hasPendingUpdates && !isUpdatingStructure && t('status.connecting')}
+            {isUpdatingStructure
+              ? t('status.updatingStructure')
+              : isUpdating
+                ? t('common.saving')
+                : hasPendingUpdates
+                  ? t('status.unsavedChanges')
+                  : ''}
+            {!isConnected &&
+              !isUpdating &&
+              !hasPendingUpdates &&
+              !isUpdatingStructure &&
+              t('status.connecting')}
           </div>
         )}
 
@@ -138,9 +147,9 @@ export function TableGrid({ tableData }: TableGridProps) {
                 <TableHead
                   key={column.idx}
                   className="bg-secondary text-secondary-foreground font-semibold text-left border border-border"
-                  style={{ 
+                  style={{
                     width: getColumnWidth(column),
-                    minWidth: '120px'
+                    minWidth: '120px',
                   }}
                 >
                   <div className="flex items-center">
@@ -148,7 +157,10 @@ export function TableGrid({ tableData }: TableGridProps) {
                       {column.header || t('table.columnNumber', { number: column.idx + 1 })}
                     </span>
                     {column.format === 'date' && (
-                      <span className="ml-2 text-xs text-primary" aria-label={t('table.dateFormat')}>
+                      <span
+                        className="ml-2 text-xs text-primary"
+                        aria-label={t('table.dateFormat')}
+                      >
                         {t('table.dateFormatIcon')}
                       </span>
                     )}
@@ -164,9 +176,9 @@ export function TableGrid({ tableData }: TableGridProps) {
                   <ShadcnTableCell
                     key={`${rowIndex}-${column.idx}`}
                     className="p-0 border border-border"
-                    style={{ 
+                    style={{
                       width: getColumnWidth(column),
-                      minWidth: '120px'
+                      minWidth: '120px',
                     }}
                   >
                     <TableCell

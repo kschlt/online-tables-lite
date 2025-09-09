@@ -61,13 +61,9 @@ export default function TablePage() {
       <div className="mb-6">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h1 className="text-heading-1 mb-2">
-              {tableData.title || t('table.untitled')}
-            </h1>
+            <h1 className="text-heading-1 mb-2">{tableData.title || t('table.untitled')}</h1>
             {tableData.description && (
-              <p className="text-body text-muted-foreground">
-                {tableData.description}
-              </p>
+              <p className="text-body text-muted-foreground">{tableData.description}</p>
             )}
           </div>
           <LanguageSwitcher />

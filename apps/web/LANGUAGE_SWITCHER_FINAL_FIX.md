@@ -13,18 +13,21 @@ The language switcher was using a fallback locale detection method that only che
 ### 🔧 **Solution Implemented:**
 
 #### **1. Removed Fallback Locale Detection**
+
 ```tsx
 // REMOVED - This was causing the issue
 const currentLocale = pathname.startsWith('/de') ? 'de' : 'en'
 ```
 
 #### **2. Use Actual Locale Hook**
+
 ```tsx
 // Use the actual locale from next-intl
 const locale = useLocale()
 ```
 
 #### **3. Direct Locale Comparison**
+
 ```tsx
 <Button
   variant={locale === 'en' ? 'default' : 'outline'}
@@ -54,6 +57,7 @@ const locale = useLocale()
 ### 📊 **Before vs After:**
 
 #### **Before Fix:**
+
 ```tsx
 // Fallback detection - unreliable
 const currentLocale = pathname.startsWith('/de') ? 'de' : 'en'
@@ -63,6 +67,7 @@ const currentLocale = pathname.startsWith('/de') ? 'de' : 'en'
 ```
 
 #### **After Fix:**
+
 ```tsx
 // Actual locale from next-intl - reliable
 const locale = useLocale()
@@ -74,6 +79,7 @@ const locale = useLocale()
 ### 🔄 **Switching Behavior:**
 
 #### **English → German:**
+
 1. User is on `/en?success=...`
 2. Clicks "DE" button
 3. Navigates to `/de?success=...`
@@ -81,6 +87,7 @@ const locale = useLocale()
 5. English button shows as inactive (outline variant)
 
 #### **German → English:**
+
 1. User is on `/de?success=...`
 2. Clicks "EN" button
 3. Navigates to `/en?success=...`
@@ -116,6 +123,7 @@ const locale = useLocale()
 ### 🔧 **Technical Details:**
 
 **Locale Detection:**
+
 ```tsx
 // Input: "/de/table/my-slug?success=..."
 // useLocale() returns: "de"
@@ -125,17 +133,19 @@ const locale = useLocale() // "de"
 ```
 
 **Button State Logic:**
+
 ```tsx
 // English button
 variant={locale === 'en' ? 'default' : 'outline'}
 // When locale="de": variant="outline" (inactive)
 
-// German button  
+// German button
 variant={locale === 'de' ? 'default' : 'outline'}
 // When locale="de": variant="default" (active)
 ```
 
 **URL Replacement:**
+
 ```tsx
 // Current: "/de/table/my-slug?success=..."
 // Locale: "de"

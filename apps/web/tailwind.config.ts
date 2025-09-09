@@ -14,32 +14,32 @@ const config: Config = {
         sans: ['var(--font-family-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-family-mono)', 'Consolas', 'monospace'],
       },
-      
+
       // Spacing from design tokens
       spacing: {
-        'xs': 'var(--spacing-xs)',
-        'sm': 'var(--spacing-sm)',
-        'md': 'var(--spacing-md)',
-        'lg': 'var(--spacing-lg)',
-        'xl': 'var(--spacing-xl)',
+        xs: 'var(--spacing-xs)',
+        sm: 'var(--spacing-sm)',
+        md: 'var(--spacing-md)',
+        lg: 'var(--spacing-lg)',
+        xl: 'var(--spacing-xl)',
       },
-      
+
       // Border radius from design tokens
       borderRadius: {
-        'sm': 'var(--radius-sm)',
-        'md': 'var(--radius-md)',
-        'lg': 'var(--radius-lg)',
-        'xl': 'var(--radius)',
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius)',
         '2xl': 'calc(var(--radius) + 2px)',
       },
-      
+
       // Box shadows from design tokens
       boxShadow: {
-        'sm': 'var(--shadow-sm)',
-        'md': 'var(--shadow-md)',
-        'lg': 'var(--shadow-lg)',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
       },
-      
+
       // Colors from design tokens
       colors: {
         // Shadcn/UI compatibility
@@ -47,11 +47,11 @@ const config: Config = {
         foreground: 'hsl(var(--foreground))',
         card: {
           DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))'
+          foreground: 'hsl(var(--card-foreground))',
         },
         popover: {
           DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
+          foreground: 'hsl(var(--popover-foreground))',
         },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
@@ -66,11 +66,11 @@ const config: Config = {
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
+          foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
           DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))'
+          foreground: 'hsl(var(--accent-foreground))',
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
@@ -99,23 +99,23 @@ const config: Config = {
           '2': 'hsl(var(--chart-2))',
           '3': 'hsl(var(--chart-3))',
           '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))'
-        }
+          '5': 'hsl(var(--chart-5))',
+        },
       },
-      
+
       // Typography from design tokens
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1.4' }],
-        'sm': ['0.875rem', { lineHeight: '1.5' }],
-        'base': ['1rem', { lineHeight: '1.5' }],
-        'lg': ['1.125rem', { lineHeight: '1.5' }],
-        'xl': ['1.25rem', { lineHeight: '1.4' }],
+        xs: ['0.75rem', { lineHeight: '1.4' }],
+        sm: ['0.875rem', { lineHeight: '1.5' }],
+        base: ['1rem', { lineHeight: '1.5' }],
+        lg: ['1.125rem', { lineHeight: '1.5' }],
+        xl: ['1.25rem', { lineHeight: '1.4' }],
         '2xl': ['1.5rem', { lineHeight: '1.3' }],
         '3xl': ['1.875rem', { lineHeight: '1.3' }],
         '4xl': ['2.25rem', { lineHeight: '1.2' }],
         '5xl': ['3rem', { lineHeight: '1.1' }],
       },
-      
+
       fontWeight: {
         light: '300',
         normal: '400',
@@ -124,8 +124,8 @@ const config: Config = {
         bold: '700',
         extrabold: '800',
       },
-    }
+    },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require('tailwindcss-animate')],
 }
 export default config

@@ -10,7 +10,7 @@ To change colors throughout the application, edit the `brandColors` object in `s
 // Change primary brand color from blue to green
 export const brandColors = {
   primary: {
-    500: 'hsl(142 76% 36%)',  // Changed from blue to green
+    500: 'hsl(142 76% 36%)', // Changed from blue to green
     // ... other shades
   },
   // ... other colors
@@ -18,6 +18,7 @@ export const brandColors = {
 ```
 
 **This will automatically update:**
+
 - All primary buttons
 - Links and interactive elements
 - Focus states
@@ -39,6 +40,7 @@ export const typography = {
 ```
 
 **This will automatically update:**
+
 - All text elements
 - Headings
 - Body text
@@ -51,13 +53,14 @@ To change spacing throughout the application, edit the `spacing` object in `src/
 
 ```typescript
 export const spacing = {
-  xs: '0.5rem',    // Changed from 0.25rem to 0.5rem
-  sm: '1rem',       // Changed from 0.5rem to 1rem
+  xs: '0.5rem', // Changed from 0.25rem to 0.5rem
+  sm: '1rem', // Changed from 0.5rem to 1rem
   // ... other spacing values
 }
 ```
 
 **This will automatically update:**
+
 - Component padding and margins
 - Grid gaps
 - Form spacing
@@ -66,6 +69,7 @@ export const spacing = {
 ## 🎯 Using Design System Classes
 
 ### Button Variants
+
 ```tsx
 // Primary button (uses brand primary color)
 <button className="btn-primary">Primary Action</button>
@@ -84,6 +88,7 @@ export const spacing = {
 ```
 
 ### Status Indicators
+
 ```tsx
 // Success status
 <div className="status-success p-3 rounded-lg">
@@ -107,6 +112,7 @@ export const spacing = {
 ```
 
 ### Card Variants
+
 ```tsx
 // Elevated card with shadow
 <div className="card-elevated p-6">
@@ -120,6 +126,7 @@ export const spacing = {
 ```
 
 ### Typography Classes
+
 ```tsx
 // Headings
 <h1 className="text-heading-1">Main Heading</h1>
@@ -150,6 +157,7 @@ The design system automatically generates CSS variables that you can use in cust
 ## 🎨 Available CSS Variables
 
 ### Colors
+
 - `--color-primary` - Main brand color
 - `--color-primary-hover` - Hover state for primary
 - `--color-primary-light` - Light variant of primary
@@ -159,10 +167,12 @@ The design system automatically generates CSS variables that you can use in cust
 - `--color-error` - Error color
 
 ### Typography
+
 - `--font-family-sans` - Sans-serif font stack
 - `--font-family-mono` - Monospace font stack
 
 ### Spacing
+
 - `--spacing-xs` - Extra small spacing
 - `--spacing-sm` - Small spacing
 - `--spacing-md` - Medium spacing
@@ -170,11 +180,13 @@ The design system automatically generates CSS variables that you can use in cust
 - `--spacing-xl` - Extra large spacing
 
 ### Border Radius
+
 - `--radius-sm` - Small border radius
 - `--radius-md` - Medium border radius
 - `--radius-lg` - Large border radius
 
 ### Shadows
+
 - `--shadow-sm` - Small shadow
 - `--shadow-md` - Medium shadow
 - `--shadow-lg` - Large shadow
@@ -182,6 +194,7 @@ The design system automatically generates CSS variables that you can use in cust
 ## 🚀 Quick Theme Changes
 
 ### Change Brand Color to Purple
+
 ```typescript
 // In src/lib/design-tokens.ts
 primary: {
@@ -193,6 +206,7 @@ primary: {
 ```
 
 ### Change Font to Roboto
+
 ```typescript
 // In src/lib/design-tokens.ts
 fontFamily: {
@@ -202,6 +216,7 @@ fontFamily: {
 ```
 
 ### Change Spacing Scale
+
 ```typescript
 // In src/lib/design-tokens.ts
 spacing: {
@@ -247,6 +262,7 @@ When updating existing components to use the design system:
 4. **Use component variants** instead of custom styling
 
 ### Before (hardcoded)
+
 ```tsx
 <div className="bg-blue-500 text-white p-4 rounded-lg shadow-md">
   <h2 className="text-xl font-bold">Title</h2>
@@ -254,6 +270,7 @@ When updating existing components to use the design system:
 ```
 
 ### After (design system)
+
 ```tsx
 <div className="card-elevated p-md">
   <h2 className="text-heading-3">Title</h2>

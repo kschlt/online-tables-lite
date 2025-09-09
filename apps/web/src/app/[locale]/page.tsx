@@ -21,12 +21,12 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<CreateTableResponse | null>(null)
   const [isClient, setIsClient] = useState(false)
-  
+
   const [formData, setFormData] = useState<CreateTableRequest>({
     title: '',
     description: '',
     cols: 3,
-    rows: 5
+    rows: 5,
   })
 
   // Ensure we're on the client side
@@ -36,8 +36,10 @@ export default function Home() {
 
   // Check for success state in URL parameters
   useEffect(() => {
-    if (!isClient) return
-    
+    if (!isClient) {
+      return
+    }
+
     const successData = searchParams.get('success')
     if (successData) {
       try {
@@ -57,7 +59,7 @@ export default function Home() {
     try {
       const response = await createTable(formData)
       setResult(response)
-      
+
       // Store success state in URL parameters
       const successData = encodeURIComponent(JSON.stringify(response))
       const newUrl = `/${locale}?success=${successData}`
@@ -81,22 +83,20 @@ export default function Home() {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
     const adminUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.admin_token}`
     const editUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.edit_token}`
-    
+
     return (
-      <PageLayout
-        title={t('app.title')}
-        description={t('app.description')}
-        maxWidth="xl"
-      >
+      <PageLayout title={t('app.title')} description={t('app.description')} maxWidth="xl">
         <div className="card-elevated p-6">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-6 h-6 text-success" />
-              <h2 className="text-heading-2 text-success">{t('errors.tableCreatedSuccessfully')}</h2>
+              <h2 className="text-heading-2 text-success">
+                {t('errors.tableCreatedSuccessfully')}
+              </h2>
             </div>
             <LanguageSwitcher />
           </div>
-          
+
           <div className="space-y-6">
             <Alert className="status-info">
               <Settings className="h-4 w-4" />
@@ -112,7 +112,7 @@ export default function Home() {
                 </div>
               </AlertDescription>
             </Alert>
-            
+
             <Alert className="status-success">
               <Edit className="h-4 w-4" />
               <AlertDescription>
@@ -127,12 +127,9 @@ export default function Home() {
                 </div>
               </AlertDescription>
             </Alert>
-            
+
             <div className="flex space-x-4">
-              <Button
-                variant="secondary"
-                onClick={resetForm}
-              >
+              <Button variant="secondary" onClick={resetForm}>
                 {t('links.createAnother')}
               </Button>
             </div>
@@ -143,17 +140,13 @@ export default function Home() {
   }
 
   return (
-    <PageLayout
-      title={t('app.title')}
-      description={t('app.description')}
-      maxWidth="xl"
-    >
+    <PageLayout title={t('app.title')} description={t('app.description')} maxWidth="xl">
       <div className="card-elevated p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-heading-2">{t('app.createTable')}</h1>
           <LanguageSwitcher />
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -164,11 +157,11 @@ export default function Home() {
                 type="text"
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder={t('table.title')}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description" className="text-body font-medium">
                 {t('table.description')}
@@ -177,12 +170,12 @@ export default function Home() {
                 type="text"
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder={t('table.description')}
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="cols" className="text-body font-medium">
@@ -194,10 +187,12 @@ export default function Home() {
                 min="1"
                 max="64"
                 value={formData.cols}
-                onChange={(e) => setFormData(prev => ({ ...prev, cols: parseInt(e.target.value) || 1 }))}
+                onChange={e =>
+                  setFormData(prev => ({ ...prev, cols: parseInt(e.target.value) || 1 }))
+                }
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="rows" className="text-body font-medium">
                 {t('table.rows')}
@@ -208,21 +203,17 @@ export default function Home() {
                 min="1"
                 max="500"
                 value={formData.rows}
-                onChange={(e) => setFormData(prev => ({ ...prev, rows: parseInt(e.target.value) || 1 }))}
+                onChange={e =>
+                  setFormData(prev => ({ ...prev, rows: parseInt(e.target.value) || 1 }))
+                }
               />
             </div>
           </div>
-          
-          {error && (
-            <ErrorMessage message={error} />
-          )}
-          
+
+          {error && <ErrorMessage message={error} />}
+
           <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={isCreating}
-              className="btn-primary"
-            >
+            <Button type="submit" disabled={isCreating} className="btn-primary">
               {isCreating ? t('common.loading') : t('app.createTable')}
             </Button>
           </div>

@@ -13,15 +13,16 @@ The language switcher was reconstructing the entire URL path instead of simply r
 ### 🔧 **Solution Implemented:**
 
 #### **1. Simplified URL Replacement**
+
 ```tsx
 const changeLanguage = (newLocale: string) => {
   // Simply replace the current locale with the new one in the pathname
   const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
-  
+
   // Preserve all search parameters
   const searchString = searchParams.toString()
   const fullUrl = searchString ? `${newPathname}?${searchString}` : newPathname
-  
+
   router.push(fullUrl)
 }
 ```
@@ -36,6 +37,7 @@ const changeLanguage = (newLocale: string) => {
 ### 🔗 **URL Examples:**
 
 #### **Before Fix (Complex Reconstruction):**
+
 ```tsx
 // Old approach - manually parsing segments
 const segments = pathname.split('/')
@@ -44,6 +46,7 @@ const newPath = `/${newLocale}${pathWithoutLocale ? `/${pathWithoutLocale}` : ''
 ```
 
 #### **After Fix (Simple Replacement):**
+
 ```tsx
 // New approach - direct replacement
 const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
@@ -52,23 +55,29 @@ const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
 ### 📊 **URL Transformation Examples:**
 
 #### **Success Page URL:**
+
 **Before Language Switch:**
+
 ```
 /en?success=%7B%22slug%22%3A%22Tg14UfhwzSU%22%2C%22admin_token%22%3A%22yJ7PdB2E_IhlyZOGfdD75g9L4jD5jOVfuvAOPoGhIzU%22%2C%22edit_token%22%3A%22wyBj_WjWtMO_7XqBygiJ8u8hrBoP9jAh9g_Nres4-d8%22%7D
 ```
 
 **After Language Switch:**
+
 ```
 /de?success=%7B%22slug%22%3A%22Tg14UfhwzSU%22%2C%22admin_token%22%3A%22yJ7PdB2E_IhlyZOGfdD75g9L4jD5jOVfuvAOPoGhIzU%22%2C%22edit_token%22%3A%22wyBj_WjWtMO_7XqBygiJ8u8hrBoP9jAh9g_Nres4-d8%22%7D
 ```
 
 #### **Table Page URL:**
+
 **Before Language Switch:**
+
 ```
 /en/table/my-table-slug
 ```
 
 **After Language Switch:**
+
 ```
 /de/table/my-table-slug
 ```
@@ -102,6 +111,7 @@ const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
 ### 🔧 **Technical Details:**
 
 **String Replacement Logic:**
+
 ```tsx
 // Input: "/en/table/my-slug"
 // Locale: "en"
@@ -112,6 +122,7 @@ const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
 ```
 
 **Parameter Preservation:**
+
 ```tsx
 // Input: "?success=encoded_data&other=value"
 // Result: "?success=encoded_data&other=value"
@@ -120,6 +131,7 @@ const searchString = searchParams.toString()
 ```
 
 **Final URL Construction:**
+
 ```tsx
 // Pathname: "/de/table/my-slug"
 // Parameters: "?success=encoded_data&other=value"

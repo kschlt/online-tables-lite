@@ -1,8 +1,8 @@
 """Table management endpoints."""
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_table_service
-from app.core.security import verify_token
+from app.core.security import extract_bearer_token, verify_token
 from app.models.table import (
     AddColumnRequest,
     AddRowRequest,
@@ -32,11 +32,11 @@ async def create_table(
 @router.get("/{slug}", response_model=TableResponse)
 async def get_table(
     slug: str,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Get table data with admin or editor token."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
     return await table_service.get_table_with_columns(table["id"])
 
 
@@ -44,11 +44,11 @@ async def get_table(
 async def update_table_config(
     slug: str,
     request: TableConfigRequest,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Update table configuration (admin only)."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
 
     # Only admin can update configuration
     if role != "admin":
@@ -62,11 +62,11 @@ async def update_table_config(
 async def add_rows(
     slug: str,
     request: AddRowRequest,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Add rows to table (admin only)."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
 
     # Only admin can add rows
     if role != "admin":
@@ -80,11 +80,11 @@ async def add_rows(
 async def remove_rows(
     slug: str,
     request: RemoveRowRequest,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Remove rows from table (admin only)."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
 
     # Only admin can remove rows
     if role != "admin":
@@ -98,11 +98,11 @@ async def remove_rows(
 async def add_columns(
     slug: str,
     request: AddColumnRequest,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Add columns to table (admin only)."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
 
     # Only admin can add columns
     if role != "admin":
@@ -116,11 +116,11 @@ async def add_columns(
 async def remove_columns(
     slug: str,
     request: RemoveColumnRequest,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Remove columns from table (admin only)."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
 
     # Only admin can remove columns
     if role != "admin":

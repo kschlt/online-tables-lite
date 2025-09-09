@@ -1,8 +1,8 @@
 """Cell management endpoints."""
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_socketio_server, get_table_service
-from app.core.security import verify_token
+from app.core.security import extract_bearer_token, verify_token
 from app.models.table import CellBatchUpdateRequest
 from app.services.table_service import TableService
 
@@ -16,11 +16,11 @@ sio = None
 async def update_cells(
     slug: str,
     request: CellBatchUpdateRequest,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Batch update cells in a table."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
 
     # Only admin and editor can update cells
     if role not in ["admin", "editor"]:
@@ -39,7 +39,16 @@ async def update_cells(
         "cells": cell_updates
     }, room=room)
 
-    print(f"Emitted cell update to room {room}: {len(cell_updates)} cells")
+    # Log the real-time update
+    import logging
+    logger = logging.getLogger("api.realtime")
+    logger.info("Cell update broadcast", extra={
+        "extra_fields": {
+            "table_id": table["id"],
+            "room": room,
+            "cells_updated": len(cell_updates)
+        }
+    })
 
     return {"success": True, "updated_cells": len(request.cells)}
 
@@ -47,10 +56,10 @@ async def update_cells(
 @router.get("/{slug}/cells")
 async def get_cells(
     slug: str,
-    t: str = Header(..., description="Token", alias="t"),
     table_service: TableService = Depends(get_table_service),
+    authorization: str = Depends(extract_bearer_token),
 ):
     """Get all cell data for a table."""
-    table, role = await verify_token(slug, t)
+    table, role = await verify_token(slug, authorization)
     cells = await table_service.get_cells(table["id"])
     return {"cells": cells}

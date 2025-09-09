@@ -230,7 +230,7 @@ class TableService:
             }
 
         table = table_result.data[0]
-        
+
         # Check if rows are fixed
         if table.get("fixed_rows", False):
             return {
@@ -271,7 +271,7 @@ class TableService:
             }
 
         table = table_result.data[0]
-        
+
         # Check if rows are fixed
         if table.get("fixed_rows", False):
             return {

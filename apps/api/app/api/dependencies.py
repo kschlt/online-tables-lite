@@ -1,12 +1,11 @@
 """Shared API dependencies."""
-from typing import Optional
 
 import socketio
 
 from app.services.table_service import TableService
 
 # Global reference to the socketio server (set by main.py)
-_socketio_server: Optional[socketio.AsyncServer] = None
+_socketio_server: socketio.AsyncServer | None = None
 
 
 def set_socketio_server(server: socketio.AsyncServer) -> None:

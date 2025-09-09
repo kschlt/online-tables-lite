@@ -19,28 +19,28 @@
     --color-warning-light: hsl(38 92% 95%);
     --color-error: hsl(0 84% 60%);
     --color-error-light: hsl(0 84% 95%);
-    
+
     /* Font families */
     --font-family-sans: 'Inter', system-ui, sans-serif;
     --font-family-mono: 'JetBrains Mono', Consolas, monospace;
-    
+
     /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
-    
+
     /* Border radius */
     --radius-sm: 0.125rem;
     --radius-md: 0.375rem;
     --radius-lg: 0.5rem;
-    
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    
+
     /* Shadcn/UI compatibility */
     --background: 0 0% 100%;
     --foreground: 0 0% 9%;
@@ -95,88 +95,89 @@
   * {
     font-family: var(--font-family-sans);
   }
-  
-  code, pre {
+
+  code,
+  pre {
     font-family: var(--font-family-mono);
   }
 }
 
 @layer components {
   /* Design system component classes */
-  
+
   /* Button variants using design tokens */
   .btn-primary {
     @apply bg-primary text-primary-foreground hover:bg-primary-hover;
     background-color: var(--color-primary);
     color: white;
   }
-  
+
   .btn-primary:hover {
     background-color: var(--color-primary-hover);
   }
-  
+
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground hover:bg-secondary-hover;
     background-color: var(--color-secondary);
     color: hsl(0 0% 9%);
   }
-  
+
   .btn-secondary:hover {
     background-color: var(--color-secondary-hover);
   }
-  
+
   .btn-success {
     background-color: var(--color-success);
     color: white;
   }
-  
+
   .btn-success:hover {
     opacity: 0.9;
   }
-  
+
   .btn-warning {
     background-color: var(--color-warning);
     color: white;
   }
-  
+
   .btn-warning:hover {
     opacity: 0.9;
   }
-  
+
   .btn-error {
     background-color: var(--color-error);
     color: white;
   }
-  
+
   .btn-error:hover {
     opacity: 0.9;
   }
-  
+
   /* Status indicators using design tokens */
   .status-success {
     background-color: var(--color-success-light);
     color: var(--color-success);
     border: 1px solid hsl(142 76% 80%);
   }
-  
+
   .status-warning {
     background-color: var(--color-warning-light);
     color: var(--color-warning);
     border: 1px solid hsl(38 92% 80%);
   }
-  
+
   .status-error {
     background-color: var(--color-error-light);
     color: var(--color-error);
     border: 1px solid hsl(0 84% 80%);
   }
-  
+
   .status-info {
     background-color: var(--color-primary-light);
     color: var(--color-primary);
     border: 1px solid hsl(214 100% 80%);
   }
-  
+
   /* Card variants using design tokens */
   .card-elevated {
     background-color: white;
@@ -184,13 +185,13 @@
     box-shadow: var(--shadow-md);
     border-radius: var(--radius-lg);
   }
-  
+
   .card-flat {
     background-color: white;
     border: 1px solid hsl(0 0% 90%);
     border-radius: var(--radius-lg);
   }
-  
+
   /* Typography using design tokens */
   .text-heading-1 {
     font-size: 2.25rem;
@@ -198,35 +199,35 @@
     line-height: 1.2;
     color: hsl(0 0% 9%);
   }
-  
+
   .text-heading-2 {
     font-size: 1.875rem;
     font-weight: 600;
     line-height: 1.3;
     color: hsl(0 0% 9%);
   }
-  
+
   .text-heading-3 {
     font-size: 1.5rem;
     font-weight: 600;
     line-height: 1.4;
     color: hsl(0 0% 9%);
   }
-  
+
   .text-body {
     font-size: 1rem;
     font-weight: 400;
     line-height: 1.5;
     color: hsl(0 0% 9%);
   }
-  
+
   .text-body-sm {
     font-size: 0.875rem;
     font-weight: 400;
     line-height: 1.5;
     color: hsl(0 0% 45%);
   }
-  
+
   .text-caption {
     font-size: 0.75rem;
     font-weight: 400;

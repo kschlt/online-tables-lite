@@ -1,5 +1,4 @@
 """Table-related Pydantic models."""
-from typing import Optional, Literal
 from enum import Enum
 
 from pydantic import BaseModel
@@ -14,8 +13,8 @@ class ColumnFormat(str, Enum):
 class CreateTableRequest(BaseModel):
     """Request model for creating a new table."""
 
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
     cols: int = 4
     rows: int = 10
 
@@ -32,8 +31,8 @@ class TableColumn(BaseModel):
     """Table column model."""
 
     idx: int
-    header: Optional[str]
-    width: Optional[int]
+    header: str | None
+    width: int | None
     format: ColumnFormat = ColumnFormat.TEXT
 
 
@@ -42,7 +41,7 @@ class CellData(BaseModel):
 
     row: int
     col: int
-    value: Optional[str]
+    value: str | None
 
 
 class TableResponse(BaseModel):
@@ -50,8 +49,8 @@ class TableResponse(BaseModel):
 
     id: str
     slug: str
-    title: Optional[str]
-    description: Optional[str]
+    title: str | None
+    description: str | None
     cols: int
     rows: int
     fixed_rows: bool = False
@@ -64,7 +63,7 @@ class CellUpdateRequest(BaseModel):
 
     row: int
     col: int
-    value: Optional[str] = None
+    value: str | None = None
 
 
 class CellBatchUpdateRequest(BaseModel):
@@ -77,19 +76,19 @@ class ColumnConfigUpdate(BaseModel):
     """Request model for updating column configuration."""
 
     idx: int
-    header: Optional[str] = None
-    width: Optional[int] = None
-    format: Optional[ColumnFormat] = None
+    header: str | None = None
+    width: int | None = None
+    format: ColumnFormat | None = None
 
 
 class TableConfigRequest(BaseModel):
     """Request model for updating table configuration."""
 
-    title: Optional[str] = None
-    description: Optional[str] = None
-    rows: Optional[int] = None
-    fixed_rows: Optional[bool] = None
-    columns: Optional[list[ColumnConfigUpdate]] = None
+    title: str | None = None
+    description: str | None = None
+    rows: int | None = None
+    fixed_rows: bool | None = None
+    columns: list[ColumnConfigUpdate] | None = None
 
 
 class TableConfigResponse(BaseModel):
@@ -116,7 +115,7 @@ class AddColumnRequest(BaseModel):
     """Request model for adding columns to a table."""
 
     count: int = 1
-    header: Optional[str] = None
+    header: str | None = None
 
 
 class RemoveColumnRequest(BaseModel):
@@ -130,5 +129,5 @@ class RowColumnResponse(BaseModel):
 
     success: bool
     message: str
-    new_rows: Optional[int] = None
-    new_cols: Optional[int] = None
+    new_rows: int | None = None
+    new_cols: int | None = None

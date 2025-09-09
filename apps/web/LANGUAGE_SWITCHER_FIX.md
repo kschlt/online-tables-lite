@@ -13,6 +13,7 @@ When users created a table in English and then switched to German on the success
 ### 🔧 **Solution Implemented:**
 
 #### **1. Added useSearchParams Hook**
+
 ```tsx
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
@@ -20,19 +21,20 @@ const searchParams = useSearchParams()
 ```
 
 #### **2. Preserve All URL Parameters**
+
 ```tsx
 const changeLanguage = (newLocale: string) => {
   // Get the path without the current locale prefix
   const segments = pathname.split('/')
   const pathWithoutLocale = segments.slice(2).join('/')
-  
+
   // Construct the new path
   const newPath = `/${newLocale}${pathWithoutLocale ? `/${pathWithoutLocale}` : ''}`
-  
+
   // Preserve all search parameters (including success state)
   const searchString = searchParams.toString()
   const fullUrl = searchString ? `${newPath}?${searchString}` : newPath
-  
+
   router.push(fullUrl)
 }
 ```
@@ -47,6 +49,7 @@ const changeLanguage = (newLocale: string) => {
 ### 🌍 **User Experience:**
 
 #### **Before Fix:**
+
 1. User creates table in English ✅
 2. Success page shows with admin/editor links ✅
 3. User switches to German ❌
@@ -54,6 +57,7 @@ const changeLanguage = (newLocale: string) => {
 5. Links are lost ❌
 
 #### **After Fix:**
+
 1. User creates table in English ✅
 2. Success page shows with admin/editor links ✅
 3. User switches to German ✅
@@ -63,11 +67,13 @@ const changeLanguage = (newLocale: string) => {
 ### 🔗 **URL Structure:**
 
 **Before Language Switch:**
+
 ```
 /en?success=%7B%22slug%22%3A%22Tg14UfhwzSU%22%2C%22admin_token%22%3A%22yJ7PdB2E_IhlyZOGfdD75g9L4jD5jOVfuvAOPoGhIzU%22%2C%22edit_token%22%3A%22wyBj_WjWtMO_7XqBygiJ8u8hrBoP9jAh9g_Nres4-d8%22%7D
 ```
 
 **After Language Switch:**
+
 ```
 /de?success=%7B%22slug%22%3A%22Tg14UfhwzSU%22%2C%22admin_token%22%3A%22yJ7PdB2E_IhlyZOGfdD75g9L4jD5jOVfuvAOPoGhIzU%22%2C%22edit_token%22%3A%22wyBj_WjWtMO_7XqBygiJ8u8hrBoP9jAh9g_Nres4-d8%22%7D
 ```
@@ -89,7 +95,7 @@ const changeLanguage = (newLocale: string) => {
 ### 🧪 **Testing Scenarios:**
 
 - ✅ Create table in English, switch to German
-- ✅ Create table in German, switch to English  
+- ✅ Create table in German, switch to English
 - ✅ Switch languages multiple times
 - ✅ Refresh page after language switch
 - ✅ Share success URL in different language
@@ -98,6 +104,7 @@ const changeLanguage = (newLocale: string) => {
 ### 🔧 **Technical Details:**
 
 **Parameter Preservation Logic:**
+
 ```tsx
 // Get all current URL parameters
 const searchString = searchParams.toString()
@@ -107,6 +114,7 @@ const fullUrl = searchString ? `${newPath}?${searchString}` : newPath
 ```
 
 **URL Structure:**
+
 - **Path:** `/{locale}/{pathWithoutLocale}`
 - **Parameters:** All existing query parameters preserved
 - **Result:** `/{newLocale}/{pathWithoutLocale}?{preservedParams}`

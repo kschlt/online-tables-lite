@@ -22,6 +22,7 @@ The hydration errors were caused by **server-side rendering (SSR) mismatches**:
 ### 🔧 **Solution Implemented:**
 
 #### **1. Client-Side Hydration Guard**
+
 ```tsx
 const [isClient, setIsClient] = useState(false)
 
@@ -31,6 +32,7 @@ useEffect(() => {
 ```
 
 #### **2. Conditional Rendering**
+
 ```tsx
 // Don't render success state until client-side hydration is complete
 if (result && isClient) {
@@ -40,16 +42,18 @@ if (result && isClient) {
 ```
 
 #### **3. Safe Window Access**
+
 ```tsx
 const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 const adminUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.admin_token}`
 ```
 
 #### **4. Client-Side Only Effects**
+
 ```tsx
 useEffect(() => {
   if (!isClient) return // Only run on client side
-  
+
   const successData = searchParams.get('success')
   if (successData) {
     // ... parse and set result
@@ -67,6 +71,7 @@ useEffect(() => {
 ### 📊 **Before vs After:**
 
 #### **Before Fix:**
+
 - ❌ Server renders form state
 - ❌ Client tries to render success state with `window.location.origin`
 - ❌ Hydration mismatch occurs
@@ -75,6 +80,7 @@ useEffect(() => {
 - ❌ Application crashes
 
 #### **After Fix:**
+
 - ✅ Server renders form state
 - ✅ Client renders form state initially
 - ✅ Client-side hydration completes
@@ -110,6 +116,7 @@ useEffect(() => {
 ### 🔧 **Technical Details:**
 
 **Hydration Process:**
+
 1. Server renders HTML with form state
 2. Client receives HTML and JavaScript
 3. React hydrates the component
@@ -117,11 +124,13 @@ useEffect(() => {
 5. Success state can now render safely
 
 **Window Access Pattern:**
+
 ```tsx
 const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 ```
 
 **Client-Side Effect Pattern:**
+
 ```tsx
 useEffect(() => {
   if (!isClient) return

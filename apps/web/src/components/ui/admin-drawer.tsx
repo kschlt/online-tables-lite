@@ -65,7 +65,9 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
       // Columns to remove (only if not fixed rows)
       const columnsToRemove = tableData.columns.filter(col => !newColumnIdxs.has(col.idx))
       if (columnsToRemove.length > 0) {
-        const response = await api.removeColumns(tableData.slug, token, { count: columnsToRemove.length })
+        const response = await api.removeColumns(tableData.slug, token, {
+          count: columnsToRemove.length,
+        })
         if (!response.success) {
           setError(response.message)
           return
@@ -100,7 +102,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
       setError(t('admin.maxColumnsReached'))
       return
     }
-    
+
     const newIdx = Math.max(...columnConfigs.map(c => c.idx), -1) + 1
     setColumnConfigs(prev => [
       ...prev,
@@ -109,7 +111,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
         header: t('table.columnNumber', { number: newIdx + 1 }),
         width: null,
         format: 'text' as ColumnFormat,
-      }
+      },
     ])
   }
 
@@ -118,16 +120,12 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
       setError(t('admin.minColumnsReached'))
       return
     }
-    
+
     setColumnConfigs(prev => prev.filter(col => col.idx !== idx))
   }
 
   const updateColumnConfig = (idx: number, updates: Partial<ColumnConfigUpdate>) => {
-    setColumnConfigs(prev => 
-      prev.map(col => 
-        col.idx === idx ? { ...col, ...updates } : col
-      )
-    )
+    setColumnConfigs(prev => prev.map(col => (col.idx === idx ? { ...col, ...updates } : col)))
   }
 
   return (
@@ -155,24 +153,28 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
           {/* Table Settings */}
           <div className="space-y-4">
             <h3 className="text-heading-3">{t('admin.basicSettings')}</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-body font-medium">{t('admin.tableTitle')}</Label>
+                <Label htmlFor="title" className="text-body font-medium">
+                  {t('admin.tableTitle')}
+                </Label>
                 <Input
                   id="title"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={e => setTitle(e.target.value)}
                   placeholder={t('admin.tableTitlePlaceholder')}
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-body font-medium">{t('admin.tableDescription')}</Label>
+                <Label htmlFor="description" className="text-body font-medium">
+                  {t('admin.tableDescription')}
+                </Label>
                 <Input
                   id="description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={e => setDescription(e.target.value)}
                   placeholder={t('admin.tableDescriptionPlaceholder')}
                 />
               </div>
@@ -184,22 +186,26 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                   type="checkbox"
                   id="fixedRows"
                   checked={fixedRows}
-                  onChange={(e) => setFixedRows(e.target.checked)}
+                  onChange={e => setFixedRows(e.target.checked)}
                   className="rounded border-border"
                 />
-                <Label htmlFor="fixedRows" className="text-body font-medium">{t('admin.fixedRows')}</Label>
+                <Label htmlFor="fixedRows" className="text-body font-medium">
+                  {t('admin.fixedRows')}
+                </Label>
               </div>
-              
+
               {fixedRows && (
                 <div className="flex items-center space-x-2">
-                  <Label htmlFor="rows" className="text-body font-medium">{t('admin.numberOfRows')}</Label>
+                  <Label htmlFor="rows" className="text-body font-medium">
+                    {t('admin.numberOfRows')}
+                  </Label>
                   <Input
                     id="rows"
                     type="number"
                     min="1"
                     max="1000"
                     value={rows}
-                    onChange={(e) => setRows(parseInt(e.target.value) || 1)}
+                    onChange={e => setRows(parseInt(e.target.value) || 1)}
                     className="w-20"
                   />
                 </div>
@@ -223,42 +229,55 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
             </div>
 
             <div className="space-y-3">
-              {columnConfigs.map((column) => (
-                <div key={column.idx} className="flex items-center space-x-3 p-3 border border-border rounded-lg card-flat">
+              {columnConfigs.map(column => (
+                <div
+                  key={column.idx}
+                  className="flex items-center space-x-3 p-3 border border-border rounded-lg card-flat"
+                >
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor={`header-${column.idx}`} className="text-body font-medium">{t('admin.columnHeader')}</Label>
+                      <Label htmlFor={`header-${column.idx}`} className="text-body font-medium">
+                        {t('admin.columnHeader')}
+                      </Label>
                       <Input
                         id={`header-${column.idx}`}
                         value={column.header || ''}
-                        onChange={(e) => updateColumnConfig(column.idx, { header: e.target.value })}
+                        onChange={e => updateColumnConfig(column.idx, { header: e.target.value })}
                         placeholder={t('table.columnNumber', { number: column.idx + 1 })}
                       />
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor={`width-${column.idx}`} className="text-body font-medium">{t('admin.columnWidth')}</Label>
+                      <Label htmlFor={`width-${column.idx}`} className="text-body font-medium">
+                        {t('admin.columnWidth')}
+                      </Label>
                       <Input
                         id={`width-${column.idx}`}
                         type="number"
                         min="80"
                         max="500"
                         value={column.width || ''}
-                        onChange={(e) => updateColumnConfig(column.idx, { 
-                          width: e.target.value ? parseInt(e.target.value) : null 
-                        })}
+                        onChange={e =>
+                          updateColumnConfig(column.idx, {
+                            width: e.target.value ? parseInt(e.target.value) : null,
+                          })
+                        }
                         placeholder="120"
                       />
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor={`format-${column.idx}`} className="text-body font-medium">{t('admin.columnFormat')}</Label>
+                      <Label htmlFor={`format-${column.idx}`} className="text-body font-medium">
+                        {t('admin.columnFormat')}
+                      </Label>
                       <select
                         id={`format-${column.idx}`}
-                        value={column.format || "text"}
-                        onChange={(e) => updateColumnConfig(column.idx, { 
-                          format: e.target.value as ColumnFormat 
-                        })}
+                        value={column.format || 'text'}
+                        onChange={e =>
+                          updateColumnConfig(column.idx, {
+                            format: e.target.value as ColumnFormat,
+                          })
+                        }
                         className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       >
                         <option value="text">{t('admin.formatText')}</option>
@@ -266,7 +285,7 @@ export function AdminDrawer({ tableData, token, isOpen, onClose, onUpdate }: Adm
                       </select>
                     </div>
                   </div>
-                  
+
                   <Button
                     type="button"
                     variant="destructive"

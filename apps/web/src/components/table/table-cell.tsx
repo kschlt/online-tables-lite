@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { CellData, ColumnFormat } from '@/types'
-import { getTodayDate, formatDateForDisplay, isToday, getRelativeDateDescription, parseDate } from '@/lib/date-utils'
+import {
+  getTodayDate,
+  formatDateForDisplay,
+  isToday,
+  getRelativeDateDescription,
+  parseDate,
+} from '@/lib/date-utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -51,11 +57,11 @@ export function TableCell({
 
   const handleBlur = useCallback(() => {
     setIsEditing(false)
-    
+
     // Only save if value changed
     if (localValue !== (value || '')) {
       let valueToSave = localValue || null
-      
+
       // For date columns, try to normalize the date format
       if (isDateFormat && localValue) {
         const parsedDate = parseDate(localValue)
@@ -64,7 +70,7 @@ export function TableCell({
           setLocalValue(parsedDate) // Update local state with normalized format
         }
       }
-      
+
       onCellChange(row, col, valueToSave)
     }
   }, [localValue, value, row, col, onCellChange, isDateFormat])
@@ -78,13 +84,16 @@ export function TableCell({
   // Format display value for date columns
   const displayValue = isDateFormat && localValue ? formatDateForDisplay(localValue) : localValue
   const isValueToday = isDateFormat && localValue ? isToday(localValue) : false
-  const relativeDateDesc = isDateFormat && localValue ? getRelativeDateDescription(localValue) : null
+  const relativeDateDesc =
+    isDateFormat && localValue ? getRelativeDateDescription(localValue) : null
 
   if (isReadonly) {
     return (
-      <div className={`border border-border p-3 min-h-[48px] flex items-center ${
-        isDateFormat ? 'bg-primary-light' : 'bg-muted'
-      }`}>
+      <div
+        className={`border border-border p-3 min-h-[48px] flex items-center ${
+          isDateFormat ? 'bg-primary-light' : 'bg-muted'
+        }`}
+      >
         <span className={`text-muted-foreground ${isValueToday ? 'font-medium text-primary' : ''}`}>
           {displayValue}
         </span>
@@ -102,17 +111,19 @@ export function TableCell({
       <Input
         type="text"
         value={localValue}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={e => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        className={`w-full min-h-[48px] ${
-          isDateFormat ? 'bg-primary-light' : ''
-        } ${
-          isEditing ? 'bg-primary-light ring-2 ring-primary/20' : isDateFormat ? 'hover:bg-primary-light' : ''
+        className={`w-full min-h-[48px] ${isDateFormat ? 'bg-primary-light' : ''} ${
+          isEditing
+            ? 'bg-primary-light ring-2 ring-primary/20'
+            : isDateFormat
+              ? 'hover:bg-primary-light'
+              : ''
         } ${isValueToday && !isEditing ? 'font-medium text-primary' : ''}`}
         placeholder={isDateFormat ? t('table.dateFormat') : ''}
       />
-      
+
       {/* Today date helper button */}
       {isDateFormat && isEditing && (
         <Button
@@ -126,7 +137,7 @@ export function TableCell({
           {t('table.today')}
         </Button>
       )}
-      
+
       {/* Relative date indicator when not editing */}
       {isDateFormat && !isEditing && relativeDateDesc && (
         <Badge variant="secondary" className="absolute right-1 top-1 text-xs">

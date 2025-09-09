@@ -24,7 +24,7 @@ export function useSocket({ tableId, onCellUpdate }: UseSocketProps) {
 
     // Create Socket.IO connection
     const socket = io(API_BASE_URL, {
-      transports: ["websocket", "polling"],
+      transports: ['websocket', 'polling'],
       forceNew: true,
       upgrade: true,
       rememberUpgrade: false,

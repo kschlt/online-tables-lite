@@ -16,6 +16,42 @@ class Settings(BaseModel):
 
     # CORS
     cors_origin: str = os.getenv("CORS_ORIGIN", "http://localhost:3000")
+    environment: str = os.getenv("ENVIRONMENT", "development")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Get CORS origins based on environment."""
+        origins = [self.cors_origin]
+
+        # Handle trailing slash variations
+        if self.cors_origin.endswith("/"):
+            origins.append(self.cors_origin.rstrip("/"))
+        else:
+            origins.append(self.cors_origin + "/")
+
+        # Add development origins only in development
+        if self.environment == "development":
+            origins.extend([
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:3002",
+            ])
+
+        return origins
+
+    @property
+    def trusted_hosts(self) -> list[str]:
+        """Get trusted hosts based on environment."""
+        if self.environment == "production":
+            # Production hosts - customize for your deployment
+            return [
+                "your-app.fly.dev",  # Fly.io app domain
+                "your-domain.com",   # Custom domain
+                "*.vercel.app",      # Vercel preview domains
+            ]
+        else:
+            # Development - allow localhost and test hosts
+            return ["localhost", "127.0.0.1", "0.0.0.0", "testserver"]
 
     # Table limits
     table_row_limit: int = int(os.getenv("TABLE_ROW_LIMIT", "500"))

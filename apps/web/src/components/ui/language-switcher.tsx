@@ -27,24 +27,24 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
   const changeLanguage = (newLocale: string) => {
     console.log('changeLanguage called with:', newLocale)
     console.log('Current pathname:', pathname)
-    
+
     // Get current locale from pathname instead of useLocale hook
     const currentLocale = pathname.startsWith('/de') ? 'de' : 'en'
     console.log('Current locale from pathname:', currentLocale)
-    
+
     if (newLocale === currentLocale) {
       console.log('Same locale, returning early')
       return
     }
-    
+
     setIsChanging(true)
-    
+
     try {
       console.log('Starting language change...')
-      
+
       // Get the path without the current locale
       let pathWithoutLocale = pathname
-  
+
       // Remove the current locale from the beginning of the path
       if (pathname.startsWith(`/${currentLocale}/`)) {
         // Pattern: /en/some/path -> /some/path
@@ -59,30 +59,29 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
         // Fallback: try to remove locale from path
         pathWithoutLocale = pathname.replace(`/${currentLocale}`, '')
       }
-  
+
       // Ensure pathWithoutLocale starts with /
       if (!pathWithoutLocale.startsWith('/')) {
         pathWithoutLocale = '/' + pathWithoutLocale
       }
-  
+
       // Create new path with new locale
       const newPathname = `/${newLocale}${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
-      
+
       // Preserve search parameters
       const searchString = searchParams.toString()
       const fullUrl = searchString ? `${newPathname}?${searchString}` : newPathname
-      
-      console.log('Language change:', { 
-        from: currentLocale, 
-        to: newLocale, 
-        originalPath: pathname, 
-        pathWithoutLocale, 
-        newPathname, 
-        fullUrl 
+
+      console.log('Language change:', {
+        from: currentLocale,
+        to: newLocale,
+        originalPath: pathname,
+        pathWithoutLocale,
+        newPathname,
+        fullUrl,
       })
-      
+
       router.push(fullUrl)
-      
     } catch (error) {
       console.error('Failed to change language:', error)
       setIsChanging(false)

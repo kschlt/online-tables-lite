@@ -40,7 +40,7 @@ async function apiRequest<T>(endpoint: string, options: ApiRequestOptions = {}):
   const headers = new Headers(fetchOptions.headers)
 
   if (token) {
-    headers.set('t', token)
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   if (!headers.has('Content-Type') && fetchOptions.method !== 'GET') {
