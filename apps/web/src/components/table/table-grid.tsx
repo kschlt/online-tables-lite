@@ -189,12 +189,8 @@ export function TableGrid({ tableData }: TableGridProps) {
                   return cellValue && nextUpcomingDate && isNextUpcomingDate(cellValue, dateValues)
                 })
 
-
                 return (
-                  <TableRow
-                    key={rowIndex}
-                    className="border-b border-gray-200 hover:bg-muted/50"
-                  >
+                  <TableRow key={rowIndex} className="border-b border-gray-200 hover:bg-muted/50">
                     {localTableData.columns.map((column, colIndex) => (
                       <ShadcnTableCell
                         key={`${rowIndex}-${column.idx}`}

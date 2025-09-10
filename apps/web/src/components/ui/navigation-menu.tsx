@@ -3,13 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DropdownLanguageSwitcher } from '@/components/ui/dropdown-language-switcher'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,12 +34,10 @@ export function NavigationMenu({ className }: NavigationMenuProps) {
           <SheetHeader className="sr-only">
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
-          
+
           <div className="mt-12 space-y-4">
             {/* Future menu items can go here */}
-            <div className="text-sm text-muted-foreground">
-              More menu options coming soon...
-            </div>
+            <div className="text-sm text-muted-foreground">More menu options coming soon...</div>
           </div>
         </SheetContent>
       </Sheet>

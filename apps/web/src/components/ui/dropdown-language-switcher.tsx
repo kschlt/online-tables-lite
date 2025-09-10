@@ -84,9 +84,9 @@ export function DropdownLanguageSwitcher({ className = '' }: DropdownLanguageSwi
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className={cn('h-9 w-9', className)}
           aria-label="Change language"
         >
@@ -94,7 +94,7 @@ export function DropdownLanguageSwitcher({ className = '' }: DropdownLanguageSwi
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-32">
-        {languages.map((language) => (
+        {languages.map(language => (
           <DropdownMenuItem
             key={language.code}
             onClick={() => changeLanguage(language.code)}
@@ -102,9 +102,7 @@ export function DropdownLanguageSwitcher({ className = '' }: DropdownLanguageSwi
             className="flex items-center justify-between px-3 py-2"
           >
             <span className="font-medium">{language.label}</span>
-            {currentLocale === language.code && (
-              <Check className="h-4 w-4" />
-            )}
+            {currentLocale === language.code && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

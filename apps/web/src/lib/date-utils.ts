@@ -6,7 +6,11 @@ export type ColumnFormat = 'text' | 'date' | 'timerange'
  * Format a date string for display in the UI
  * Handles both single dates and timerange formats based on column format
  */
-export function formatDateForDisplay(value: string, locale: string = 'en', columnFormat?: ColumnFormat): string {
+export function formatDateForDisplay(
+  value: string,
+  locale: string = 'en',
+  columnFormat?: ColumnFormat
+): string {
   if (!value) {
     return ''
   }
@@ -188,7 +192,6 @@ export function findNextUpcomingDate(dates: string[]): string | null {
     .map(dateStr => new Date(dateStr!))
     .filter(date => !isNaN(date.getTime()) && date >= today)
     .sort((a, b) => a.getTime() - b.getTime())
-
 
   return validDates.length > 0 ? validDates[0].toISOString().split('T')[0] : null
 }
