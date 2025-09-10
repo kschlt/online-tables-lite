@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
 # AI-Era Branch Protection
 current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -19,9 +18,10 @@ if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
         echo "   git commit -m 'your changes'"
         echo "   git checkout main && git merge feature/your-change"
         echo ""
+        echo "🛡️  This prevents accidental direct commits to protected branches."
         exit 1
     fi
+else
+    echo "✅ Committing to feature branch: $current_branch"
+    echo "🔍 AI protection: ACTIVE"
 fi
-
-echo "✅ Committing to feature branch: $current_branch"
-echo "🔍 AI protection: ACTIVE"
