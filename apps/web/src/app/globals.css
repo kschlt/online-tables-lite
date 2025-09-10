@@ -262,6 +262,23 @@
   .bg-date-column:hover {
     background-color: hsl(142 76% 90%);
   }
+
+  /* Next upcoming date highlighting - applied to first cell */
+  .next-date-cell {
+    position: relative;
+  }
+
+  .next-date-cell::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: hsl(var(--primary));
+    z-index: 10;
+    pointer-events: none;
+  }
 }
 
 /* Safe area insets for mobile devices */

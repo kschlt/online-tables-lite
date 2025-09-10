@@ -4,15 +4,56 @@ export type ColumnFormat = 'text' | 'date' | 'timerange'
 
 /**
  * Format a date string for display in the UI
- * Handles both single dates and timerange formats
+ * Handles both single dates and timerange formats based on column format
  */
-export function formatDateForDisplay(value: string, locale: string = 'en'): string {
+export function formatDateForDisplay(value: string, locale: string = 'en', columnFormat?: ColumnFormat): string {
   if (!value) {
     return ''
   }
 
   try {
-    // Check if it's a timerange format
+    // For date columns, only show date (no time)
+    if (columnFormat === 'date') {
+      const date = new Date(value)
+      if (isNaN(date.getTime())) {
+        return value // Return original if not a valid date
+      }
+
+      return date.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    }
+
+    // For timerange columns, check if it's a timerange format
+    if (columnFormat === 'timerange') {
+      const dateRange = parseDateRange(value)
+      if (dateRange) {
+        const startDate = new Date(dateRange.start)
+        const endDate = new Date(dateRange.end)
+
+        const startFormatted = startDate.toLocaleDateString(locale, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+
+        const endFormatted = endDate.toLocaleDateString(locale, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+
+        return `${startFormatted} - ${endFormatted}`
+      }
+    }
+
+    // Fallback: try to parse as timerange first (for backward compatibility)
     const dateRange = parseDateRange(value)
     if (dateRange) {
       const startDate = new Date(dateRange.start)
@@ -97,24 +138,69 @@ export function getTomorrowISO(): string {
 }
 
 /**
+ * Extract date from a value, handling both date and timerange formats
+ */
+export function extractDateFromValue(value: string): string | null {
+  if (!value) {
+    return null
+  }
+
+  try {
+    // Check if it's a timerange format (pipe-separated)
+    if (value.includes('|')) {
+      const [startDate] = value.split('|')
+      const date = new Date(startDate.trim())
+      if (isNaN(date.getTime())) {
+        return null
+      }
+      return date.toISOString().split('T')[0]
+    }
+
+    // Check if it's a timerange format with embedded time range
+    const timeRangeMatch = value.match(/^(.+T\d{2}:\d{2}:\d{2})(?:\.000Z)?-(\d{2}):(\d{2})$/)
+    if (timeRangeMatch) {
+      const [, startPart] = timeRangeMatch
+      const startDate = new Date(startPart.includes('.000Z') ? startPart : startPart + '.000Z')
+      return startDate.toISOString().split('T')[0]
+    }
+
+    // Single date format
+    const date = new Date(value)
+    if (isNaN(date.getTime())) {
+      return null
+    }
+
+    return date.toISOString().split('T')[0]
+  } catch {
+    return null
+  }
+}
+
+/**
  * Find the next upcoming date from a list of dates
+ * Now handles both date and timerange formats
  */
 export function findNextUpcomingDate(dates: string[]): string | null {
   const today = new Date()
   const validDates = dates
-    .map(dateStr => new Date(dateStr))
+    .map(dateStr => extractDateFromValue(dateStr))
+    .filter(dateStr => dateStr !== null)
+    .map(dateStr => new Date(dateStr!))
     .filter(date => !isNaN(date.getTime()) && date >= today)
     .sort((a, b) => a.getTime() - b.getTime())
+
 
   return validDates.length > 0 ? validDates[0].toISOString().split('T')[0] : null
 }
 
 /**
  * Check if a date is the next upcoming date
+ * Now handles both date and timerange formats
  */
 export function isNextUpcomingDate(dateStr: string, allDates: string[]): boolean {
   const nextUpcoming = findNextUpcomingDate(allDates)
-  return nextUpcoming === dateStr
+  const extractedDate = extractDateFromValue(dateStr)
+  return nextUpcoming === extractedDate
 }
 
 /**
