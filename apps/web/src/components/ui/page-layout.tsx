@@ -4,12 +4,10 @@
 
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { NavigationMenu } from '@/components/ui/navigation-menu'
 
 interface PageLayoutProps {
   children: ReactNode
-  title?: string
-  description?: string
+  header?: ReactNode
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   className?: string
 }
@@ -24,28 +22,20 @@ const maxWidthClasses = {
 
 export function PageLayout({
   children,
-  title,
-  description,
+  header,
   maxWidth = 'lg',
   className = '',
 }: PageLayoutProps) {
   return (
-    <main className={cn('min-h-screen bg-background p-4', className)}>
+    <main className={cn('min-h-screen bg-background', className)}>
       <div className={cn('mx-auto', maxWidthClasses[maxWidth])}>
-        {/* Global Navigation */}
-        <div className="flex justify-end mb-4">
-          <NavigationMenu />
+        {/* Optional Header */}
+        {header}
+        
+        {/* Content Section */}
+        <div className="px-4 py-4">
+          {children}
         </div>
-
-        {(title || description) && (
-          <div className="mb-6 space-y-2">
-            {title && (
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-            )}
-            {description && <p className="text-muted-foreground">{description}</p>}
-          </div>
-        )}
-        {children}
       </div>
     </main>
   )

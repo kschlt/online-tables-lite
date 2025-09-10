@@ -19,15 +19,15 @@ export function NavigationMenu({ className }: NavigationMenuProps) {
 
   return (
     <div className={cn('relative', className)}>
-      {/* Hamburger Button */}
+      {/* Hamburger Button with proper sizing */}
       <Button
         variant="ghost"
         size="sm"
         onClick={toggleMenu}
-        className="p-2"
+        className="h-12 w-12 md:h-14 md:w-14 p-0 flex items-center justify-center"
         aria-label="Open navigation menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-6 w-6 md:h-7 md:w-7" />
       </Button>
 
       {/* Menu Overlay */}
@@ -44,7 +44,7 @@ export function NavigationMenu({ className }: NavigationMenuProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="p-2"
+                className="h-8 w-8 p-0 flex items-center justify-center"
                 aria-label="Close navigation menu"
               >
                 <X className="h-4 w-4" />
@@ -54,7 +54,7 @@ export function NavigationMenu({ className }: NavigationMenuProps) {
             {/* Menu Content */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Language</h3>
+                <h3 className="text-body-sm font-medium text-muted-foreground mb-2">Language</h3>
                 <LanguageSwitcher />
               </div>
             </div>
