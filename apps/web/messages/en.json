@@ -4,6 +4,7 @@
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
+    "clear": "Clear",
     "error": "Error",
     "connecting": "Attempting to reconnect...",
     "unsavedChanges": "Unsaved changes",
@@ -89,6 +90,9 @@
     "disconnected": "Disconnected",
     "unsavedChanges": "Unsaved changes",
     "updatingStructure": "Updating table structure..."
+  },
+  "validation": {
+    "selectStartAndEndTimes": "Please select start and end times."
   },
   "links": {
     "adminTitle": "Admin Link (Configure Table)",

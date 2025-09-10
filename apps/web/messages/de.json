@@ -4,6 +4,7 @@
     "saving": "Speichert...",
     "save": "Speichern",
     "cancel": "Abbrechen",
+    "clear": "Leeren",
     "error": "Fehler",
     "connecting": "Versuche erneut zu verbinden...",
     "unsavedChanges": "Ungespeicherte Änderungen",
@@ -85,6 +86,9 @@
     "disconnected": "Getrennt",
     "unsavedChanges": "Ungespeicherte Änderungen",
     "updatingStructure": "Tabellenstruktur wird aktualisiert..."
+  },
+  "validation": {
+    "selectStartAndEndTimes": "Bitte Start- und Endzeit auswählen."
   },
   "links": {
     "adminTitle": "Admin-Link (Tabelle konfigurieren)",
