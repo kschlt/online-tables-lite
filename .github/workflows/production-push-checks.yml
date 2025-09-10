@@ -1,0 +1,83 @@
+name: Production Push Validation
+
+on:
+  push:
+    branches: [ production ]
+  pull_request:
+    branches: [ production ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-validation:
+    name: Production Branch Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Web App Production Checks
+        working-directory: apps/web
+        run: |
+          # Setup Node.js
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          
+          # Install dependencies
+          npm ci
+          
+          # Run comprehensive checks
+          echo "🔍 Running TypeScript type check..."
+          npm run typecheck
+          
+          echo "🔍 Running ESLint check..."
+          npm run lint
+          
+          echo "🔍 Running Prettier format check..."
+          npm run format:check
+          
+          echo "🔍 Running build check..."
+          npm run build
+          
+          echo "✅ Web app production checks passed!"
+      
+      - name: API Production Checks
+        working-directory: apps/api
+        run: |
+          # Setup Python
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip
+          
+          # Install dependencies
+          pip3 install -r requirements.txt
+          
+          # Run comprehensive checks
+          echo "🔍 Running Ruff linting..."
+          ruff check .
+          
+          echo "🔍 Running Ruff formatting check..."
+          ruff format --check .
+          
+          echo "🔍 Running API structure validation..."
+          python3 -c "import app; print('✅ API structure validation passed')"
+          
+          echo "✅ API production checks passed!"
+      
+      - name: Production Readiness Summary
+        run: |
+          echo ""
+          echo "🎉 PRODUCTION BRANCH VALIDATION COMPLETE!"
+          echo "✅ All checks passed - production is ready for deployment"
+          echo ""
+          echo "📋 Validation Summary:"
+          echo "   ✅ Web App: TypeScript ✓ Linting ✓ Formatting ✓ Build ✓"
+          echo "   ✅ API: Linting ✓ Formatting ✓ Structure ✓"
+          echo ""
+          echo "🚀 Production deployments will now proceed automatically"
+          echo "   - Web app → Vercel"
+          echo "   - API → Fly.io"

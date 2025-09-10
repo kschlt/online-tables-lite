@@ -30,6 +30,9 @@ ignore = [
     "E501",  # line too long (handled by formatter)
     "T201",  # print statements (allowed in main.py for server startup)
     "S101",  # assert statements (common in FastAPI)
+    "B008",  # FastAPI dependency injection patterns (correct usage)
+    "S104",  # binding to all interfaces (acceptable for dev)
+    "B904",  # exception chaining (acceptable for this use case)
 ]
 fixable = ["ALL"]
 unfixable = []

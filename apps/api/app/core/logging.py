@@ -1,4 +1,5 @@
 """Structured logging configuration with request IDs."""
+
 import json
 import logging
 import time
@@ -10,7 +11,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Context variable to store request ID
-request_id_context: ContextVar[str] = ContextVar('request_id', default='')
+request_id_context: ContextVar[str] = ContextVar("request_id", default="")
 
 
 class JSONFormatter(logging.Formatter):
@@ -23,7 +24,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
-            "request_id": request_id_context.get(''),
+            "request_id": request_id_context.get(""),
         }
 
         # Add exception info if present
@@ -31,7 +32,7 @@ class JSONFormatter(logging.Formatter):
             log_data["exception"] = self.formatException(record.exc_info)
 
         # Add extra fields if present
-        if hasattr(record, 'extra_fields'):
+        if hasattr(record, "extra_fields"):
             log_data.update(record.extra_fields)
 
         return json.dumps(log_data, ensure_ascii=False)
@@ -51,15 +52,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         # Log request
         logger = logging.getLogger("api.request")
-        logger.info("Request started", extra={
-            "extra_fields": {
-                "method": request.method,
-                "url": str(request.url),
-                "client_ip": request.client.host if request.client else None,
-                "user_agent": request.headers.get("user-agent"),
-                "request_id": request_id,
-            }
-        })
+        logger.info(
+            "Request started",
+            extra={
+                "extra_fields": {
+                    "method": request.method,
+                    "url": str(request.url),
+                    "client_ip": request.client.host if request.client else None,
+                    "user_agent": request.headers.get("user-agent"),
+                    "request_id": request_id,
+                }
+            },
+        )
 
         # Process request
         response = await call_next(request)
@@ -68,15 +72,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         duration = time.time() - start_time
 
         # Log response
-        logger.info("Request completed", extra={
-            "extra_fields": {
-                "method": request.method,
-                "url": str(request.url),
-                "status_code": response.status_code,
-                "duration_ms": round(duration * 1000, 2),
-                "request_id": request_id,
-            }
-        })
+        logger.info(
+            "Request completed",
+            extra={
+                "extra_fields": {
+                    "method": request.method,
+                    "url": str(request.url),
+                    "status_code": response.status_code,
+                    "duration_ms": round(duration * 1000, 2),
+                    "request_id": request_id,
+                }
+            },
+        )
 
         # Add request ID to response headers for debugging
         response.headers["X-Request-ID"] = request_id
@@ -114,24 +121,25 @@ def get_logger(name: str) -> logging.Logger:
 
 def log_error(logger: logging.Logger, message: str, error: Exception, **extra_fields) -> None:
     """Log error with structured format and request context."""
-    logger.error(message, exc_info=error, extra={
-        "extra_fields": {
-            "error_type": type(error).__name__,
-            "error_message": str(error),
-            "request_id": request_id_context.get(''),
-            **extra_fields
-        }
-    })
+    logger.error(
+        message,
+        exc_info=error,
+        extra={
+            "extra_fields": {
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                "request_id": request_id_context.get(""),
+                **extra_fields,
+            }
+        },
+    )
 
 
 def log_info(logger: logging.Logger, message: str, **extra_fields) -> None:
     """Log info with structured format and request context."""
-    logger.info(message, extra={
-        "extra_fields": {
-            "request_id": request_id_context.get(''),
-            **extra_fields
-        }
-    })
+    logger.info(
+        message, extra={"extra_fields": {"request_id": request_id_context.get(""), **extra_fields}}
+    )
 
     # Fix: Suppress HTTP/2 and HPACK debug logs that are causing spam
     logging.getLogger("hpack.hpack").setLevel(logging.WARNING)

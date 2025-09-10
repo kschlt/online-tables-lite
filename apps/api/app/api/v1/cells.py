@@ -1,4 +1,5 @@
 """Cell management endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_socketio_server, get_table_service
@@ -32,23 +33,26 @@ async def update_cells(
     # Emit real-time update to other clients in the table room
     sio = get_socketio_server()
     room = f"table:{table['id']}"
-    cell_updates = [{"row": cell.row, "col": cell.col, "value": cell.value} for cell in request.cells]
+    cell_updates = [
+        {"row": cell.row, "col": cell.col, "value": cell.value} for cell in request.cells
+    ]
 
-    await sio.emit("cell_update", {
-        "table_id": table["id"],
-        "cells": cell_updates
-    }, room=room)
+    await sio.emit("cell_update", {"table_id": table["id"], "cells": cell_updates}, room=room)
 
     # Log the real-time update
     import logging
+
     logger = logging.getLogger("api.realtime")
-    logger.info("Cell update broadcast", extra={
-        "extra_fields": {
-            "table_id": table["id"],
-            "room": room,
-            "cells_updated": len(cell_updates)
-        }
-    })
+    logger.info(
+        "Cell update broadcast",
+        extra={
+            "extra_fields": {
+                "table_id": table["id"],
+                "room": room,
+                "cells_updated": len(cell_updates),
+            }
+        },
+    )
 
     return {"success": True, "updated_cells": len(request.cells)}
 

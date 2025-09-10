@@ -1,4 +1,5 @@
 """Table-related Pydantic models."""
+
 from enum import Enum
 
 from pydantic import BaseModel
@@ -6,6 +7,7 @@ from pydantic import BaseModel
 
 class ColumnFormat(str, Enum):
     """Column format options."""
+
     TEXT = "text"
     DATE = "date"
     TIMERANGE = "timerange"
