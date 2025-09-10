@@ -27,3 +27,5 @@ export { LanguageSwitcher } from './language-switcher'
 export { AdminDialog } from './admin-dialog'
 export * from './dialog'
 export { Header } from './header'
+export { CompactLanguageSwitcher } from "./compact-language-switcher"
+export { DropdownLanguageSwitcher } from "./dropdown-language-switcher"
