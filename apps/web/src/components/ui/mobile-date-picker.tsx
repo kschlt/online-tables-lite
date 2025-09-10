@@ -207,10 +207,10 @@ export function MobileDatePicker({
           <div className="mt-4 pt-4 border-t">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={handleClear}
-              className="w-full h-8"
+              className="w-full"
             >
               {t('common.clear')}
             </Button>
@@ -242,10 +242,9 @@ export function MobileDatePicker({
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={handleClear}
-                    className="h-8"
                   >
                     {t('common.clear')}
                   </Button>
@@ -253,7 +252,6 @@ export function MobileDatePicker({
                     type="button"
                     size="sm"
                     onClick={handleDoneClick}
-                    className="h-8"
                     disabled={!timeStart || !timeEnd}
                   >
                     OK
