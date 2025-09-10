@@ -90,7 +90,7 @@ export function TableGrid({ tableData }: TableGridProps) {
       const { updateTableConfig } = await import('@/lib/api')
       await updateTableConfig(localTableData.slug, token, {}) // Empty request to test permissions
       setIsAdmin(true)
-    } catch (_err) {
+    } catch {
       setIsAdmin(false)
     }
   }

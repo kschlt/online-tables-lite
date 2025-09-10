@@ -21,26 +21,25 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
   // Prevent hydration mismatch by only rendering after mount
   useEffect(() => {
     setIsMounted(true)
-    console.log('LanguageSwitcher mounted, current locale:', locale)
+    // Component mounted
   }, [locale])
 
   const changeLanguage = (newLocale: string) => {
-    console.log('changeLanguage called with:', newLocale)
-    console.log('Current pathname:', pathname)
+    // Starting language change
 
     // Get current locale from pathname instead of useLocale hook
     const currentLocale = pathname.startsWith('/de') ? 'de' : 'en'
-    console.log('Current locale from pathname:', currentLocale)
+    // Current locale determined from pathname
 
     if (newLocale === currentLocale) {
-      console.log('Same locale, returning early')
+      // Same locale, no change needed
       return
     }
 
     setIsChanging(true)
 
     try {
-      console.log('Starting language change...')
+      // Performing language change
 
       // Get the path without the current locale
       let pathWithoutLocale = pathname
@@ -72,18 +71,11 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
       const searchString = searchParams.toString()
       const fullUrl = searchString ? `${newPathname}?${searchString}` : newPathname
 
-      console.log('Language change:', {
-        from: currentLocale,
-        to: newLocale,
-        originalPath: pathname,
-        pathWithoutLocale,
-        newPathname,
-        fullUrl,
-      })
+      // Language change complete
 
       router.push(fullUrl)
-    } catch (error) {
-      console.error('Failed to change language:', error)
+    } catch {
+      // Failed to change language
       setIsChanging(false)
     }
   }
@@ -91,14 +83,14 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
   const handleEnClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('EN button clicked')
+    // EN language selected
     changeLanguage('en')
   }
 
   const handleDeClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('DE button clicked')
+    // DE language selected
     changeLanguage('de')
   }
 

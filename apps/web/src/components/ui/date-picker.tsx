@@ -13,7 +13,7 @@ import type { ColumnFormat } from '@/types'
 
 interface DatePickerProps {
   value?: Date | null | string // Allow string for timerange format
-  onChange: (_date: Date | null | string) => void // Return string for timerange
+  onChange: (date: Date | null | string) => void // Return string for timerange
   placeholder?: string
   format?: ColumnFormat
   disabled?: boolean

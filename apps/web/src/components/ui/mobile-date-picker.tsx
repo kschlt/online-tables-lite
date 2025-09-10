@@ -12,7 +12,7 @@ import type { ColumnFormat } from '@/types'
 
 interface MobileDatePickerProps {
   value?: Date | null | string
-  onChange: (_date: Date | null | string) => void
+  onChange: (date: Date | null | string) => void
   format?: ColumnFormat
   open: boolean
   onOpenChange: (open: boolean) => void

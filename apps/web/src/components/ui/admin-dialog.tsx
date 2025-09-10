@@ -25,7 +25,7 @@ interface AdminDialogProps {
   token: string
   isOpen: boolean
   onClose: () => void
-  onUpdate: (_updatedTable: TableData) => void
+  onUpdate: () => void
 }
 
 export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogProps) {

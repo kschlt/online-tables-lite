@@ -100,8 +100,8 @@ export function formatDateRange(range: DateRange, locale: string = 'de-DE'): str
     const startTime = formatTime(startDate)
 
     return `${dayName}, ${day}. ${month} ${startTime}`
-  } catch (error) {
-    console.error('Error formatting date range:', error)
+  } catch {
+    // Error formatting date range, return fallback
     return String(range.start)
   }
 }
@@ -128,7 +128,7 @@ export function createDateRangeString(start: Date | string, end?: Date | string)
  * @param format - Column format
  * @returns Pipe-separated time range or null
  */
-export function parseTimeRangeInput(input: string, _format?: string): string | null {
+export function parseTimeRangeInput(input: string): string | null {
   if (!input) {
     return null
   }

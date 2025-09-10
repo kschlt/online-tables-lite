@@ -44,7 +44,10 @@ install-all: install-frontend install-backend
 stop:
 	@echo "🛑 Stopping all services..."
 	pkill -f "npm run dev" || true
-	pkill -f "python3 main.py" || true
+	pkill -f "next dev" || true
+	pkill -f "main.py" || true
+	pkill -f "uvicorn" || true
+	pkill -f "python.*main.py" || true
 	@echo "✅ All services stopped"
 
 # Quick setup for new developers

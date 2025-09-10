@@ -51,8 +51,8 @@ export default function Home() {
       try {
         const parsedData = JSON.parse(decodeURIComponent(successData))
         setResult(parsedData)
-      } catch (err) {
-        console.error('Failed to parse success data:', err)
+      } catch {
+        // Failed to parse success data, ignore
       }
     }
   }, [searchParams, isClient])

@@ -35,7 +35,7 @@ export function useSocket({ tableId, onCellUpdate }: UseSocketProps) {
 
     // Connection event handlers
     socket.on('connect', () => {
-      console.log('Socket.IO connected:', socket.id)
+      // Socket.IO connected
       setIsConnected(true)
       setConnectionError(null)
 
@@ -43,24 +43,24 @@ export function useSocket({ tableId, onCellUpdate }: UseSocketProps) {
       socket.emit('join_table', { table_id: tableId })
     })
 
-    socket.on('disconnect', reason => {
-      console.log('Socket.IO disconnected:', reason)
+    socket.on('disconnect', () => {
+      // Socket.IO disconnected
       setIsConnected(false)
     })
 
     socket.on('connect_error', error => {
-      console.error('Socket.IO connection error:', error)
+      // Socket.IO connection error
       setIsConnected(false)
       setConnectionError(error.message)
     })
 
     // Table-specific event handlers
-    socket.on('room_joined', data => {
-      console.log('Joined table room:', data.table_id)
+    socket.on('room_joined', () => {
+      // Joined table room
     })
 
     socket.on('cell_update', data => {
-      console.log('Received cell update:', data)
+      // Received cell update
       if (data.table_id === tableId && onCellUpdate && data.cells) {
         onCellUpdate(data.cells)
       }

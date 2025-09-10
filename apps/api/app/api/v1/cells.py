@@ -64,6 +64,6 @@ async def get_cells(
     authorization: str = Depends(extract_bearer_token),
 ):
     """Get all cell data for a table."""
-    table, role = await verify_token(slug, authorization)
+    table, _role = await verify_token(slug, authorization)
     cells = await table_service.get_cells(table["id"])
     return {"cells": cells}

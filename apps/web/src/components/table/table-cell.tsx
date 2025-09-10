@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
 import { ColumnFormat } from '@/types'
 import { formatDateForDisplay, parseDate } from '@/lib/date-utils'
@@ -27,7 +26,6 @@ export function TableCell({
   isReadonly = false,
   format = 'text',
 }: TableCellProps) {
-  const t = useTranslations()
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
   const [showMobileDatePicker, setShowMobileDatePicker] = useState(false)
@@ -63,7 +61,7 @@ export function TableCell({
 
         // For date columns, try to normalize the date format
         if (isDateFormat && localValue) {
-          const parsedDate = parseDate(localValue, format)
+          const parsedDate = parseDate(localValue)
           if (parsedDate) {
             valueToSave = parsedDate // Save as ISO format
             setLocalValue(parsedDate) // Update local state with normalized format
@@ -73,7 +71,7 @@ export function TableCell({
         onCellChange(row, col, valueToSave)
       }
     }
-  }, [localValue, value, row, col, onCellChange, isDateFormat, isTimeRangeFormat, format])
+  }, [localValue, value, row, col, onCellChange, isDateFormat, isTimeRangeFormat])
 
   const handleDatePickerChange = useCallback(
     (date: Date | null | string) => {
