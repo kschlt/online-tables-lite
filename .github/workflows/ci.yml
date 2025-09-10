@@ -241,7 +241,6 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       
       - name: Update deployment status - Success
-        needs: [create_deployment]
         if: steps.api_health.outputs.api_healthy == 'true' && steps.web_health.outputs.web_healthy == 'true'
         uses: actions/github-script@v7
         with:
@@ -257,7 +256,6 @@ jobs:
             });
       
       - name: Update deployment status - Failure
-        needs: [create_deployment]
         if: steps.api_health.outputs.api_healthy == 'false' || steps.web_health.outputs.web_healthy == 'false'
         uses: actions/github-script@v7
         with:
