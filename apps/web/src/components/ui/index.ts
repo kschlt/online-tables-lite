@@ -18,6 +18,12 @@ export {
 export { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './sheet'
 export { Alert, AlertDescription } from './alert'
 export { Badge } from './badge'
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './dropdown-menu'
 
 // Custom components using Shadcn/UI
 export { LoadingSpinner } from './loading-spinner'
@@ -27,3 +33,4 @@ export { LanguageSwitcher } from './language-switcher'
 export { AdminDialog } from './admin-dialog'
 export * from './dialog'
 export { Header } from './header'
+export { DropdownLanguageSwitcher } from './dropdown-language-switcher'
