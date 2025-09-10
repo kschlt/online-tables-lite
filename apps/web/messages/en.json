@@ -54,7 +54,7 @@
     "adminSettings": "Admin Settings",
     "settings": "Admin Settings",
     "tableSettings": "Table Settings",
-    "tableSettingsDescription": "Configure your table settings and column properties",
+    "tableSettingsDescription": "Configure your table settings and column properties.",
     "basicSettings": "Basic Settings",
     "tableTitle": "Table Title",
     "tableTitlePlaceholder": "Enter table title...",
@@ -83,13 +83,6 @@
     "failedToAddRow": "Failed to add row",
     "updateFailed": "Failed to update configuration",
     "column": "Column"
-  },
-  "status": {
-    "connected": "Connected",
-    "connecting": "Connecting...",
-    "disconnected": "Disconnected",
-    "unsavedChanges": "Unsaved changes",
-    "updatingStructure": "Updating table structure..."
   },
   "validation": {
     "selectStartAndEndTimes": "Please select start and end times."

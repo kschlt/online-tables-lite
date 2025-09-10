@@ -140,27 +140,6 @@ export function TableGrid({ tableData }: TableGridProps) {
     <div className="relative">
       {/* FIXED: Container with proper overflow handling for rounded corners */}
       <div className="card-elevated overflow-hidden">
-        {/* Status indicator using design system */}
-        {(isUpdating || hasPendingUpdates || !isConnected || isUpdatingStructure) && (
-          <div
-            className={`border-b p-3 text-sm ${!isConnected ? 'status-warning' : 'status-info'}`}
-          >
-            {!isConnected && `⚠️ ${t('status.disconnected')} - `}
-            {isUpdatingStructure
-              ? t('status.updatingStructure')
-              : isUpdating
-                ? t('common.saving')
-                : hasPendingUpdates
-                  ? t('status.unsavedChanges')
-                  : ''}
-            {!isConnected &&
-              !isUpdating &&
-              !hasPendingUpdates &&
-              !isUpdatingStructure &&
-              t('status.connecting')}
-          </div>
-        )}
-
         {(error || structureError) && (
           <div className="status-error p-3 text-sm">
             <strong>{t('common.error')}:</strong> {error || structureError}
