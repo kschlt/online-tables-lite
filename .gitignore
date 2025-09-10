@@ -59,3 +59,43 @@ env/
 .cursor/
 *.claude*
 CLAUDE.md
+# Backup files and temporary agent files
+*.backup
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+.#*
+#*#
+
+# Agent-generated files and temporary storage
+.agent/
+.cursor/
+*.claude*
+CLAUDE.md
+*.agent-temp
+*.agent-backup
+
+# Temporary markdown files (agent-generated)
+*.agent.md
+*.temp.md
+*.draft.md
+*.notes.md
+
+# Temporary configuration files
+*.temp.json
+*.temp.js
+*.temp.ts
+*.temp.tsx
+
+# Development and debugging files
+*.debug
+*.test-temp
+*.experimental
+
+# IDE and editor temporary files
+.vscode/settings.json.bak
+.idea/workspace.xml.bak
+*.sublime-*

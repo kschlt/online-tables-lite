@@ -1,4 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Run cleanup before commit
+echo "🧹 Running pre-commit cleanup..."
+./cleanup-before-merge.sh
+
+# Run lint-staged for web app
 cd apps/web && npx lint-staged
