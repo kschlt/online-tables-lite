@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup cleanup verify
 
 # Start frontend development server
 dev-frontend:
@@ -42,7 +42,7 @@ install-all: install-frontend install-backend
 
 # Stop all background processes
 stop:
-	@echo "�� Stopping all services..."
+	@echo "🛑 Stopping all services..."
 	pkill -f "npm run dev" || true
 	pkill -f "python3 main.py" || true
 	@echo "✅ All services stopped"
@@ -50,3 +50,44 @@ stop:
 # Quick setup for new developers
 setup: install-all
 	@echo "🎉 Setup complete! Run 'make dev' to start development"
+
+# Development environment setup (using organized scripts)
+setup-dev:
+	./scripts/dev/setup-dev.sh
+
+# Start development servers (using organized scripts)
+start-dev:
+	./scripts/dev/start-dev.sh
+
+# Clean up before merge/push (using organized scripts)
+cleanup:
+	./scripts/git/cleanup-before-merge.sh
+
+# Verify clean commit (using organized scripts)
+verify:
+	./scripts/git/verify-clean-commit.sh
+
+# Run all quality checks
+check: verify
+	@echo "🔍 Running all quality checks..."
+	cd apps/web && npm run typecheck
+	cd apps/web && npm run lint
+	cd apps/web && npm run build
+	@echo "✅ All checks passed!"
+
+# Help command
+help:
+	@echo "📋 Available commands:"
+	@echo "  make dev-frontend    - Start frontend development server"
+	@echo "  make dev-backend     - Start backend development server"
+	@echo "  make dev             - Show development instructions"
+	@echo "  make dev-all         - Start both servers in background"
+	@echo "  make install-all     - Install all dependencies"
+	@echo "  make setup           - Quick setup for new developers"
+	@echo "  make setup-dev       - Full development environment setup"
+	@echo "  make start-dev       - Start development servers"
+	@echo "  make cleanup         - Clean up before merge/push"
+	@echo "  make verify          - Verify clean commit"
+	@echo "  make check           - Run all quality checks"
+	@echo "  make stop            - Stop all background services"
+	@echo "  make help            - Show this help message"
