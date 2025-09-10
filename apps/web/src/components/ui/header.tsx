@@ -19,19 +19,13 @@ export function Header({ title, description, children, className }: HeaderProps)
       <div className="flex items-center justify-between">
         {/* Title Section */}
         <div className="flex-1 min-w-0">
-          {title && (
-            <h1 className="text-heading-1 truncate">
-              {title}
-            </h1>
-          )}
+          {title && <h1 className="text-heading-1 truncate">{title}</h1>}
           {description && (
-            <p className="text-body-sm text-muted-foreground mt-1 truncate">
-              {description}
-            </p>
+            <p className="text-body-sm text-muted-foreground mt-1 truncate">{description}</p>
           )}
           {children}
         </div>
-        
+
         {/* Navigation Menu */}
         <div className="flex-shrink-0 ml-4">
           <NavigationMenu />

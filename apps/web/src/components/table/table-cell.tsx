@@ -13,7 +13,7 @@ interface TableCellProps {
   row: number
   col: number
   value?: string | null
-  onCellChange: (row: number, col: number, value: string | null) => void
+  onCellChange: (_row: number, _col: number, _value: string | null) => void
   isReadonly?: boolean
   format?: ColumnFormat
 }

@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Clock } from 'lucide-react'
 
 interface TimePickerInputProps {
-  onChange?: (value: string) => void
+  onChange?: (_value: string) => void
   placeholder?: string
   className?: string
   disabled?: boolean

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 interface CalendarProps {
   mode: 'single'
   selected?: Date
-  onSelect: (date?: Date) => void
+  onSelect: (_date?: Date) => void
   initialFocus?: boolean
   className?: string
 }

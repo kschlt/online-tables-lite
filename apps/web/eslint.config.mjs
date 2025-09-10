@@ -2,6 +2,8 @@ import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import typescriptEslint from '@typescript-eslint/eslint-plugin'
+import typescriptParser from '@typescript-eslint/parser'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -27,6 +29,19 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals'),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint,
+    },
     rules: {
       // Code quality rules
       'react/no-unescaped-entities': 'warn',
@@ -76,8 +91,9 @@ const eslintConfig = [
 
       // Disable problematic unicorn rules for now - ESLint v9 compatibility issues
 
-      // Basic TypeScript patterns (without plugin dependency)
-      'no-unused-vars': 'warn',
+      // TypeScript-specific patterns
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
     },
   },
 ]
