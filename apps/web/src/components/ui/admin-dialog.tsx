@@ -199,22 +199,25 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                 </Label>
               </div>
 
-              {fixedRows && (
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="rows" className="text-body font-medium">
-                    {t('admin.numberOfRows')}
-                  </Label>
-                  <Input
-                    id="rows"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    value={rows}
-                    onChange={e => setRows(parseInt(e.target.value) || 1)}
-                    className="w-20"
-                  />
-                </div>
-              )}
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="rows" className={`text-body ${fixedRows ? '' : 'text-muted-foreground'}`}>
+                  {t('admin.numberOfRows')}
+                </Label>
+                <Input
+                  id="rows"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={rows}
+                  onChange={e => setRows(parseInt(e.target.value) || 1)}
+                  disabled={!fixedRows}
+                  className="w-20"
+                  aria-describedby={fixedRows ? undefined : "rows-disabled-description"}
+                />
+                <span id="rows-disabled-description" className="sr-only">
+                  {!fixedRows ? "Input is disabled when Fixed Rows is not checked" : ""}
+                </span>
+              </div>
             </div>
           </div>
 
