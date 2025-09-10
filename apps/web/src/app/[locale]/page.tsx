@@ -108,7 +108,7 @@ export default function Home() {
     try {
       // Ensure numeric values are properly typed
       const requestData: CreateTableRequest = {
-        title: formData.title.trim(),
+        title: formData.title?.trim() || '',
         description: formData.description?.trim() || '',
         cols: Number(formData.cols),
         rows: Number(formData.rows),
@@ -171,7 +171,7 @@ export default function Home() {
 
   const handleNumericFieldBlur = (field: 'cols' | 'rows') => {
     // If field is empty after blur, set to default value
-    if (formData[field] === '' || formData[field] === null || formData[field] === undefined) {
+    if (typeof formData[field] === 'string' && (formData[field] === '' || formData[field] === null || formData[field] === undefined)) {
       const defaultValue = field === 'cols' ? 3 : 5
       setFormData(prev => ({ ...prev, [field]: defaultValue }))
     }
