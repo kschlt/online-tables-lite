@@ -37,7 +37,7 @@ export function TableGrid({ tableData }: TableGridProps) {
   // Local state for table data to enable immediate updates
   const [localTableData, setLocalTableData] = useState<TableData>(tableData)
 
-  const { getCellValue, updateCell, isUpdating, error, hasPendingUpdates, isConnected } =
+  const { getCellValue, updateCell, error } =
     useCellEditor({
       tableId: localTableData.id,
       tableSlug: localTableData.slug,
