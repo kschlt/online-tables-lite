@@ -80,13 +80,6 @@
     "failedToUpdateConfig": "Konfiguration konnte nicht aktualisiert werden",
     "failedToAddRow": "Zeile konnte nicht hinzugefügt werden"
   },
-  "status": {
-    "connected": "Verbunden",
-    "connecting": "Verbinde...",
-    "disconnected": "Getrennt",
-    "unsavedChanges": "Ungespeicherte Änderungen",
-    "updatingStructure": "Tabellenstruktur wird aktualisiert..."
-  },
   "validation": {
     "selectStartAndEndTimes": "Bitte Start- und Endzeit auswählen."
   },
