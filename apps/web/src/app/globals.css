@@ -234,4 +234,32 @@
     line-height: 1.4;
     color: hsl(0 0% 45%);
   }
+
+  /* Toggle button states for semantic clarity */
+  .toggle-button {
+    @apply border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .toggle-button.selected {
+    @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .toggle-button:not(.selected):hover {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  /* Semantic highlight differentiation for table states */
+  .bg-interaction-highlight {
+    background-color: var(--color-primary-light);
+  }
+
+  .bg-date-column {
+    background-color: hsl(142 76% 95%); /* Light green for date columns */
+    border-color: hsl(142 76% 85%);
+  }
+
+  .bg-date-column:hover {
+    background-color: hsl(142 76% 90%);
+  }
 }

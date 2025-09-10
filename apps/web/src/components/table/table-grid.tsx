@@ -50,10 +50,10 @@ export function TableGrid({ tableData }: TableGridProps) {
     setLocalTableData(tableData)
   }, [tableData])
 
-  // Get all date/datetime values for next date highlighting
+  // Get all date/timerange values for next date highlighting
   const getDateColumnsAndValues = () => {
     const dateColumns = localTableData.columns.filter(
-      col => col.format === 'date' || col.format === 'datetime'
+      col => col.format === 'date' || col.format === 'timerange'
     )
 
     const dateValues: string[] = []
@@ -163,79 +163,85 @@ export function TableGrid({ tableData }: TableGridProps) {
         )}
 
         {/* Table using Shadcn/UI components */}
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {localTableData.columns.map(column => (
-                <TableHead
-                  key={column.idx}
-                  className="bg-secondary text-secondary-foreground font-semibold text-left border border-border"
-                  style={{
-                    width: getColumnWidth(column),
-                    minWidth: '120px',
-                  }}
-                >
-                  <div className="flex items-center">
-                    <span className="text-body font-medium">
-                      {column.header || t('table.columnNumber', { number: column.idx + 1 })}
-                    </span>
-                    {(column.format === 'date' || column.format === 'datetime') && (
-                      <span
-                        className="ml-2 text-xs text-primary"
-                        aria-label={
-                          column.format === 'datetime'
-                            ? t('table.datetimeFormat')
-                            : t('table.dateFormat')
-                        }
-                      >
-                        {column.format === 'datetime' ? '🕐' : t('table.dateFormatIcon')}
+        <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+          <Table className="border-separate border-spacing-0">
+            <TableHeader>
+              <TableRow className="border-b-2 border-gray-300">
+                {localTableData.columns.map(column => (
+                  <TableHead
+                    key={column.idx}
+                    className="bg-secondary text-secondary-foreground font-semibold text-left border-r border-gray-300 last:border-r-0"
+                    style={{
+                      width: getColumnWidth(column),
+                      minWidth: '120px',
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <span className="text-body font-medium">
+                        {column.header || t('table.columnNumber', { number: column.idx + 1 })}
                       </span>
-                    )}
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: localTableData.rows }).map((_, rowIndex) => {
-              // Check if this row contains the next upcoming date
-              const isNextDateRow = dateColumns.some(column => {
-                const cellValue = getCellValue(rowIndex, column.idx)
-                return cellValue && nextUpcomingDate && isNextUpcomingDate(cellValue, dateValues)
-              })
+                      {(column.format === 'date' || column.format === 'timerange') && (
+                        <span
+                          className="ml-2 text-xs text-primary"
+                          aria-label={
+                            column.format === 'timerange'
+                              ? t('admin.formatTimeRange')
+                              : t('table.dateFormat')
+                          }
+                        >
+                          {column.format === 'timerange' ? '🕐' : t('table.dateFormatIcon')}
+                        </span>
+                      )}
+                    </div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: localTableData.rows }).map((_, rowIndex) => {
+                // Check if this row contains the next upcoming date
+                const isNextDateRow = dateColumns.some(column => {
+                  const cellValue = getCellValue(rowIndex, column.idx)
+                  return cellValue && nextUpcomingDate && isNextUpcomingDate(cellValue, dateValues)
+                })
 
-              return (
-                <TableRow key={rowIndex} className={isNextDateRow ? 'bg-primary-light' : ''}>
-                  {localTableData.columns.map(column => (
-                    <ShadcnTableCell
-                      key={`${rowIndex}-${column.idx}`}
-                      className="p-0 border border-border"
-                      style={{
-                        width: getColumnWidth(column),
-                        minWidth: '120px',
-                      }}
-                    >
-                      <TableCell
-                        row={rowIndex}
-                        col={column.idx}
-                        value={getCellValue(rowIndex, column.idx)}
-                        onCellChange={updateCell}
-                        format={column.format}
-                      />
-                    </ShadcnTableCell>
-                  ))}
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
+                return (
+                  <TableRow 
+                    key={rowIndex} 
+                    className={`border-b border-gray-300`}
+                    style={isNextDateRow ? { borderLeft: '4px solid hsl(var(--primary))' } : {}}
+                  >
+                    {localTableData.columns.map(column => (
+                      <ShadcnTableCell
+                        key={`${rowIndex}-${column.idx}`}
+                        className="p-0 border-r border-gray-300 last:border-r-0"
+                        style={{
+                          width: getColumnWidth(column),
+                          minWidth: '120px',
+                        }}
+                      >
+                        <TableCell
+                          row={rowIndex}
+                          col={column.idx}
+                          value={getCellValue(rowIndex, column.idx)}
+                          onCellChange={updateCell}
+                          format={column.format}
+                        />
+                      </ShadcnTableCell>
+                    ))}
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
 
         {/* Add Row Button using design system */}
         {isAdmin && !localTableData.fixed_rows && (
-          <div className="border-t border-border p-3">
+          <div className="border-t">
             <Button
               variant="ghost"
-              className="w-full justify-center text-secondary-foreground hover:text-primary hover:bg-primary-light"
+              className="w-full justify-center text-secondary-foreground hover:text-primary hover:bg-interaction-highlight min-h-[48px] px-3 rounded-none"
               onClick={addRow}
             >
               <Plus className="w-4 h-4 mr-2" />

@@ -1,5 +1,5 @@
 /**
- * Date utilities for date and datetime functionality.
+ * Date utilities for date functionality.
  */
 
 import { format, parse, isValid, startOfDay } from 'date-fns'
@@ -25,7 +25,7 @@ export function getTodayDate() {
 }
 
 /**
- * Parse various date and datetime formats and return ISO string.
+ * Parse various date formats and return ISO string.
  */
 export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): string | null {
   if (!value || typeof value !== 'string') {
@@ -37,39 +37,6 @@ export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): s
     return null
   }
 
-  // Handle datetime format with time ranges (e.g., "13.05.24 19:00-20:30")
-  if (columnFormat === 'datetime') {
-    const datetimeMatch = cleaned.match(
-      /^(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?:-(\d{1,2}):(\d{2}))?)?$/
-    )
-    if (datetimeMatch) {
-      const [, day, month, year, startHour, startMin, endHour, endMin] = datetimeMatch
-      const fullYear = year.length === 2 ? `20${year}` : year
-
-      try {
-        const date = parse(`${day}.${month}.${fullYear}`, 'dd.MM.yyyy', new Date())
-        if (!isValid(date)) {
-          return null
-        }
-
-        if (startHour && startMin) {
-          date.setHours(parseInt(startHour), parseInt(startMin), 0, 0)
-          // Store time range info in a custom format: ISO + time range
-          const timeRange = endHour && endMin ? `-${endHour.padStart(2, '0')}:${endMin}` : ''
-          return (
-            date.toISOString().split('T')[0] +
-            'T' +
-            `${startHour.padStart(2, '0')}:${startMin}:00` +
-            timeRange
-          )
-        }
-
-        return date.toISOString().split('T')[0]
-      } catch {
-        return null
-      }
-    }
-  }
 
   // Handle date formats: DD.MM.YY or DD.MM.YYYY
   const dateMatch = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/)
@@ -105,7 +72,7 @@ export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): s
 }
 
 /**
- * Format date/datetime string for display with locale support.
+ * Format date string for display with locale support.
  */
 export function formatDateForDisplay(
   value: string,
@@ -117,34 +84,6 @@ export function formatDateForDisplay(
   }
 
   try {
-    // Handle datetime format with time range
-    if (columnFormat === 'datetime' && value.includes('T')) {
-      const [datePart, timePart] = value.split('T')
-      const date = new Date(datePart)
-
-      if (!isValid(date)) {
-        return value
-      }
-
-      // Extract time range if present
-      let timeDisplay = ''
-      if (timePart) {
-        const timeMatch = timePart.match(/^(\d{2}):(\d{2}):00(?:-(\d{2}):(\d{2}))?$/)
-        if (timeMatch) {
-          const [, startHour, startMin, endHour, endMin] = timeMatch
-          if (endHour && endMin) {
-            timeDisplay = ` ${startHour}:${startMin}-${endHour}:${endMin}`
-          } else {
-            timeDisplay = ` ${startHour}:${startMin}`
-          }
-        }
-      }
-
-      const dateLocale = locale === 'de' ? de : enUS
-      const dateFormat = locale === 'de' ? 'EEE, d. MMM' : 'EEE, d MMM'
-
-      return format(date, dateFormat, { locale: dateLocale }) + timeDisplay
-    }
 
     // Handle regular date format
     const date = new Date(value)
@@ -170,7 +109,7 @@ export function isToday(value: string): boolean {
   }
 
   try {
-    const date = new Date(value.split('T')[0]) // Handle both date and datetime formats
+    const date = new Date(value.split('T')[0]) // Handle date format
     const today = startOfDay(new Date())
     return startOfDay(date).getTime() === today.getTime()
   } catch {
@@ -194,7 +133,7 @@ export function findNextUpcomingDate(dateValues: string[]): string | null {
     }
 
     try {
-      const date = new Date(value.split('T')[0]) // Handle both date and datetime formats
+      const date = new Date(value.split('T')[0]) // Handle date format
       const dateStart = startOfDay(date)
 
       // Only consider dates that are today or in the future

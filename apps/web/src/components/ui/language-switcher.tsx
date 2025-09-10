@@ -106,10 +106,10 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
   if (!isMounted) {
     return (
       <div className={cn('flex items-center space-x-2', className)}>
-        <Button size="sm" disabled className="px-3 py-1">
+        <Button variant="toggle" size="sm" disabled className="px-3 py-1">
           EN
         </Button>
-        <Button size="sm" disabled className="px-3 py-1">
+        <Button variant="toggle" size="sm" disabled className="px-3 py-1">
           DE
         </Button>
       </div>
@@ -122,20 +122,22 @@ export function LanguageSwitcher({ className = '' }: LanguageSwitcherProps) {
   return (
     <div className={cn('flex items-center space-x-2', className)}>
       <Button
-        variant={currentLocale === 'en' ? 'default' : 'outline'}
+        variant={currentLocale === 'en' ? 'toggle-selected' : 'toggle'}
         size="sm"
         onClick={handleEnClick}
         disabled={isChanging}
         className="px-3 py-1"
+        aria-pressed={currentLocale === 'en'}
       >
         EN
       </Button>
       <Button
-        variant={currentLocale === 'de' ? 'default' : 'outline'}
+        variant={currentLocale === 'de' ? 'toggle-selected' : 'toggle'}
         size="sm"
         onClick={handleDeClick}
         disabled={isChanging}
         className="px-3 py-1"
+        aria-pressed={currentLocale === 'de'}
       >
         DE
       </Button>

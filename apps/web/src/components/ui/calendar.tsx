@@ -14,7 +14,13 @@ interface CalendarProps {
 }
 
 export function Calendar({ selected, onSelect, className }: CalendarProps) {
-  const [currentDate, setCurrentDate] = React.useState(selected || new Date())
+  const [currentDate, setCurrentDate] = React.useState(() => {
+    // Ensure we always have a valid Date object
+    if (selected instanceof Date) {
+      return selected
+    }
+    return new Date()
+  })
 
   const today = new Date()
   const currentMonth = currentDate.getMonth()

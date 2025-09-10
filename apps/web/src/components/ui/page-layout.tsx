@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { NavigationMenu } from '@/components/ui/navigation-menu'
 
 interface PageLayoutProps {
   children: ReactNode
@@ -31,6 +32,11 @@ export function PageLayout({
   return (
     <main className={cn('min-h-screen bg-background p-4', className)}>
       <div className={cn('mx-auto', maxWidthClasses[maxWidth])}>
+        {/* Global Navigation */}
+        <div className="flex justify-end mb-4">
+          <NavigationMenu />
+        </div>
+
         {(title || description) && (
           <div className="mb-6 space-y-2">
             {title && (

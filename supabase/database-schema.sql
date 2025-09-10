@@ -42,7 +42,7 @@ DROP CONSTRAINT IF EXISTS columns_format_check;
 
 ALTER TABLE columns 
 ADD CONSTRAINT columns_format_check 
-CHECK (format IN ('text', 'date', 'datetime'));
+CHECK (format IN ('text', 'date', 'timerange'));
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_columns_table_id ON columns(table_id);

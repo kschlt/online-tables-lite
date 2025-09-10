@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
 import { ColumnFormat } from '@/types'
 import { formatDateForDisplay, parseDate } from '@/lib/date-utils'
+import { parseDateRange, formatDateRange } from '@/lib/date-range-utils'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 
@@ -29,7 +30,8 @@ export function TableCell({
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
 
-  const isDateFormat = format === 'date' || format === 'datetime'
+  const isDateFormat = format === 'date'
+  const isTimeRangeFormat = format === 'timerange'
   const locale = useLocale()
 
   // Sync external value changes (from real-time updates)
@@ -41,61 +43,95 @@ export function TableCell({
 
   const handleChange = useCallback((newValue: string) => {
     setLocalValue(newValue)
-    // Debounced save will happen on blur
   }, [])
 
   const handleFocus = useCallback(() => {
-    setIsEditing(true)
-  }, [])
+    if (!isTimeRangeFormat) {
+      setIsEditing(true)
+    }
+  }, [isTimeRangeFormat])
 
   const handleBlur = useCallback(() => {
-    setIsEditing(false)
+    if (!isTimeRangeFormat) {
+      setIsEditing(false)
 
-    // Only save if value changed
-    if (localValue !== (value || '')) {
-      let valueToSave = localValue || null
+      // Only save if value changed
+      if (localValue !== (value || '')) {
+        let valueToSave = localValue || null
 
-      // For date/datetime columns, try to normalize the date format
-      if (isDateFormat && localValue) {
-        const parsedDate = parseDate(localValue, format)
-        if (parsedDate) {
-          valueToSave = parsedDate // Save as ISO format
-          setLocalValue(parsedDate) // Update local state with normalized format
+        // For date columns, try to normalize the date format
+        if (isDateFormat && localValue) {
+          const parsedDate = parseDate(localValue, format)
+          if (parsedDate) {
+            valueToSave = parsedDate // Save as ISO format
+            setLocalValue(parsedDate) // Update local state with normalized format
+          }
         }
-      }
 
-      onCellChange(row, col, valueToSave)
+        onCellChange(row, col, valueToSave)
+      }
     }
-  }, [localValue, value, row, col, onCellChange, isDateFormat, format])
+  }, [localValue, value, row, col, onCellChange, isDateFormat, isTimeRangeFormat, format])
 
   const handleDatePickerChange = useCallback(
-    (date: Date | null) => {
+    (date: Date | null | string) => {
       if (date) {
-        const isoString =
-          format === 'datetime' ? date.toISOString() : date.toISOString().split('T')[0]
-        setLocalValue(isoString)
-        onCellChange(row, col, isoString)
+        if (typeof date === 'string') {
+          // Timerange format - date is already a formatted string
+          setLocalValue(date)
+          onCellChange(row, col, date)
+        } else {
+          // Date format
+          const isoString = date.toISOString().split('T')[0]
+          setLocalValue(isoString)
+          onCellChange(row, col, isoString)
+        }
       } else {
         setLocalValue('')
         onCellChange(row, col, null)
       }
       setIsEditing(false)
     },
-    [row, col, onCellChange, format]
+    [row, col, onCellChange]
   )
 
-  // Format display value for date/datetime columns
-  const displayValue =
-    isDateFormat && localValue ? formatDateForDisplay(localValue, format, locale) : localValue
 
-  // Convert string value to Date object for DatePicker
-  const dateValue = isDateFormat && localValue ? new Date(localValue.split('T')[0]) : null
+  // Format display value for date/timerange columns
+  const displayValue = (() => {
+    if ((!isDateFormat && !isTimeRangeFormat) || !localValue) return localValue
+
+    // For timerange format, always try to parse as date range
+    if (isTimeRangeFormat) {
+      const dateRange = parseDateRange(localValue)
+      if (dateRange) {
+        return formatDateRange(dateRange, locale)
+      }
+      return localValue
+    }
+
+    // For date format - only single date formatting
+    if (isDateFormat) {
+      return formatDateForDisplay(localValue, format, locale)
+    }
+
+    return localValue
+  })()
+
+  // Convert value for DatePicker (Date for date, string for timerange)
+  const dateValue = (() => {
+    if (isTimeRangeFormat && localValue) {
+      return localValue // Pass string directly for timerange
+    } else if (isDateFormat && localValue) {
+      return new Date(localValue.split('T')[0])
+    }
+    return null
+  })()
 
   if (isReadonly) {
     return (
       <div
-        className={`border border-border p-3 min-h-[48px] flex items-center ${
-          isDateFormat ? 'bg-primary-light' : 'bg-muted'
+        className={`p-3 min-h-[48px] flex items-center ${
+          isDateFormat || isTimeRangeFormat ? 'bg-date-column' : 'bg-muted'
         }`}
       >
         <span className="text-muted-foreground">{displayValue}</span>
@@ -104,28 +140,28 @@ export function TableCell({
   }
 
   return (
-    <div className="relative">
-      <div className="flex items-center space-x-1">
+    <div 
+      className={`relative min-h-[48px] flex items-center transition-colors duration-200 ${
+        isDateFormat || isTimeRangeFormat
+          ? 'bg-date-column hover:bg-date-column/80' 
+          : 'hover:bg-muted/30'
+      } ${
+        isEditing ? 'ring-2 ring-primary/20 bg-interaction-highlight' : ''
+      }`}
+    >
+      <div className="flex items-center space-x-1 w-full px-3">
         <Input
           type="text"
-          value={localValue}
+          value={isEditing ? localValue : displayValue}
           onChange={e => handleChange(e.target.value)}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          className={`flex-1 min-h-[48px] ${isDateFormat ? 'bg-primary-light' : ''} ${
-            isEditing
-              ? 'bg-primary-light ring-2 ring-primary/20'
-              : isDateFormat
-                ? 'hover:bg-primary-light'
-                : ''
-          }`}
-          placeholder={
-            isDateFormat ? (format === 'datetime' ? 'DD.MM.YYYY HH:MM' : 'DD.MM.YYYY') : ''
-          }
+          readOnly={isTimeRangeFormat}
+          className={`flex-1 min-h-[40px] border-none shadow-none p-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0`}
         />
 
-        {/* DatePicker button for date/datetime columns */}
-        {isDateFormat && (
+        {/* DatePicker button for both date and timerange columns */}
+        {(isDateFormat || isTimeRangeFormat) && (
           <div className="flex-shrink-0">
             <DatePicker
               value={dateValue}

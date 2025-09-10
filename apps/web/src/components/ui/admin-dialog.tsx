@@ -14,7 +14,9 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Plus, Trash2, Settings } from 'lucide-react'
 
@@ -131,11 +133,11 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-heading-3">
-            <Settings className="h-5 w-5" />
-            {t('admin.tableSettings')}
+          <DialogTitle className="flex items-center gap-2 text-heading-3 pr-8">
+            <Settings className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">{t('admin.tableSettings')}</span>
           </DialogTitle>
           <DialogDescription className="text-body text-muted-foreground">
             {t('admin.tableSettingsDescription')}
@@ -172,11 +174,13 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                 <Label htmlFor="description" className="text-body font-medium">
                   {t('admin.tableDescription')}
                 </Label>
-                <Input
+                <Textarea
                   id="description"
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder={t('admin.tableDescriptionPlaceholder')}
+                  rows={3}
+                  className="max-h-40 resize-y"
                 />
               </div>
             </div>
@@ -216,16 +220,17 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
 
           {/* Column Management */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-heading-3">{t('admin.columnManagement')}</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h3 className="text-heading-3 truncate">{t('admin.columnManagement')}</h3>
               <Button
                 type="button"
                 onClick={addColumn}
                 size="sm"
-                className="btn-primary flex items-center gap-2"
+                variant="secondary"
+                className="flex items-center gap-2 flex-shrink-0"
               >
                 <Plus className="h-4 w-4" />
-                {t('admin.addColumn')}
+                <span className="whitespace-nowrap">{t('admin.addColumn')}</span>
               </Button>
             </div>
 
@@ -233,9 +238,12 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
               {columnConfigs.map(column => (
                 <div
                   key={column.idx}
-                  className="flex items-center space-x-3 p-3 border border-border rounded-lg card-flat"
+                  className="flex items-center space-x-3 p-3 border border-border rounded-lg card-flat relative"
                 >
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <span className="absolute top-2 right-2 text-xs text-muted-foreground font-medium">
+                    {column.idx + 1}
+                  </span>
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 pr-12">
                     <div>
                       <Label htmlFor={`header-${column.idx}`} className="text-body font-medium">
                         {t('admin.columnHeader')}
@@ -283,18 +291,18 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                       >
                         <option value="text">{t('admin.formatText')}</option>
                         <option value="date">{t('admin.formatDate')}</option>
-                        <option value="datetime">{t('admin.formatDateTime')}</option>
+                        <option value="timerange">{t('admin.formatTimeRange')}</option>
                       </select>
                     </div>
                   </div>
 
                   <Button
                     type="button"
-                    variant="destructive"
+                    variant="secondary"
                     size="sm"
                     onClick={() => removeColumn(column.idx)}
                     disabled={columnConfigs.length <= 1}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -306,8 +314,8 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
           {/* Action Buttons */}
         </form>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-3 sm:gap-0">
+          <Button type="button" variant="secondary" onClick={onClose} className="w-full sm:w-auto">
             {t('common.cancel')}
           </Button>
           <Button
@@ -317,7 +325,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
               handleSubmit(e as any)
             }}
             disabled={isUpdating}
-            className="btn-primary"
+            className="w-full sm:w-auto"
           >
             {isUpdating ? (
               <>
