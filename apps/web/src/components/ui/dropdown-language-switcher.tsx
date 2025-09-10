@@ -93,7 +93,7 @@ export function DropdownLanguageSwitcher({ className = '' }: DropdownLanguageSwi
           <Globe className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-32">
+      <DropdownMenuContent align="start" className="w-32">
         {languages.map((language) => (
           <DropdownMenuItem
             key={language.code}
