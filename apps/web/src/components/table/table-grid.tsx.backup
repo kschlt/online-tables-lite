@@ -1,5 +1,5 @@
 /**
- * Table grid component with FIXED corner issues
+ * Table grid component using Shadcn/UI components and design system.
  */
 
 import { useState, useEffect } from 'react'
@@ -134,8 +134,7 @@ export function TableGrid({ tableData }: TableGridProps) {
 
   return (
     <div className="relative">
-      {/* FIXED: Container with proper overflow handling for rounded corners */}
-      <div className="card-elevated overflow-hidden">
+      <div className="card-elevated">
         {/* Status indicator using design system */}
         {(isUpdating || hasPendingUpdates || !isConnected || isUpdatingStructure) && (
           <div
@@ -163,15 +162,15 @@ export function TableGrid({ tableData }: TableGridProps) {
           </div>
         )}
 
-        {/* FIXED: Table with proper corner handling */}
-        <div className="overflow-hidden">
-          <Table>
+        {/* Table using Shadcn/UI components */}
+        <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+          <Table className="border-separate border-spacing-0">
             <TableHeader>
-              <TableRow className="border-b border-gray-300">
+              <TableRow className="border-b-2 border-gray-300">
                 {localTableData.columns.map(column => (
                   <TableHead
                     key={column.idx}
-                    className="bg-secondary text-secondary-foreground font-semibold text-left border-r border-gray-200 last:border-r-0"
+                    className="bg-secondary text-secondary-foreground font-semibold text-left border-r border-gray-300 last:border-r-0"
                     style={{
                       width: getColumnWidth(column),
                       minWidth: '120px',
@@ -209,13 +208,13 @@ export function TableGrid({ tableData }: TableGridProps) {
                 return (
                   <TableRow 
                     key={rowIndex} 
-                    className="border-b border-gray-200 hover:bg-muted/50"
+                    className={`border-b border-gray-300`}
                     style={isNextDateRow ? { borderLeft: '4px solid hsl(var(--primary))' } : {}}
                   >
                     {localTableData.columns.map(column => (
                       <ShadcnTableCell
                         key={`${rowIndex}-${column.idx}`}
-                        className="p-0 border-r border-gray-200 last:border-r-0"
+                        className="p-0 border-r border-gray-300 last:border-r-0"
                         style={{
                           width: getColumnWidth(column),
                           minWidth: '120px',
@@ -237,9 +236,9 @@ export function TableGrid({ tableData }: TableGridProps) {
           </Table>
         </div>
 
-        {/* FIXED: Add Row Button with proper corner handling */}
+        {/* Add Row Button using design system */}
         {isAdmin && !localTableData.fixed_rows && (
-          <div className="border-t border-gray-200">
+          <div className="border-t">
             <Button
               variant="ghost"
               className="w-full justify-center text-secondary-foreground hover:text-primary hover:bg-interaction-highlight min-h-[48px] px-3 rounded-none"
