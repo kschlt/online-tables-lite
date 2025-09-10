@@ -200,13 +200,13 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
         {columnFormat === 'date' && (
           <div className="p-3 border-t">
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={() => {
                 onChange(null)
                 setOpen(false)
               }}
-              className="w-full h-8"
+              className="w-full"
             >
               {t('common.clear')}
             </Button>
@@ -237,20 +237,18 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={() => {
                       onChange(null)
                       setOpen(false)
                     }}
-                    className="h-8"
                   >
                     {t('common.clear')}
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleOkClick}
-                    className="h-8"
                     disabled={columnFormat === 'timerange' && (!timeStart || !timeEnd)}
                   >
                     OK

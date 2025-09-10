@@ -3,7 +3,7 @@
 import { useParams, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useTable } from '@/hooks'
-import { PageLayout, LoadingSpinner, ErrorMessage } from '@/components/ui'
+import { PageLayout, LoadingSpinner, ErrorMessage, Header } from '@/components/ui'
 import { TableGrid } from '@/components/table'
 
 export default function TablePage() {
@@ -51,15 +51,14 @@ export default function TablePage() {
   }
 
   return (
-    <PageLayout>
-      <div className="mb-6">
-        <div className="mb-6">
-          <h1 className="text-heading-1 mb-2">{tableData.title || t('table.untitled')}</h1>
-          {tableData.description && (
-            <p className="text-body text-muted-foreground">{tableData.description}</p>
-          )}
-        </div>
-      </div>
+    <PageLayout 
+      header={
+        <Header 
+          title={tableData.title || t('table.untitled')}
+          description={tableData.description || undefined}
+        />
+      }
+    >
       <TableGrid tableData={tableData} />
     </PageLayout>
   )

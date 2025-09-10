@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { PageLayout, ErrorMessage } from '@/components/ui'
+import { PageLayout, ErrorMessage, Header } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -188,7 +188,15 @@ export default function Home() {
     const editUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.edit_token}`
 
     return (
-      <PageLayout title={t('app.title')} description={t('app.description')} maxWidth="xl">
+      <PageLayout 
+        header={
+          <Header 
+            title={t('app.title')} 
+            description={t('app.description')} 
+          />
+        }
+        maxWidth="xl"
+      >
         <div className="card-elevated p-6">
           <div className="flex justify-start items-center mb-6">
             <div className="flex items-center gap-2">
@@ -242,7 +250,15 @@ export default function Home() {
   }
 
   return (
-    <PageLayout title={t('app.title')} description={t('app.description')} maxWidth="xl">
+    <PageLayout 
+      header={
+        <Header 
+          title={t('app.title')} 
+          description={t('app.description')} 
+        />
+      }
+      maxWidth="xl"
+    >
       <div className="card-elevated p-6">
         <div className="mb-6">
           <h1 className="text-heading-2">{t('app.createTable')}</h1>
