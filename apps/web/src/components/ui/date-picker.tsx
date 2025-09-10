@@ -12,7 +12,7 @@ import type { ColumnFormat } from '@/types'
 
 interface DatePickerProps {
   value?: Date | null | string // Allow string for timerange format
-  onChange: (date: Date | null | string) => void // Return string for timerange
+  onChange: (_date: Date | null | string) => void // Return string for timerange
   placeholder?: string
   format?: ColumnFormat
   disabled?: boolean
@@ -40,8 +40,12 @@ export function DatePicker({
         const startDate = new Date(dateRange.start)
         const endDate = new Date(dateRange.end)
         setPendingDate(startDate)
-        setTimeStart(`${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`)
-        setTimeEnd(`${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`)
+        setTimeStart(
+          `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`
+        )
+        setTimeEnd(
+          `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+        )
       }
     } else if (value && value instanceof Date) {
       setPendingDate(value)
@@ -62,8 +66,12 @@ export function DatePicker({
           const endDate = new Date(dateRange.end)
           setPendingDate(startDate)
           // Set both start and end times
-          setTimeStart(`${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`)
-          setTimeEnd(`${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`)
+          setTimeStart(
+            `${startDate.getHours().toString().padStart(2, '0')}:${startDate.getMinutes().toString().padStart(2, '0')}`
+          )
+          setTimeEnd(
+            `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+          )
         } else {
           setPendingDate(null)
           setTimeStart('')
@@ -119,7 +127,14 @@ export function DatePicker({
       // Apply start time
       if (timeStart) {
         const [startHours, startMinutes] = timeStart.split(':').map(Number)
-        if (!isNaN(startHours) && !isNaN(startMinutes) && startHours >= 0 && startHours <= 23 && startMinutes >= 0 && startMinutes <= 59) {
+        if (
+          !isNaN(startHours) &&
+          !isNaN(startMinutes) &&
+          startHours >= 0 &&
+          startHours <= 23 &&
+          startMinutes >= 0 &&
+          startMinutes <= 59
+        ) {
           startDate.setHours(startHours, startMinutes, 0, 0)
         }
       }
@@ -127,7 +142,14 @@ export function DatePicker({
       // Apply end time
       if (timeEnd) {
         const [endHours, endMinutes] = timeEnd.split(':').map(Number)
-        if (!isNaN(endHours) && !isNaN(endMinutes) && endHours >= 0 && endHours <= 23 && endMinutes >= 0 && endMinutes <= 59) {
+        if (
+          !isNaN(endHours) &&
+          !isNaN(endMinutes) &&
+          endHours >= 0 &&
+          endHours <= 23 &&
+          endMinutes >= 0 &&
+          endMinutes <= 59
+        ) {
           endDate.setHours(endHours, endMinutes, 0, 0)
         }
       } else {

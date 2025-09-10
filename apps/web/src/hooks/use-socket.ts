@@ -9,7 +9,7 @@ import { CellData } from '@/types'
 
 interface UseSocketProps {
   tableId: string | null
-  onCellUpdate?: (cells: CellData[]) => void
+  onCellUpdate?: (_cells: CellData[]) => void
 }
 
 export function useSocket({ tableId, onCellUpdate }: UseSocketProps) {

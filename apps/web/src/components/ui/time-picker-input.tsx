@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Clock } from 'lucide-react'
 
 interface TimePickerInputProps {
-  onChange?: (value: string) => void
+  onChange?: (_value: string) => void
   placeholder?: string
   className?: string
   disabled?: boolean
@@ -60,14 +60,10 @@ export function TimePickerInput({
   const displayValue = value || `${hours}:${minutes}`
 
   // Generate hour options (00-23)
-  const hourOptions = Array.from({ length: 24 }, (_, i) => 
-    i.toString().padStart(2, '0')
-  )
+  const hourOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'))
 
   // Generate minute options (00-59, in 5-minute increments)
-  const minuteOptions = Array.from({ length: 12 }, (_, i) => 
-    (i * 5).toString().padStart(2, '0')
-  )
+  const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'))
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -86,7 +82,7 @@ export function TimePickerInput({
             className="absolute right-0 top-0 h-full w-8 p-0 hover:bg-transparent"
             disabled={disabled}
             type="button"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault()
               setOpen(!open)
             }}
@@ -99,11 +95,9 @@ export function TimePickerInput({
         <div className="flex">
           {/* Hours */}
           <div className="p-2 border-r">
-            <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
-              Hours
-            </div>
+            <div className="text-xs font-medium text-muted-foreground mb-2 text-center">Hours</div>
             <div className="grid max-h-[200px] overflow-y-auto">
-              {hourOptions.map((hour) => (
+              {hourOptions.map(hour => (
                 <Button
                   key={hour}
                   variant="ghost"
@@ -119,14 +113,14 @@ export function TimePickerInput({
               ))}
             </div>
           </div>
-          
+
           {/* Minutes */}
           <div className="p-2">
             <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
               Minutes
             </div>
             <div className="grid max-h-[200px] overflow-y-auto">
-              {minuteOptions.map((minute) => (
+              {minuteOptions.map(minute => (
                 <Button
                   key={minute}
                   variant="ghost"
@@ -143,13 +137,9 @@ export function TimePickerInput({
             </div>
           </div>
         </div>
-        
+
         <div className="p-2 border-t">
-          <Button
-            size="sm"
-            onClick={() => setOpen(false)}
-            className="w-full h-8"
-          >
+          <Button size="sm" onClick={() => setOpen(false)} className="w-full h-8">
             OK
           </Button>
         </div>

@@ -90,7 +90,7 @@ export function TableGrid({ tableData }: TableGridProps) {
       const { updateTableConfig } = await import('@/lib/api')
       await updateTableConfig(localTableData.slug, token, {}) // Empty request to test permissions
       setIsAdmin(true)
-    } catch (err) {
+    } catch (_err) {
       setIsAdmin(false)
     }
   }
@@ -207,8 +207,8 @@ export function TableGrid({ tableData }: TableGridProps) {
                 })
 
                 return (
-                  <TableRow 
-                    key={rowIndex} 
+                  <TableRow
+                    key={rowIndex}
                     className="border-b border-gray-200 hover:bg-muted/50"
                     style={isNextDateRow ? { borderLeft: '4px solid hsl(var(--primary))' } : {}}
                   >

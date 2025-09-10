@@ -27,7 +27,7 @@ export function getTodayDate() {
 /**
  * Parse various date formats and return ISO string.
  */
-export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): string | null {
+export function parseDate(value: string, _columnFormat: ColumnFormat = 'date'): string | null {
   if (!value || typeof value !== 'string') {
     return null
   }
@@ -36,7 +36,6 @@ export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): s
   if (!cleaned) {
     return null
   }
-
 
   // Handle date formats: DD.MM.YY or DD.MM.YYYY
   const dateMatch = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/)
@@ -76,7 +75,7 @@ export function parseDate(value: string, columnFormat: ColumnFormat = 'date'): s
  */
 export function formatDateForDisplay(
   value: string,
-  columnFormat: ColumnFormat = 'date',
+  _columnFormat: ColumnFormat = 'date',
   locale: string = 'en'
 ): string {
   if (!value) {
@@ -84,7 +83,6 @@ export function formatDateForDisplay(
   }
 
   try {
-
     // Handle regular date format
     const date = new Date(value)
     if (!isValid(date)) {

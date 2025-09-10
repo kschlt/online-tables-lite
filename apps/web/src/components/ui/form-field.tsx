@@ -11,13 +11,13 @@ interface FormFieldProps {
   children: React.ReactNode
 }
 
-export function FormField({ 
-  label, 
-  error, 
-  htmlFor, 
-  required = false, 
+export function FormField({
+  label,
+  error,
+  htmlFor,
+  required = false,
   className,
-  children 
+  children,
 }: FormFieldProps) {
   return (
     <div className={cn('space-y-2', className)}>
@@ -42,8 +42,10 @@ interface FormFieldErrorProps {
 }
 
 export function FormFieldError({ error }: FormFieldErrorProps) {
-  if (!error) return null
-  
+  if (!error) {
+    return null
+  }
+
   return (
     <p className="text-sm text-destructive mt-1 flex items-center gap-1">
       <span className="text-destructive">⚠</span>

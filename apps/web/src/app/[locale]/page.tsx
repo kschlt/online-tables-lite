@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { PageLayout, LanguageSwitcher, ErrorMessage } from '@/components/ui'
+import { PageLayout, ErrorMessage } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+
 import { FormField } from '@/components/ui/form-field'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createTable } from '@/lib/api'
@@ -90,7 +90,7 @@ export default function Home() {
     }
 
     setFieldErrors(newErrors)
-    
+
     return Object.values(newErrors).every(error => error === null)
   }
 
@@ -171,7 +171,10 @@ export default function Home() {
 
   const handleNumericFieldBlur = (field: 'cols' | 'rows') => {
     // If field is empty after blur, set to default value
-    if (typeof formData[field] === 'string' && (formData[field] === '' || formData[field] === null || formData[field] === undefined)) {
+    if (
+      typeof formData[field] === 'string' &&
+      (formData[field] === '' || formData[field] === null || formData[field] === undefined)
+    ) {
       const defaultValue = field === 'cols' ? 3 : 5
       setFormData(prev => ({ ...prev, [field]: defaultValue }))
     }
@@ -247,12 +250,7 @@ export default function Home() {
 
         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              label={t('table.title')}
-              htmlFor="title"
-              required
-              error={fieldErrors.title}
-            >
+            <FormField label={t('table.title')} htmlFor="title" required error={fieldErrors.title}>
               <Input
                 type="text"
                 id="title"
@@ -264,10 +262,7 @@ export default function Home() {
               />
             </FormField>
 
-            <FormField
-              label={t('table.description')}
-              htmlFor="description"
-            >
+            <FormField label={t('table.description')} htmlFor="description">
               <Input
                 type="text"
                 id="description"
@@ -279,12 +274,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              label={t('table.columns')}
-              htmlFor="cols"
-              required
-              error={fieldErrors.cols}
-            >
+            <FormField label={t('table.columns')} htmlFor="cols" required error={fieldErrors.cols}>
               <Input
                 type="number"
                 id="cols"
@@ -297,12 +287,7 @@ export default function Home() {
               />
             </FormField>
 
-            <FormField
-              label={t('table.rows')}
-              htmlFor="rows"
-              required
-              error={fieldErrors.rows}
-            >
+            <FormField label={t('table.rows')} htmlFor="rows" required error={fieldErrors.rows}>
               <Input
                 type="number"
                 id="rows"
