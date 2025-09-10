@@ -95,10 +95,11 @@ export function TableCell({
     [row, col, onCellChange]
   )
 
-
   // Format display value for date/timerange columns
   const displayValue = (() => {
-    if ((!isDateFormat && !isTimeRangeFormat) || !localValue) return localValue
+    if ((!isDateFormat && !isTimeRangeFormat) || !localValue) {
+      return localValue
+    }
 
     // For timerange format, always try to parse as date range
     if (isTimeRangeFormat) {
@@ -140,14 +141,12 @@ export function TableCell({
   }
 
   return (
-    <div 
+    <div
       className={`relative min-h-[48px] flex items-center transition-colors duration-200 ${
         isDateFormat || isTimeRangeFormat
-          ? 'bg-date-column hover:bg-date-column/80' 
+          ? 'bg-date-column hover:bg-date-column/80'
           : 'hover:bg-muted/30'
-      } ${
-        isEditing ? 'ring-2 ring-primary/20 bg-interaction-highlight' : ''
-      }`}
+      } ${isEditing ? 'ring-2 ring-primary/20 bg-interaction-highlight' : ''}`}
     >
       <div className="flex items-center space-x-1 w-full px-3">
         <Input
