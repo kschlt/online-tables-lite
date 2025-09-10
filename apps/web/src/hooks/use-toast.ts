@@ -15,14 +15,12 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
-
 let count = 0
 
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
 }
-
 
 type Action =
   | {

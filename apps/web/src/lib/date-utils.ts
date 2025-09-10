@@ -6,10 +6,7 @@ export type ColumnFormat = 'text' | 'date' | 'timerange'
  * Format a date string for display in the UI
  * Handles both single dates and timerange formats
  */
-export function formatDateForDisplay(
-  value: string,
-  locale: string = 'en'
-): string {
+export function formatDateForDisplay(value: string, locale: string = 'en'): string {
   if (!value) {
     return ''
   }
@@ -20,7 +17,7 @@ export function formatDateForDisplay(
     if (dateRange) {
       const startDate = new Date(dateRange.start)
       const endDate = new Date(dateRange.end)
-      
+
       const startFormatted = startDate.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
@@ -28,7 +25,7 @@ export function formatDateForDisplay(
         hour: '2-digit',
         minute: '2-digit',
       })
-      
+
       const endFormatted = endDate.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
@@ -36,16 +33,16 @@ export function formatDateForDisplay(
         hour: '2-digit',
         minute: '2-digit',
       })
-      
+
       return `${startFormatted} - ${endFormatted}`
     }
-    
+
     // Single date format
     const date = new Date(value)
     if (isNaN(date.getTime())) {
       return value // Return original if not a valid date
     }
-    
+
     return date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
@@ -108,7 +105,7 @@ export function findNextUpcomingDate(dates: string[]): string | null {
     .map(dateStr => new Date(dateStr))
     .filter(date => !isNaN(date.getTime()) && date >= today)
     .sort((a, b) => a.getTime() - b.getTime())
-  
+
   return validDates.length > 0 ? validDates[0].toISOString().split('T')[0] : null
 }
 
@@ -144,7 +141,7 @@ export function getRelativeTime(date: Date, locale: string = 'en'): string {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
   const diffMinutes = Math.floor(diffMs / (1000 * 60))
-  
+
   if (Math.abs(diffDays) >= 1) {
     return new Intl.RelativeTimeFormat(locale).format(diffDays, 'day')
   } else if (Math.abs(diffHours) >= 1) {
