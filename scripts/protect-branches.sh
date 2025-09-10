@@ -1,10 +1,12 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/bin/bash
 
-# Branch Protection Check
-echo "🛡️ Checking branch protection..."
+# Branch Protection Script
+# Prevents direct commits to main and production branches
+
+# Get current branch
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 
+# Check if we're on a protected branch
 if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
     echo ""
     echo "🚨 BRANCH PROTECTION VIOLATION DETECTED! 🚨"
@@ -30,12 +32,6 @@ if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
     exit 1
 fi
 
+# Allow commits to feature branches
 echo "✅ Committing to feature branch: $current_branch"
 echo "🛡️ Branch protection: ACTIVE"
-
-# Run cleanup before commit
-echo "🧹 Running pre-commit cleanup..."
-./scripts/git/cleanup-before-merge.sh
-
-# Run lint-staged for web app
-cd apps/web && npx lint-staged
