@@ -68,7 +68,7 @@ export function DropdownLanguageSwitcher({ className = '' }: DropdownLanguageSwi
 
   if (!isMounted) {
     return (
-      <Button variant="ghost" size="sm" disabled className={cn('h-8 w-8 p-0', className)}>
+      <Button variant="ghost" size="icon" disabled className={cn('h-9 w-9', className)}>
         <Globe className="h-4 w-4" />
       </Button>
     )
@@ -86,8 +86,8 @@ export function DropdownLanguageSwitcher({ className = '' }: DropdownLanguageSwi
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          size="sm" 
-          className={cn('h-8 w-8 p-0', className)}
+          size="icon" 
+          className={cn('h-9 w-9', className)}
           aria-label="Change language"
         >
           <Globe className="h-4 w-4" />

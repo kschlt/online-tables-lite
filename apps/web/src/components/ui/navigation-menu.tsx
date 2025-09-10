@@ -26,15 +26,15 @@ export function NavigationMenu({ className }: NavigationMenuProps) {
         <SheetTrigger asChild>
           <Button
             variant="ghost"
-            size="sm"
-            className="h-12 w-12 md:h-14 md:w-14 p-0 flex items-center justify-center"
+            size="icon"
+            className="h-12 w-12 md:h-14 md:w-14"
             aria-label="Open navigation menu"
           >
             <Menu className="h-6 w-6 md:h-7 md:w-7" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[320px] sm:w-[420px] pt-2">
-          <div className="absolute left-4 top-2">
+        <SheetContent side="right" className="w-[320px] sm:w-[420px]">
+          <div className="absolute left-4 top-4">
             <DropdownLanguageSwitcher className="flex-shrink-0" />
           </div>
           <SheetHeader className="sr-only">
