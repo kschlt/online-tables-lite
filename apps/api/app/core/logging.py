@@ -132,16 +132,16 @@ def log_info(logger: logging.Logger, message: str, **extra_fields) -> None:
             **extra_fields
         }
     })
-    
+
     # Fix: Suppress HTTP/2 and HPACK debug logs that are causing spam
     logging.getLogger("hpack.hpack").setLevel(logging.WARNING)
     logging.getLogger("httpcore.http2").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.INFO)
-    
+
     # Suppress Socket.IO debug logs
     logging.getLogger("socketio").setLevel(logging.INFO)
     logging.getLogger("engineio").setLevel(logging.INFO)
-    
+
     # Keep our API logs at appropriate levels
     logging.getLogger("api.request").setLevel(logging.INFO)
     logging.getLogger("api.socketio").setLevel(logging.INFO)

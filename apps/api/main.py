@@ -2,7 +2,7 @@
 from contextlib import asynccontextmanager
 
 import socketio
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -136,7 +136,7 @@ def create_app() -> FastAPI:
         """Handle Pydantic validation errors with detailed messages."""
         import logging
         logger = logging.getLogger("api.validation")
-        
+
         logger.error("Validation error", extra={
             "extra_fields": {
                 "url": str(request.url),
@@ -145,7 +145,7 @@ def create_app() -> FastAPI:
                 "body": await request.body() if request.method in ["POST", "PUT", "PATCH"] else None
             }
         })
-        
+
         return JSONResponse(
             status_code=422,
             content={
@@ -160,7 +160,7 @@ def create_app() -> FastAPI:
         """Handle ValueError exceptions."""
         import logging
         logger = logging.getLogger("api.error")
-        
+
         logger.error("Value error", extra={
             "extra_fields": {
                 "url": str(request.url),
@@ -168,7 +168,7 @@ def create_app() -> FastAPI:
                 "error": str(exc)
             }
         })
-        
+
         return JSONResponse(
             status_code=400,
             content={
@@ -182,7 +182,7 @@ def create_app() -> FastAPI:
         """Handle unexpected exceptions."""
         import logging
         logger = logging.getLogger("api.error")
-        
+
         logger.error("Unexpected error", extra={
             "extra_fields": {
                 "url": str(request.url),
@@ -191,7 +191,7 @@ def create_app() -> FastAPI:
                 "type": type(exc).__name__
             }
         }, exc_info=exc)
-        
+
         return JSONResponse(
             status_code=500,
             content={
