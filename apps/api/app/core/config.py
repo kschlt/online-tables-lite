@@ -1,4 +1,5 @@
 """Application configuration settings."""
+
 import os
 
 from dotenv import load_dotenv
@@ -31,11 +32,13 @@ class Settings(BaseModel):
 
         # Add development origins only in development
         if self.environment == "development":
-            origins.extend([
-                "http://localhost:3000",
-                "http://localhost:3001",
-                "http://localhost:3002",
-            ])
+            origins.extend(
+                [
+                    "http://localhost:3000",
+                    "http://localhost:3001",
+                    "http://localhost:3002",
+                ]
+            )
 
         return origins
 
@@ -46,7 +49,7 @@ class Settings(BaseModel):
             # Production hosts - customize for your deployment
             return [
                 "online-table-lite-api.fly.dev",  # Fly.io app domain
-                "*.vercel.app",      # Vercel preview domains
+                "*.vercel.app",  # Vercel preview domains
             ]
         else:
             # Development - allow localhost and test hosts

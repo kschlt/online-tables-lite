@@ -1,4 +1,5 @@
 """Table management endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_table_service

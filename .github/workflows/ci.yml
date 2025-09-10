@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, production ]
+  pull_request:
+    branches: [ main, production ]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Web App Checks
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+      
+      - name: Web App Quality
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run typecheck
+          npm run lint
+          npm run build
+          echo "✅ Web app checks passed"
+      
+      # API Checks  
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: API Quality
+        working-directory: apps/api
+        run: |
+          pip install -r requirements.txt
+          ruff check .
+          ruff format --check .
+          python -c "import app; print('✅ API structure OK')"
+          echo "✅ API checks passed"
+      
+      - name: Summary
+        run: |
+          echo "🎉 All quality checks passed!"
+          echo "✅ Ready for deployment"

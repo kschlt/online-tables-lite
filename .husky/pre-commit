@@ -1,9 +1,27 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run cleanup before commit
-echo "🧹 Running pre-commit cleanup..."
-./scripts/git/cleanup-before-merge.sh
+# AI-Era Branch Protection
+current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-# Run lint-staged for web app
-cd apps/web && npx lint-staged
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
+    # Check if this is a merge commit
+    commit_msg=$(git log -1 --pretty=%B)
+    
+    if echo "$commit_msg" | grep -q "Merge branch"; then
+        echo "✅ Merge to $current_branch - ALLOWED"
+    else
+        echo ""
+        echo "🚨 AI PROTECTION: Direct commits to $current_branch blocked!"
+        echo ""
+        echo "💡 Use feature branches:"
+        echo "   git checkout -b feature/your-change"
+        echo "   git commit -m 'your changes'"
+        echo "   git checkout main && git merge feature/your-change"
+        echo ""
+        exit 1
+    fi
+fi
+
+echo "✅ Committing to feature branch: $current_branch"
+echo "🔍 AI protection: ACTIVE"

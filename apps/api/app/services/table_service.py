@@ -1,4 +1,5 @@
 """Table business logic service."""
+
 from typing import Any
 
 from app.core.config import settings
@@ -112,10 +113,7 @@ class TableService:
 
         # Get cells data
         cells_result = (
-            self.supabase.table("cells")
-            .select("r, c, value")
-            .eq("table_id", table_id)
-            .execute()
+            self.supabase.table("cells").select("r, c, value").eq("table_id", table_id).execute()
         )
 
         cells_data = [
@@ -158,7 +156,9 @@ class TableService:
 
             if existing.data:
                 # Update existing cell
-                self.supabase.table("cells").update({"value": cell.value}).eq("id", existing.data[0]["id"]).execute()
+                self.supabase.table("cells").update({"value": cell.value}).eq(
+                    "id", existing.data[0]["id"]
+                ).execute()
             else:
                 # Insert new cell
                 self.supabase.table("cells").insert(cell_data).execute()
@@ -166,18 +166,16 @@ class TableService:
     async def get_cells(self, table_id: str) -> list[dict[str, Any]]:
         """Get all cell data for a table."""
         result = (
-            self.supabase.table("cells")
-            .select("r, c, value")
-            .eq("table_id", table_id)
-            .execute()
+            self.supabase.table("cells").select("r, c, value").eq("table_id", table_id).execute()
         )
 
         return [
-            {"row": cell["r"], "col": cell["c"], "value": cell["value"]}
-            for cell in result.data
+            {"row": cell["r"], "col": cell["c"], "value": cell["value"]} for cell in result.data
         ]
 
-    async def update_table_config(self, table_id: str, config: TableConfigRequest) -> dict[str, Any]:
+    async def update_table_config(
+        self, table_id: str, config: TableConfigRequest
+    ) -> dict[str, Any]:
         """Update table configuration (admin only)."""
         # Validate limits
         errors = []
@@ -194,8 +192,8 @@ class TableService:
                 "message": "; ".join(errors),
                 "limits": {
                     "max_rows": settings.table_row_limit,
-                    "max_cols": settings.table_col_limit
-                }
+                    "max_cols": settings.table_col_limit,
+                },
             }
 
         # Update table metadata
@@ -224,27 +222,24 @@ class TableService:
                     col_data["format"] = col_update.format.value
 
                 if col_data:
-                    self.supabase.table("columns").update(col_data).eq("table_id", table_id).eq("idx", col_update.idx).execute()
+                    self.supabase.table("columns").update(col_data).eq("table_id", table_id).eq(
+                        "idx", col_update.idx
+                    ).execute()
 
         return {
             "success": True,
             "message": "Configuration updated successfully",
-            "limits": {
-                "max_rows": settings.table_row_limit,
-                "max_cols": settings.table_col_limit
-            }
+            "limits": {"max_rows": settings.table_row_limit, "max_cols": settings.table_col_limit},
         }
 
     async def add_rows(self, table_id: str, request: AddRowRequest) -> dict[str, Any]:
         """Add rows to a table."""
         # Get current table data
-        table_result = self.supabase.table("tables").select("rows, fixed_rows").eq("id", table_id).execute()
+        table_result = (
+            self.supabase.table("tables").select("rows, fixed_rows").eq("id", table_id).execute()
+        )
         if not table_result.data:
-            return {
-                "success": False,
-                "message": "Table not found",
-                "new_rows": None
-            }
+            return {"success": False, "message": "Table not found", "new_rows": None}
 
         table = table_result.data[0]
 
@@ -253,7 +248,7 @@ class TableService:
             return {
                 "success": False,
                 "message": "Cannot add rows to a table with fixed row count",
-                "new_rows": table["rows"]
+                "new_rows": table["rows"],
             }
 
         current_rows = table["rows"]
@@ -264,28 +259,22 @@ class TableService:
             return {
                 "success": False,
                 "message": f"Cannot add {request.count} rows. Would exceed limit of {settings.table_row_limit}",
-                "new_rows": current_rows
+                "new_rows": current_rows,
             }
 
         # Update table row count
         self.supabase.table("tables").update({"rows": new_rows}).eq("id", table_id).execute()
 
-        return {
-            "success": True,
-            "message": f"Added {request.count} rows",
-            "new_rows": new_rows
-        }
+        return {"success": True, "message": f"Added {request.count} rows", "new_rows": new_rows}
 
     async def remove_rows(self, table_id: str, request: RemoveRowRequest) -> dict[str, Any]:
         """Remove rows from a table."""
         # Get current table data
-        table_result = self.supabase.table("tables").select("rows, fixed_rows").eq("id", table_id).execute()
+        table_result = (
+            self.supabase.table("tables").select("rows, fixed_rows").eq("id", table_id).execute()
+        )
         if not table_result.data:
-            return {
-                "success": False,
-                "message": "Table not found",
-                "new_rows": None
-            }
+            return {"success": False, "message": "Table not found", "new_rows": None}
 
         table = table_result.data[0]
 
@@ -294,7 +283,7 @@ class TableService:
             return {
                 "success": False,
                 "message": "Cannot remove rows from a table with fixed row count",
-                "new_rows": table["rows"]
+                "new_rows": table["rows"],
             }
 
         current_rows = table["rows"]
@@ -305,7 +294,7 @@ class TableService:
             return {
                 "success": False,
                 "message": f"Cannot remove {request.count} rows. Must have at least 1 row",
-                "new_rows": current_rows
+                "new_rows": current_rows,
             }
 
         # Remove cells from deleted rows
@@ -314,22 +303,14 @@ class TableService:
         # Update table row count
         self.supabase.table("tables").update({"rows": new_rows}).eq("id", table_id).execute()
 
-        return {
-            "success": True,
-            "message": f"Removed {request.count} rows",
-            "new_rows": new_rows
-        }
+        return {"success": True, "message": f"Removed {request.count} rows", "new_rows": new_rows}
 
     async def add_columns(self, table_id: str, request: AddColumnRequest) -> dict[str, Any]:
         """Add columns to a table."""
         # Get current table data
         table_result = self.supabase.table("tables").select("cols").eq("id", table_id).execute()
         if not table_result.data:
-            return {
-                "success": False,
-                "message": "Table not found",
-                "new_cols": None
-            }
+            return {"success": False, "message": "Table not found", "new_cols": None}
 
         current_cols = table_result.data[0]["cols"]
         new_cols = current_cols + request.count
@@ -339,42 +320,36 @@ class TableService:
             return {
                 "success": False,
                 "message": f"Cannot add {request.count} columns. Would exceed limit of {settings.table_col_limit}",
-                "new_cols": current_cols
+                "new_cols": current_cols,
             }
 
         # Create new column entries
         new_columns = []
         for i in range(current_cols, new_cols):
             header = request.header if request.header and i == current_cols else f"Column {i + 1}"
-            new_columns.append({
-                "table_id": table_id,
-                "idx": i,
-                "header": header,
-                "width": None,
-                "format": "text",  # Default to text format
-            })
+            new_columns.append(
+                {
+                    "table_id": table_id,
+                    "idx": i,
+                    "header": header,
+                    "width": None,
+                    "format": "text",  # Default to text format
+                }
+            )
 
         self.supabase.table("columns").insert(new_columns).execute()
 
         # Update table column count
         self.supabase.table("tables").update({"cols": new_cols}).eq("id", table_id).execute()
 
-        return {
-            "success": True,
-            "message": f"Added {request.count} columns",
-            "new_cols": new_cols
-        }
+        return {"success": True, "message": f"Added {request.count} columns", "new_cols": new_cols}
 
     async def remove_columns(self, table_id: str, request: RemoveColumnRequest) -> dict[str, Any]:
         """Remove columns from a table."""
         # Get current table data
         table_result = self.supabase.table("tables").select("cols").eq("id", table_id).execute()
         if not table_result.data:
-            return {
-                "success": False,
-                "message": "Table not found",
-                "new_cols": None
-            }
+            return {"success": False, "message": "Table not found", "new_cols": None}
 
         current_cols = table_result.data[0]["cols"]
         new_cols = current_cols - request.count
@@ -384,11 +359,13 @@ class TableService:
             return {
                 "success": False,
                 "message": f"Cannot remove {request.count} columns. Must have at least 1 column",
-                "new_cols": current_cols
+                "new_cols": current_cols,
             }
 
         # Remove columns and their cells
-        self.supabase.table("columns").delete().eq("table_id", table_id).gte("idx", new_cols).execute()
+        self.supabase.table("columns").delete().eq("table_id", table_id).gte(
+            "idx", new_cols
+        ).execute()
         self.supabase.table("cells").delete().eq("table_id", table_id).gte("c", new_cols).execute()
 
         # Update table column count
@@ -397,5 +374,5 @@ class TableService:
         return {
             "success": True,
             "message": f"Removed {request.count} columns",
-            "new_cols": new_cols
+            "new_cols": new_cols,
         }

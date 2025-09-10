@@ -1,8 +1,9 @@
 """FastAPI application entry point."""
+
 from contextlib import asynccontextmanager
 
 import socketio
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -44,20 +45,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 async def connect(sid, environ):
     """Handle client connection."""
     import logging
+
     logger = logging.getLogger("api.socketio")
-    logger.info("Socket.IO client connected", extra={
-        "extra_fields": {"client_id": sid}
-    })
+    logger.info("Socket.IO client connected", extra={"extra_fields": {"client_id": sid}})
 
 
 @sio.event
 async def disconnect(sid):
     """Handle client disconnection."""
     import logging
+
     logger = logging.getLogger("api.socketio")
-    logger.info("Socket.IO client disconnected", extra={
-        "extra_fields": {"client_id": sid}
-    })
+    logger.info("Socket.IO client disconnected", extra={"extra_fields": {"client_id": sid}})
 
 
 @sio.event
@@ -70,14 +69,12 @@ async def join_table(sid, data):
         await sio.emit("room_joined", {"table_id": table_id}, room=sid)
 
         import logging
+
         logger = logging.getLogger("api.socketio")
-        logger.info("Client joined table room", extra={
-            "extra_fields": {
-                "client_id": sid,
-                "table_id": table_id,
-                "room": room
-            }
-        })
+        logger.info(
+            "Client joined table room",
+            extra={"extra_fields": {"client_id": sid, "table_id": table_id, "room": room}},
+        )
 
 
 @sio.event
@@ -89,29 +86,31 @@ async def leave_table(sid, data):
         await sio.leave_room(sid, room)
 
         import logging
+
         logger = logging.getLogger("api.socketio")
-        logger.info("Client left table room", extra={
-            "extra_fields": {
-                "client_id": sid,
-                "table_id": table_id,
-                "room": room
-            }
-        })
+        logger.info(
+            "Client left table room",
+            extra={"extra_fields": {"client_id": sid, "table_id": table_id, "room": room}},
+        )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
     import logging
+
     logger = logging.getLogger("api.startup")
 
     # Startup
-    logger.info("FastAPI server starting up", extra={
-        "extra_fields": {
-            "environment": settings.environment,
-            "cors_origins_count": len(settings.cors_origins)
-        }
-    })
+    logger.info(
+        "FastAPI server starting up",
+        extra={
+            "extra_fields": {
+                "environment": settings.environment,
+                "cors_origins_count": len(settings.cors_origins),
+            }
+        },
+    )
     yield
     # Shutdown
     logger.info("FastAPI server shutting down")
@@ -135,69 +134,77 @@ def create_app() -> FastAPI:
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         """Handle Pydantic validation errors with detailed messages."""
         import logging
+
         logger = logging.getLogger("api.validation")
-        
-        logger.error("Validation error", extra={
-            "extra_fields": {
-                "url": str(request.url),
-                "method": request.method,
-                "errors": exc.errors(),
-                "body": await request.body() if request.method in ["POST", "PUT", "PATCH"] else None
-            }
-        })
-        
+
+        logger.error(
+            "Validation error",
+            extra={
+                "extra_fields": {
+                    "url": str(request.url),
+                    "method": request.method,
+                    "errors": exc.errors(),
+                    "body": await request.body()
+                    if request.method in ["POST", "PUT", "PATCH"]
+                    else None,
+                }
+            },
+        )
+
         return JSONResponse(
             status_code=422,
             content={
                 "detail": "Validation error",
                 "errors": exc.errors(),
-                "message": "Please check your request format and field types"
-            }
+                "message": "Please check your request format and field types",
+            },
         )
 
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
         """Handle ValueError exceptions."""
         import logging
+
         logger = logging.getLogger("api.error")
-        
-        logger.error("Value error", extra={
-            "extra_fields": {
-                "url": str(request.url),
-                "method": request.method,
-                "error": str(exc)
-            }
-        })
-        
+
+        logger.error(
+            "Value error",
+            extra={
+                "extra_fields": {
+                    "url": str(request.url),
+                    "method": request.method,
+                    "error": str(exc),
+                }
+            },
+        )
+
         return JSONResponse(
-            status_code=400,
-            content={
-                "detail": str(exc),
-                "message": "Invalid input value"
-            }
+            status_code=400, content={"detail": str(exc), "message": "Invalid input value"}
         )
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
         """Handle unexpected exceptions."""
         import logging
+
         logger = logging.getLogger("api.error")
-        
-        logger.error("Unexpected error", extra={
-            "extra_fields": {
-                "url": str(request.url),
-                "method": request.method,
-                "error": str(exc),
-                "type": type(exc).__name__
-            }
-        }, exc_info=exc)
-        
+
+        logger.error(
+            "Unexpected error",
+            extra={
+                "extra_fields": {
+                    "url": str(request.url),
+                    "method": request.method,
+                    "error": str(exc),
+                    "type": type(exc).__name__,
+                }
+            },
+            exc_info=exc,
+        )
+
         return JSONResponse(
             status_code=500,
-            content={
-                "detail": "Internal server error",
-                "message": "An unexpected error occurred"
-            }
+            content={"detail": "Internal server error", "message": "An unexpected error occurred"},
         )
 
     # Request logging middleware (must be first for proper timing)
@@ -207,10 +214,7 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityHeadersMiddleware)
 
     # Security middleware
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.trusted_hosts
-    )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
 
     # CORS middleware
     app.add_middleware(
@@ -244,7 +248,7 @@ def create_app() -> FastAPI:
                 "fastapi": fastapi.__version__,
                 "pydantic": pydantic.__version__,
                 "uvicorn": uvicorn.__version__,
-            }
+            },
         }
 
         # Test database connectivity
@@ -254,39 +258,30 @@ def create_app() -> FastAPI:
             supabase.table("tables").select("id").limit(1).execute()
             health_status["database"] = {
                 "status": "connected",
-                "response_time_ms": 0  # Could add timing if needed
+                "response_time_ms": 0,  # Could add timing if needed
             }
             logger.info("Health check - database connected")
         except Exception as e:
-            health_status["database"] = {
-                "status": "error",
-                "error": str(e)
-            }
+            health_status["database"] = {"status": "error", "error": str(e)}
             health_status["status"] = "degraded"
             logger.error("Health check - database connection failed", exc_info=e)
 
         # Test Socket.IO server
         try:
-            if sio and hasattr(sio, 'manager'):
+            if sio and hasattr(sio, "manager"):
                 # Get client count safely
                 try:
                     client_count = len(sio.manager.rooms.get("/", {}))
                 except (AttributeError, KeyError):
                     client_count = 0
 
-                health_status["socketio"] = {
-                    "status": "running",
-                    "connected_clients": client_count
-                }
+                health_status["socketio"] = {"status": "running", "connected_clients": client_count}
                 logger.info("Health check - Socket.IO server running")
             else:
                 health_status["socketio"] = {"status": "not_initialized"}
                 logger.warning("Health check - Socket.IO not initialized")
         except Exception as e:
-            health_status["socketio"] = {
-                "status": "error",
-                "error": str(e)
-            }
+            health_status["socketio"] = {"status": "error", "error": str(e)}
             logger.error("Health check - Socket.IO check failed", exc_info=e)
 
         return health_status

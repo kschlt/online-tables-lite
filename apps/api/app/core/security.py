@@ -1,4 +1,5 @@
 """Security utilities for token handling."""
+
 import hashlib
 import secrets
 from typing import Any
@@ -26,15 +27,12 @@ def generate_token() -> str:
 
 def extract_bearer_token(authorization: str = Header(None)) -> str:
     """Extract token from Authorization header."""
-    request_id = request_id_context.get('')
+    request_id = request_id_context.get("")
 
     if not authorization:
         raise HTTPException(
             status_code=401,
-            detail={
-                "error": "Authorization header required",
-                "request_id": request_id
-            }
+            detail={"error": "Authorization header required", "request_id": request_id},
         )
 
     if not authorization.startswith("Bearer "):
@@ -42,8 +40,8 @@ def extract_bearer_token(authorization: str = Header(None)) -> str:
             status_code=401,
             detail={
                 "error": "Invalid authorization format. Use 'Bearer <token>'",
-                "request_id": request_id
-            }
+                "request_id": request_id,
+            },
         )
 
     return authorization[7:]  # Remove "Bearer " prefix
@@ -51,15 +49,11 @@ def extract_bearer_token(authorization: str = Header(None)) -> str:
 
 async def verify_token(table_slug: str, token: str) -> tuple[dict[str, Any], str]:
     """Verify token and return table with role."""
-    request_id = request_id_context.get('')
+    request_id = request_id_context.get("")
 
     if not token:
         raise HTTPException(
-            status_code=401,
-            detail={
-                "error": "Token required",
-                "request_id": request_id
-            }
+            status_code=401, detail={"error": "Token required", "request_id": request_id}
         )
 
     # Hash token for comparison (never log raw tokens)
@@ -82,8 +76,8 @@ async def verify_token(table_slug: str, token: str) -> tuple[dict[str, Any], str
                 detail={
                     "error": "Table not found",
                     "request_id": request_id,
-                    "table_slug": table_slug
-                }
+                    "table_slug": table_slug,
+                },
             )
 
         table = result.data[0]
@@ -98,8 +92,8 @@ async def verify_token(table_slug: str, token: str) -> tuple[dict[str, Any], str
                 detail={
                     "error": "Invalid token",
                     "request_id": request_id,
-                    "table_slug": table_slug
-                }
+                    "table_slug": table_slug,
+                },
             )
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -107,25 +101,21 @@ async def verify_token(table_slug: str, token: str) -> tuple[dict[str, Any], str
     except Exception as e:
         # Log database errors and return standardized error
         import logging
+
         logger = logging.getLogger("api.auth")
-        logger.error("Database error during token verification", exc_info=e, extra={
-            "extra_fields": {
-                "table_slug": table_slug,
-                "request_id": request_id
-            }
-        })
+        logger.error(
+            "Database error during token verification",
+            exc_info=e,
+            extra={"extra_fields": {"table_slug": table_slug, "request_id": request_id}},
+        )
         raise HTTPException(
             status_code=500,
-            detail={
-                "error": "Authentication service unavailable",
-                "request_id": request_id
-            }
+            detail={"error": "Authentication service unavailable", "request_id": request_id},
         )
 
 
 async def verify_bearer_token(
-    table_slug: str,
-    authorization: str = Depends(extract_bearer_token)
+    table_slug: str, authorization: str = Depends(extract_bearer_token)
 ) -> tuple[dict[str, Any], str]:
     """Verify Bearer token and return table with role."""
     return await verify_token(table_slug, authorization)
@@ -133,6 +123,10 @@ async def verify_bearer_token(
 
 def get_bearer_auth(slug: str):
     """Create dependency for Bearer token authentication for a specific table."""
-    async def _verify_auth(authorization: str = Depends(extract_bearer_token)) -> tuple[dict[str, Any], str]:
+
+    async def _verify_auth(
+        authorization: str = Depends(extract_bearer_token),
+    ) -> tuple[dict[str, Any], str]:
         return await verify_token(slug, authorization)
+
     return _verify_auth
