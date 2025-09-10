@@ -134,17 +134,17 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-heading-3 pr-8">
+        <DialogHeader className="space-y-4 mb-2">
+          <DialogTitle className="flex items-center gap-2 text-heading-2 pr-8">
             <Settings className="h-5 w-5 flex-shrink-0" />
             <span className="truncate">{t('admin.tableSettings')}</span>
           </DialogTitle>
-          <DialogDescription className="text-body text-muted-foreground">
+          <DialogDescription className="text-body text-muted-foreground text-left">
             {t('admin.tableSettingsDescription')}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Error message */}
           {error && (
             <Alert variant="destructive">
@@ -234,15 +234,28 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
             </div>
 
             <div className="space-y-3">
-              {columnConfigs.map(column => (
+              {columnConfigs.map((column, index) => (
                 <div
                   key={column.idx}
-                  className="flex items-center space-x-3 p-3 border border-border rounded-lg card-flat relative"
+                  className="p-3 border border-border rounded-lg card-flat relative"
                 >
-                  <span className="absolute top-2 right-2 text-xs text-muted-foreground font-medium">
-                    {column.idx + 1}
-                  </span>
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 pr-12">
+                  {/* Index and delete button - top right */}
+                  <div className="absolute top-1.5 right-3 flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      #{index + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeColumn(column.idx)}
+                      disabled={columnConfigs.length <= 1}
+                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground transition-colors"
+                      title={columnConfigs.length <= 1 ? t('admin.minColumnsReached') : 'Delete column'}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <Label htmlFor={`header-${column.idx}`} className="text-body font-medium">
                         {t('admin.columnHeader')}
@@ -294,17 +307,6 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                       </select>
                     </div>
                   </div>
-
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => removeColumn(column.idx)}
-                    disabled={columnConfigs.length <= 1}
-                    className="flex items-center gap-1 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               ))}
             </div>
