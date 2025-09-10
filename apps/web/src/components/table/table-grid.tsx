@@ -190,15 +190,11 @@ export function TableGrid({ tableData }: TableGridProps) {
                 })
 
                 return (
-                  <TableRow
-                    key={rowIndex}
-                    className="border-b border-gray-200 hover:bg-muted/50"
-                    style={isNextDateRow ? { borderLeft: '4px solid hsl(var(--primary))' } : {}}
-                  >
-                    {localTableData.columns.map(column => (
+                  <TableRow key={rowIndex} className="border-b border-gray-200 hover:bg-muted/50">
+                    {localTableData.columns.map((column, colIndex) => (
                       <ShadcnTableCell
                         key={`${rowIndex}-${column.idx}`}
-                        className="p-0 border-r border-gray-200 last:border-r-0"
+                        className={`p-0 border-r border-gray-200 last:border-r-0 ${isNextDateRow && colIndex === 0 ? 'next-date-cell' : ''}`}
                         style={{
                           width: getColumnWidth(column),
                           minWidth:

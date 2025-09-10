@@ -120,7 +120,7 @@ export function TableCell({
 
     // For date format - only single date formatting
     if (isDateFormat) {
-      return formatDateForDisplay(localValue, locale)
+      return formatDateForDisplay(localValue, locale, format)
     }
 
     return localValue

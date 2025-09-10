@@ -1,35 +1,19 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
-# Production Protection Only
-while read local_ref local_sha remote_ref remote_sha; do
-    branch=$(echo "$remote_ref" | sed 's/refs\/heads\///')
-    
-    if [ "$branch" = "production" ]; then
-        echo "🚨 PRODUCTION PUSH - Running essential checks..."
-        
-        # Quick web check
-        cd apps/web
-        if ! npm run typecheck > /dev/null 2>&1; then
-            echo "❌ TypeScript errors detected!"
-            echo "💡 Fix errors before pushing to production"
-            exit 1
-        fi
-        
-        if ! npm run build > /dev/null 2>&1; then
-            echo "❌ Build failed!"
-            echo "💡 Fix build issues before pushing to production"
-            exit 1
-        fi
-        
-        # Quick API check
-        cd ../api
-        if ! ruff check . > /dev/null 2>&1; then
-            echo "❌ API linting errors detected!"
-            echo "💡 Fix linting issues before pushing to production"
-            exit 1
-        fi
-        
-        echo "✅ Production checks passed - safe to deploy!"
-    fi
-done
+# AI-Era Branch Protection for Push
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
+    echo ""
+    echo "🚨 AI PROTECTION: Direct push to $current_branch blocked!"
+    echo ""
+    echo "💡 Use pull requests:"
+    echo "   git push origin feature/your-change"
+    echo "   # Then create PR on GitHub"
+    echo ""
+    echo "🛡️  This prevents accidental direct pushes to protected branches."
+    exit 1
+else
+    echo "✅ Pushing feature branch: $current_branch"
+    echo "🔍 AI protection: ACTIVE"
+fi
