@@ -7,7 +7,7 @@
       "protectionRules": {
         "pullRequest": {
           "requirePullRequest": true,
-          "requiredApprovals": 1,
+          "requiredApprovals": 0,
           "dismissStaleApprovals": true,
           "requireCodeOwnerReview": false,
           "requireLatestReviewablePush": false,
@@ -31,7 +31,7 @@
       },
       "implications": [
         "No direct pushes to main",
-        "PRs must have 1 approval + passing Quality Checks",
+        "PRs must pass Quality Checks (no approval required)",
         "Branch must be up to date",
         "History stays clean with squash/rebase merges"
       ]
@@ -41,7 +41,7 @@
       "protectionRules": {
         "pullRequest": {
           "requirePullRequest": true,
-          "requiredApprovals": 1,
+          "requiredApprovals": 0,
           "dismissStaleApprovals": true,
           "requireCodeOwnerReview": false,
           "requireLatestReviewablePush": false,
@@ -67,7 +67,7 @@
         "No direct pushes to production",
         "All changes flow via PRs from main → production",
         "Strict linear history enforced (Rebase only)",
-        "Must pass Quality Checks and require 1 approval"
+        "Must pass Quality Checks (no approval required)"
       ]
     }
   },
@@ -75,7 +75,7 @@
     "protectedBranches": ["main", "production"],
     "aiProtection": "AI and humans cannot push directly to protected branches",
     "requiredStatusCheck": "Quality Checks (GitHub Actions)",
-    "requiredApprovals": 1,
+    "requiredApprovals": 0,
     "mainHistoryPolicy": "Flexible (Squash + Rebase)",
     "productionHistoryPolicy": "Strict linear (Rebase only)"
   }
