@@ -21,7 +21,7 @@
   },
   "app": {
     "title": "Online Tabellen Lite",
-    "description": "Kollaborative Tabellenbearbeitungsanwendung",
+    "description": "App um gemeinsam Tabellen zu erstellen und zu bearbeiten",
     "createTable": "Tabelle erstellen",
     "tableCreated": "Tabelle erfolgreich erstellt!"
   },
