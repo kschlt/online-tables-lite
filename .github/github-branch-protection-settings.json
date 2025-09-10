@@ -1,0 +1,82 @@
+{
+  "repository": "online-table-lite",
+  "lastUpdated": "2024-09-10",
+  "branches": {
+    "main": {
+      "status": "active",
+      "protectionRules": {
+        "pullRequest": {
+          "requirePullRequest": true,
+          "requiredApprovals": 1,
+          "dismissStaleApprovals": true,
+          "requireCodeOwnerReview": false,
+          "requireLatestReviewablePush": false,
+          "requireConversationResolution": true,
+          "autoRequestCopilotReview": false
+        },
+        "mergeMethods": {
+          "allowed": ["squash", "rebase"],
+          "disabled": ["merge_commits"]
+        },
+        "statusChecks": {
+          "requireStatusChecks": true,
+          "requiredChecks": ["Quality Checks"],
+          "requireUpToDateBranch": true,
+          "requireStatusChecksOnCreation": false
+        },
+        "branchIntegrity": {
+          "blockForcePushes": true,
+          "blockBranchDeletions": true
+        }
+      },
+      "implications": [
+        "No direct pushes to main",
+        "PRs must have 1 approval + passing Quality Checks",
+        "Branch must be up to date",
+        "History stays clean with squash/rebase merges"
+      ]
+    },
+    "production": {
+      "status": "active",
+      "protectionRules": {
+        "pullRequest": {
+          "requirePullRequest": true,
+          "requiredApprovals": 1,
+          "dismissStaleApprovals": true,
+          "requireCodeOwnerReview": false,
+          "requireLatestReviewablePush": false,
+          "requireConversationResolution": true,
+          "autoRequestCopilotReview": false
+        },
+        "mergeMethods": {
+          "allowed": ["rebase"],
+          "disabled": ["merge_commits", "squash"]
+        },
+        "statusChecks": {
+          "requireStatusChecks": true,
+          "requiredChecks": ["Quality Checks"],
+          "requireUpToDateBranch": true,
+          "requireStatusChecksOnCreation": false
+        },
+        "branchIntegrity": {
+          "blockForcePushes": true,
+          "blockBranchDeletions": true
+        }
+      },
+      "implications": [
+        "No direct pushes to production",
+        "All changes flow via PRs from main → production",
+        "Strict linear history enforced (Rebase only)",
+        "Must pass Quality Checks and require 1 approval"
+      ]
+    }
+  },
+  "summary": {
+    "protectedBranches": ["main", "production"],
+    "aiProtection": "AI and humans cannot push directly to protected branches",
+    "requiredStatusCheck": "Quality Checks (GitHub Actions)",
+    "requiredApprovals": 1,
+    "mainHistoryPolicy": "Flexible (Squash + Rebase)",
+    "productionHistoryPolicy": "Strict linear (Rebase only)"
+  }
+}
