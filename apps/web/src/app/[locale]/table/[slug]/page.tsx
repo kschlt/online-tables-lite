@@ -51,9 +51,9 @@ export default function TablePage() {
   }
 
   return (
-    <PageLayout 
+    <PageLayout
       header={
-        <Header 
+        <Header
           title={tableData.title || t('table.untitled')}
           description={tableData.description || undefined}
         />

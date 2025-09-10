@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { ColumnFormat } from '@/types'
-import { formatDateForDisplay, parseDate } from '@/lib/date-utils'
+import { formatDateForDisplay, parseDateString } from '@/lib/date-utils'
 import { parseDateRange, formatDateRange } from '@/lib/date-range-utils'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -13,7 +13,7 @@ interface TableCellProps {
   row: number
   col: number
   value?: string | null
-  onCellChange: (row: number, col: number, value: string | null) => void
+  onCellChange: (_row: number, _col: number, _value: string | null) => void
   isReadonly?: boolean
   format?: ColumnFormat
 }
@@ -61,10 +61,10 @@ export function TableCell({
 
         // For date columns, try to normalize the date format
         if (isDateFormat && localValue) {
-          const parsedDate = parseDate(localValue)
+          const parsedDate = parseDateString(localValue)
           if (parsedDate) {
-            valueToSave = parsedDate // Save as ISO format
-            setLocalValue(parsedDate) // Update local state with normalized format
+            valueToSave = parsedDate.toISOString() // Save as ISO format
+            setLocalValue(parsedDate.toISOString()) // Update local state with normalized format
           }
         }
 
@@ -120,7 +120,7 @@ export function TableCell({
 
     // For date format - only single date formatting
     if (isDateFormat) {
-      return formatDateForDisplay(localValue, format, locale)
+      return formatDateForDisplay(localValue, locale)
     }
 
     return localValue

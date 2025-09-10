@@ -20,22 +20,15 @@ const maxWidthClasses = {
   full: 'max-w-full',
 }
 
-export function PageLayout({
-  children,
-  header,
-  maxWidth = 'lg',
-  className = '',
-}: PageLayoutProps) {
+export function PageLayout({ children, header, maxWidth = 'lg', className = '' }: PageLayoutProps) {
   return (
     <main className={cn('min-h-screen bg-background', className)}>
       <div className={cn('mx-auto', maxWidthClasses[maxWidth])}>
         {/* Optional Header */}
         {header}
-        
+
         {/* Content Section */}
-        <div className="px-4 py-4">
-          {children}
-        </div>
+        <div className="px-4 py-4">{children}</div>
       </div>
     </main>
   )

@@ -27,7 +27,6 @@ cat > test-auto-format.ts << 'TEST_EOF'
 // Test file for auto-formatting
 const testFunction=(a:number,b:string)=>{
 if(a>0){
-console.log(b)
 }
 return{a,b}
 }

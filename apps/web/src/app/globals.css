@@ -264,19 +264,19 @@
   }
 }
 
-  /* Safe area insets for mobile devices */
-  .pt-safe-area-inset-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
+/* Safe area insets for mobile devices */
+.pt-safe-area-inset-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
 
-  .pb-safe-area-inset-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+.pb-safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
-  .pl-safe-area-inset-left {
-    padding-left: env(safe-area-inset-left, 0px);
-  }
+.pl-safe-area-inset-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
 
-  .pr-safe-area-inset-right {
-    padding-right: env(safe-area-inset-right, 0px);
-  }
+.pr-safe-area-inset-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}

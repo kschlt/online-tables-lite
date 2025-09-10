@@ -1,158 +1,152 @@
-/**
- * Date utilities for date functionality.
- */
+import { parseDateRange } from './date-range-utils'
 
-import { format, parse, isValid, startOfDay } from 'date-fns'
-import { de, enUS } from 'date-fns/locale'
-import type { ColumnFormat } from '@/types'
+export type ColumnFormat = 'text' | 'date' | 'timerange'
 
 /**
- * Get today's date in various formats.
+ * Format a date string for display in the UI
+ * Handles both single dates and timerange formats
  */
-export function getTodayDate() {
-  const today = new Date()
-  return {
-    iso: today.toISOString().split('T')[0], // YYYY-MM-DD
-    us: today.toLocaleDateString('en-US'), // MM/DD/YYYY
-    eu: today.toLocaleDateString('en-GB'), // DD/MM/YYYY
-    readable: today.toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }), // Fri, Dec 1, 2023
-  }
-}
-
-/**
- * Parse various date formats and return ISO string.
- */
-export function parseDate(value: string): string | null {
-  if (!value || typeof value !== 'string') {
-    return null
-  }
-
-  const cleaned = value.trim()
-  if (!cleaned) {
-    return null
-  }
-
-  // Handle date formats: DD.MM.YY or DD.MM.YYYY
-  const dateMatch = cleaned.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/)
-  if (dateMatch) {
-    const [, day, month, year] = dateMatch
-    const fullYear = year.length === 2 ? `20${year}` : year
-
-    try {
-      const date = parse(`${day}.${month}.${fullYear}`, 'dd.MM.yyyy', new Date())
-      if (isValid(date)) {
-        return date.toISOString().split('T')[0]
-      }
-      return null
-    } catch {
-      return null
-    }
-  }
-
-  // Fallback to ISO format parsing
-  if (/^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
-    try {
-      const date = new Date(cleaned)
-      if (isNaN(date.getTime())) {
-        return null
-      }
-      return date.toISOString().split('T')[0]
-    } catch {
-      return null
-    }
-  }
-
-  return null
-}
-
-/**
- * Format date string for display with locale support.
- */
-export function formatDateForDisplay(
-  value: string,
-  _format: ColumnFormat = 'date',
-  locale: string = 'en'
-): string {
+export function formatDateForDisplay(value: string, locale: string = 'en'): string {
   if (!value) {
     return ''
   }
 
   try {
-    // Handle regular date format
-    const date = new Date(value)
-    if (!isValid(date)) {
-      return value
+    // Check if it's a timerange format
+    const dateRange = parseDateRange(value)
+    if (dateRange) {
+      const startDate = new Date(dateRange.start)
+      const endDate = new Date(dateRange.end)
+
+      const startFormatted = startDate.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+
+      const endFormatted = endDate.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+
+      return `${startFormatted} - ${endFormatted}`
     }
 
-    const dateLocale = locale === 'de' ? de : enUS
-    const dateFormat = locale === 'de' ? 'EEE, d. MMM' : 'EEE, d MMM'
+    // Single date format
+    const date = new Date(value)
+    if (isNaN(date.getTime())) {
+      return value // Return original if not a valid date
+    }
 
-    return format(date, dateFormat, { locale: dateLocale })
+    return date.toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
   } catch {
+    // console.warn('Error formatting date:', error)
     return value
   }
 }
 
 /**
- * Check if a string represents today's date.
+ * Check if a date is today
  */
-export function isToday(value: string): boolean {
-  if (!value) {
-    return false
-  }
-
-  try {
-    const date = new Date(value.split('T')[0]) // Handle date format
-    const today = startOfDay(new Date())
-    return startOfDay(date).getTime() === today.getTime()
-  } catch {
-    return false
-  }
+export function isToday(date: Date): boolean {
+  const today = new Date()
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  )
 }
 
 /**
- * Find the next upcoming date from a list of date values.
+ * Check if a date is tomorrow
  */
-export function findNextUpcomingDate(dateValues: string[]): string | null {
+export function isTomorrow(date: Date): boolean {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  return (
+    date.getDate() === tomorrow.getDate() &&
+    date.getMonth() === tomorrow.getMonth() &&
+    date.getFullYear() === tomorrow.getFullYear()
+  )
+}
+
+/**
+ * Get today's date as ISO string (date only)
+ */
+export function getTodayISO(): string {
+  const today = new Date()
+  return today.toISOString().split('T')[0]
+}
+
+/**
+ * Get tomorrow's date as ISO string (date only)
+ */
+export function getTomorrowISO(): string {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  return tomorrow.toISOString().split('T')[0]
+}
+
+/**
+ * Find the next upcoming date from a list of dates
+ */
+export function findNextUpcomingDate(dates: string[]): string | null {
+  const today = new Date()
+  const validDates = dates
+    .map(dateStr => new Date(dateStr))
+    .filter(date => !isNaN(date.getTime()) && date >= today)
+    .sort((a, b) => a.getTime() - b.getTime())
+
+  return validDates.length > 0 ? validDates[0].toISOString().split('T')[0] : null
+}
+
+/**
+ * Check if a date is the next upcoming date
+ */
+export function isNextUpcomingDate(dateStr: string, allDates: string[]): boolean {
+  const nextUpcoming = findNextUpcomingDate(allDates)
+  return nextUpcoming === dateStr
+}
+
+/**
+ * Format a date for input fields (YYYY-MM-DD format)
+ */
+export function formatDateForInput(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
+
+/**
+ * Parse a date string and return a Date object
+ */
+export function parseDateString(dateStr: string): Date | null {
+  const date = new Date(dateStr)
+  return isNaN(date.getTime()) ? null : date
+}
+
+/**
+ * Get relative time string (e.g., "2 days ago", "in 3 hours")
+ */
+export function getRelativeTime(date: Date, locale: string = 'en'): string {
   const now = new Date()
-  const today = startOfDay(now)
+  const diffMs = date.getTime() - now.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffMinutes = Math.floor(diffMs / (1000 * 60))
 
-  let nextDate: Date | null = null
-  let nextDateValue: string | null = null
-
-  for (const value of dateValues) {
-    if (!value) {
-      continue
-    }
-
-    try {
-      const date = new Date(value.split('T')[0]) // Handle date format
-      const dateStart = startOfDay(date)
-
-      // Only consider dates that are today or in the future
-      if (dateStart >= today) {
-        if (!nextDate || dateStart < nextDate) {
-          nextDate = dateStart
-          nextDateValue = value
-        }
-      }
-    } catch {
-      continue
-    }
+  if (Math.abs(diffDays) >= 1) {
+    return new Intl.RelativeTimeFormat(locale).format(diffDays, 'day')
+  } else if (Math.abs(diffHours) >= 1) {
+    return new Intl.RelativeTimeFormat(locale).format(diffHours, 'hour')
+  } else {
+    return new Intl.RelativeTimeFormat(locale).format(diffMinutes, 'minute')
   }
-
-  return nextDateValue
-}
-
-/**
- * Check if a date value represents the next upcoming date.
- */
-export function isNextUpcomingDate(value: string, allDateValues: string[]): boolean {
-  const nextDate = findNextUpcomingDate(allDateValues)
-  return nextDate === value
 }

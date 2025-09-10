@@ -31,19 +31,18 @@ export function TableGrid({ tableData }: TableGridProps) {
   const token = searchParams.get('t')
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
-  const [isUpdatingStructure, setIsUpdatingStructure] = useState(false)
+
   const [structureError, setStructureError] = useState<string | null>(null)
 
   // Local state for table data to enable immediate updates
   const [localTableData, setLocalTableData] = useState<TableData>(tableData)
 
-  const { getCellValue, updateCell, error } =
-    useCellEditor({
-      tableId: localTableData.id,
-      tableSlug: localTableData.slug,
-      token: token || '',
-      initialCells: localTableData.cells || [],
-    })
+  const { getCellValue, updateCell, error } = useCellEditor({
+    tableId: localTableData.id,
+    tableSlug: localTableData.slug,
+    token: token || '',
+    initialCells: localTableData.cells || [],
+  })
 
   // Update local state when props change
   useEffect(() => {
@@ -88,7 +87,7 @@ export function TableGrid({ tableData }: TableGridProps) {
 
     try {
       const { updateTableConfig } = await import('@/lib/api')
-      await updateTableConfig(localTableData.slug, token, {}) // Empty request to test permissions
+      await updateTableConfig(localTableData.slug, token, {}) // Test permissions
       setIsAdmin(true)
     } catch {
       setIsAdmin(false)
@@ -107,7 +106,6 @@ export function TableGrid({ tableData }: TableGridProps) {
     }
 
     try {
-      setIsUpdatingStructure(true)
       setStructureError(null)
       const { api } = await import('@/lib/api')
       await api.addRows(localTableData.slug, token, {})
@@ -120,7 +118,6 @@ export function TableGrid({ tableData }: TableGridProps) {
     } catch (error) {
       setStructureError(error instanceof Error ? error.message : t('admin.failedToAddRow'))
     } finally {
-      setIsUpdatingStructure(false)
     }
   }
 
@@ -129,7 +126,7 @@ export function TableGrid({ tableData }: TableGridProps) {
     // Give date columns more minimum width to reduce truncation
     const isDateColumn = column.format === 'date' || column.format === 'timerange'
     const minWidth = isDateColumn ? 200 : 120
-    
+
     if (column.width) {
       return Math.max(column.width, minWidth) + 'px'
     }
@@ -157,7 +154,10 @@ export function TableGrid({ tableData }: TableGridProps) {
                     className="bg-secondary text-secondary-foreground font-semibold text-left border-r border-gray-200 last:border-r-0"
                     style={{
                       width: getColumnWidth(column),
-                      minWidth: (column.format === 'date' || column.format === 'timerange') ? '200px' : '120px',
+                      minWidth:
+                        column.format === 'date' || column.format === 'timerange'
+                          ? '200px'
+                          : '120px',
                     }}
                   >
                     <div className="flex items-center">
@@ -201,7 +201,10 @@ export function TableGrid({ tableData }: TableGridProps) {
                         className="p-0 border-r border-gray-200 last:border-r-0"
                         style={{
                           width: getColumnWidth(column),
-                          minWidth: (column.format === 'date' || column.format === 'timerange') ? '200px' : '120px',
+                          minWidth:
+                            column.format === 'date' || column.format === 'timerange'
+                              ? '200px'
+                              : '120px',
                         }}
                       >
                         <TableCell

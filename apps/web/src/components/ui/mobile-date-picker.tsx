@@ -12,7 +12,7 @@ import type { ColumnFormat } from '@/types'
 
 interface MobileDatePickerProps {
   value?: Date | null | string
-  onChange: (date: Date | null | string) => void
+  onChange: (_date: Date | null | string) => void
   format?: ColumnFormat
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -240,12 +240,7 @@ export function MobileDatePicker({
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleClear}
-                  >
+                  <Button type="button" variant="secondary" size="sm" onClick={handleClear}>
                     {t('common.clear')}
                   </Button>
                   <Button
@@ -259,9 +254,7 @@ export function MobileDatePicker({
                 </div>
               </div>
               {(!timeStart || !timeEnd) && (
-                <div className="text-xs text-red-500">
-                  {t('validation.selectStartAndEndTimes')}
-                </div>
+                <div className="text-xs text-red-500">{t('validation.selectStartAndEndTimes')}</div>
               )}
             </div>
           </div>

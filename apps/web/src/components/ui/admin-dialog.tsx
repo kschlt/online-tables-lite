@@ -89,7 +89,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
       const response = await updateTableConfig(tableData.slug, token, request)
 
       if (response.success) {
-        window.location.reload() // Refresh to get latest data from backend
+        window.location.reload() // Refresh to get latest data
       } else {
         setError(response.message)
       }
@@ -202,7 +202,10 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Label htmlFor="rows" className={`text-body ${fixedRows ? '' : 'text-muted-foreground'}`}>
+                  <Label
+                    htmlFor="rows"
+                    className={`text-body ${fixedRows ? '' : 'text-muted-foreground'}`}
+                  >
                     {t('admin.numberOfRows')}
                   </Label>
                   <Input
@@ -214,10 +217,10 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                     onChange={e => setRows(parseInt(e.target.value) || 1)}
                     disabled={!fixedRows}
                     className="w-20"
-                    aria-describedby={fixedRows ? undefined : "rows-disabled-description"}
+                    aria-describedby={fixedRows ? undefined : 'rows-disabled-description'}
                   />
                   <span id="rows-disabled-description" className="sr-only">
-                    {!fixedRows ? "Input is disabled when Fixed Rows is not checked" : ""}
+                    {!fixedRows ? 'Input is disabled when Fixed Rows is not checked' : ''}
                   </span>
                 </div>
               </div>
@@ -241,15 +244,15 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                 >
                   {/* Index and delete button - top right */}
                   <div className="absolute top-1.5 right-3 flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      #{index + 1}
-                    </span>
+                    <span className="text-xs text-muted-foreground font-medium">#{index + 1}</span>
                     <button
                       type="button"
                       onClick={() => removeColumn(column.idx)}
                       disabled={columnConfigs.length <= 1}
                       className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground transition-colors"
-                      title={columnConfigs.length <= 1 ? t('admin.minColumnsReached') : 'Delete column'}
+                      title={
+                        columnConfigs.length <= 1 ? t('admin.minColumnsReached') : 'Delete column'
+                      }
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -313,12 +316,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
 
             {/* Add Column Button - positioned at bottom */}
             <div className="flex justify-start">
-              <Button
-                type="button"
-                onClick={addColumn}
-                size="sm"
-                variant="secondary"
-              >
+              <Button type="button" onClick={addColumn} size="sm" variant="secondary">
                 <Plus className="h-4 w-4" />
                 <span className="whitespace-nowrap">{t('admin.addColumn')}</span>
               </Button>

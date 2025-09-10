@@ -145,7 +145,7 @@ export default function Home() {
   }
 
   const handleNumericFieldChange = (field: 'cols' | 'rows', value: string) => {
-    // Allow empty string temporarily
+    // Allow empty string
     if (value === '') {
       setFormData(prev => ({ ...prev, [field]: '' as any }))
       // Clear field error on change
@@ -188,13 +188,8 @@ export default function Home() {
     const editUrl = `${baseUrl}/${locale}/table/${result.slug}?t=${result.edit_token}`
 
     return (
-      <PageLayout 
-        header={
-          <Header 
-            title={t('app.title')} 
-            description={t('app.description')} 
-          />
-        }
+      <PageLayout
+        header={<Header title={t('app.title')} description={t('app.description')} />}
         maxWidth="xl"
       >
         <div className="card-elevated p-6">
@@ -250,13 +245,8 @@ export default function Home() {
   }
 
   return (
-    <PageLayout 
-      header={
-        <Header 
-          title={t('app.title')} 
-          description={t('app.description')} 
-        />
-      }
+    <PageLayout
+      header={<Header title={t('app.title')} description={t('app.description')} />}
       maxWidth="xl"
     >
       <div className="card-elevated p-6">
