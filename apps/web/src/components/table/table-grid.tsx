@@ -90,7 +90,7 @@ export function TableGrid({ tableData }: TableGridProps) {
       const { updateTableConfig } = await import('@/lib/api')
       await updateTableConfig(localTableData.slug, token, {}) // Empty request to test permissions
       setIsAdmin(true)
-    } catch (_err) {
+    } catch {
       setIsAdmin(false)
     }
   }
@@ -126,10 +126,14 @@ export function TableGrid({ tableData }: TableGridProps) {
 
   // Calculate column widths with minimum constraints
   const getColumnWidth = (column: any) => {
+    // Give date columns more minimum width to reduce truncation
+    const isDateColumn = column.format === 'date' || column.format === 'timerange'
+    const minWidth = isDateColumn ? 200 : 120
+    
     if (column.width) {
-      return Math.max(column.width, 120) + 'px'
+      return Math.max(column.width, minWidth) + 'px'
     }
-    return 'minmax(120px, 1fr)'
+    return `minmax(${minWidth}px, 1fr)`
   }
 
   return (
@@ -174,7 +178,7 @@ export function TableGrid({ tableData }: TableGridProps) {
                     className="bg-secondary text-secondary-foreground font-semibold text-left border-r border-gray-200 last:border-r-0"
                     style={{
                       width: getColumnWidth(column),
-                      minWidth: '120px',
+                      minWidth: (column.format === 'date' || column.format === 'timerange') ? '200px' : '120px',
                     }}
                   >
                     <div className="flex items-center">
@@ -218,7 +222,7 @@ export function TableGrid({ tableData }: TableGridProps) {
                         className="p-0 border-r border-gray-200 last:border-r-0"
                         style={{
                           width: getColumnWidth(column),
-                          minWidth: '120px',
+                          minWidth: (column.format === 'date' || column.format === 'timerange') ? '200px' : '120px',
                         }}
                       >
                         <TableCell

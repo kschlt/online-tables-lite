@@ -1,39 +1,38 @@
 'use client'
 
 import * as React from 'react'
-import { Calendar as CalendarIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { TimePickerInput } from '@/components/ui/time-picker-input'
 import { createDateRangeString, parseDateRange } from '@/lib/date-range-utils'
 import type { ColumnFormat } from '@/types'
 
-interface DatePickerProps {
-  value?: Date | null | string // Allow string for timerange format
-  onChange: (date: Date | null | string) => void // Return string for timerange
-  placeholder?: string
+interface MobileDatePickerProps {
+  value?: Date | null | string
+  onChange: (date: Date | null | string) => void
   format?: ColumnFormat
-  disabled?: boolean
-  className?: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title?: string
 }
 
-export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(({
+export function MobileDatePicker({
   value,
   onChange,
   format: columnFormat = 'date',
-  disabled,
-  className,
-}, ref) => {
+  open,
+  onOpenChange,
+  title = 'Select Date',
+}: MobileDatePickerProps) {
   const t = useTranslations()
-  const [open, setOpen] = React.useState(false)
   const [timeStart, setTimeStart] = React.useState('')
   const [timeEnd, setTimeEnd] = React.useState('')
   const [pendingDate, setPendingDate] = React.useState<Date | null>(null)
 
-  // Initialize state when value changes or popover opens
+  // Initialize state when value changes or dialog opens
   React.useEffect(() => {
     if (value && columnFormat === 'timerange' && typeof value === 'string') {
       // Parse timerange format
@@ -54,7 +53,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
     }
   }, [value, columnFormat])
 
-  // Reset pending date when opening popover
+  // Reset pending date when opening dialog
   React.useEffect(() => {
     if (open) {
       // Handle different value types properly
@@ -90,20 +89,23 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) {
       onChange(null)
-      setOpen(false)
+      onOpenChange(false)
       return
     }
 
     // For timerange mode, store the selected date temporarily
     if (columnFormat === 'timerange') {
       setPendingDate(selectedDate)
-      // Don't call onChange yet - wait for OK button
+      // Don't close - wait for Done button since timerange needs time input
       return
     }
 
-    // For regular date mode, apply immediately and close
-    onChange(selectedDate)
-    setOpen(false)
+    // For regular date mode, apply immediately and close (same as desktop)
+    // Use setTimeout to avoid any potential state update conflicts
+    setTimeout(() => {
+      onChange(selectedDate)
+      onOpenChange(false)
+    }, 0)
   }
 
   const handleTimeChange = (timeValue: string, isEndTime = false) => {
@@ -112,12 +114,14 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
     } else {
       setTimeStart(timeValue)
     }
-    // Don't call onChange here - wait for OK button
+    // Don't call onChange here - wait for Done button
   }
 
-  const handleOkClick = () => {
+  const handleDoneClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     if (!pendingDate) {
-      setOpen(false)
+      onOpenChange(false)
       return
     }
 
@@ -166,46 +170,46 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
 
       const timeRangeString = createDateRangeString(startDate, endDate)
       onChange(timeRangeString)
-      setOpen(false)
+      onOpenChange(false)
       return
     }
 
     // For regular date format, just return the selected date
     onChange(pendingDate)
-    setOpen(false)
+    onOpenChange(false)
+  }
+
+  const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onChange(null)
+    onOpenChange(false)
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          ref={ref}
-          variant="ghost"
-          size="sm"
-          className={cn('h-8 w-8 p-0', className)}
-          disabled={disabled}
-        >
-          <CalendarIcon className="h-4 w-4" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm mx-auto gap-0 rounded-lg [&>button]:hidden p-4">
+        {/* Always include DialogTitle for accessibility, but hide it visually */}
+        <VisuallyHidden>
+          <DialogTitle>{title}</DialogTitle>
+        </VisuallyHidden>
+
         <Calendar
           mode="single"
           selected={pendingDate || (value instanceof Date ? value : undefined)}
           onSelect={handleDateSelect}
           initialFocus
+          className="w-full"
         />
 
         {/* Clear button for date format */}
         {columnFormat === 'date' && (
-          <div className="p-3 border-t">
+          <div className="mt-4 pt-4 border-t">
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                onChange(null)
-                setOpen(false)
-              }}
+              onClick={handleClear}
               className="w-full h-8"
             >
               {t('common.clear')}
@@ -215,7 +219,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
 
         {/* Time inputs for timerange format */}
         {columnFormat === 'timerange' && (
-          <div className="p-3 border-t">
+          <div className="mt-4 pt-4 border-t">
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <label className="text-sm font-medium w-12">Start:</label>
@@ -237,27 +241,26 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
                 </div>
                 <div className="flex gap-2">
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      onChange(null)
-                      setOpen(false)
-                    }}
+                    onClick={handleClear}
                     className="h-8"
                   >
                     {t('common.clear')}
                   </Button>
                   <Button
+                    type="button"
                     size="sm"
-                    onClick={handleOkClick}
+                    onClick={handleDoneClick}
                     className="h-8"
-                    disabled={columnFormat === 'timerange' && (!timeStart || !timeEnd)}
+                    disabled={!timeStart || !timeEnd}
                   >
                     OK
                   </Button>
                 </div>
               </div>
-              {columnFormat === 'timerange' && (!timeStart || !timeEnd) && (
+              {(!timeStart || !timeEnd) && (
                 <div className="text-xs text-red-500">
                   {t('validation.selectStartAndEndTimes')}
                 </div>
@@ -265,9 +268,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>((
             </div>
           </div>
         )}
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   )
-})
-
-DatePicker.displayName = "DatePicker"
+}

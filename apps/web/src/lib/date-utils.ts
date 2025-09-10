@@ -27,7 +27,7 @@ export function getTodayDate() {
 /**
  * Parse various date formats and return ISO string.
  */
-export function parseDate(value: string, _columnFormat: ColumnFormat = 'date'): string | null {
+export function parseDate(value: string): string | null {
   if (!value || typeof value !== 'string') {
     return null
   }
@@ -75,7 +75,7 @@ export function parseDate(value: string, _columnFormat: ColumnFormat = 'date'): 
  */
 export function formatDateForDisplay(
   value: string,
-  _columnFormat: ColumnFormat = 'date',
+  _format: ColumnFormat = 'date',
   locale: string = 'en'
 ): string {
   if (!value) {

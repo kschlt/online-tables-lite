@@ -37,7 +37,7 @@ async def get_table(
     authorization: str = Depends(extract_bearer_token),
 ):
     """Get table data with admin or editor token."""
-    table, role = await verify_token(slug, authorization)
+    table, _role = await verify_token(slug, authorization)
     return await table_service.get_table_with_columns(table["id"])
 
 

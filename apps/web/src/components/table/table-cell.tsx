@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
 import { ColumnFormat } from '@/types'
 import { formatDateForDisplay, parseDate } from '@/lib/date-utils'
 import { parseDateRange, formatDateRange } from '@/lib/date-range-utils'
 import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
+import { MobileDatePicker } from '@/components/ui/mobile-date-picker'
 
 interface TableCellProps {
   row: number
@@ -26,9 +26,9 @@ export function TableCell({
   isReadonly = false,
   format = 'text',
 }: TableCellProps) {
-  const t = useTranslations()
   const [localValue, setLocalValue] = useState(value || '')
   const [isEditing, setIsEditing] = useState(false)
+  const [showMobileDatePicker, setShowMobileDatePicker] = useState(false)
 
   const isDateFormat = format === 'date'
   const isTimeRangeFormat = format === 'timerange'
@@ -61,7 +61,7 @@ export function TableCell({
 
         // For date columns, try to normalize the date format
         if (isDateFormat && localValue) {
-          const parsedDate = parseDate(localValue, format)
+          const parsedDate = parseDate(localValue)
           if (parsedDate) {
             valueToSave = parsedDate // Save as ISO format
             setLocalValue(parsedDate) // Update local state with normalized format
@@ -71,7 +71,7 @@ export function TableCell({
         onCellChange(row, col, valueToSave)
       }
     }
-  }, [localValue, value, row, col, onCellChange, isDateFormat, isTimeRangeFormat, format])
+  }, [localValue, value, row, col, onCellChange, isDateFormat, isTimeRangeFormat])
 
   const handleDatePickerChange = useCallback(
     (date: Date | null | string) => {
@@ -94,6 +94,14 @@ export function TableCell({
     },
     [row, col, onCellChange]
   )
+
+  // Mobile click handler for date cells
+  const handleCellClick = useCallback(() => {
+    if ((isDateFormat || isTimeRangeFormat) && window.innerWidth < 768) {
+      // On mobile, show the mobile date picker dialog
+      setShowMobileDatePicker(true)
+    }
+  }, [isDateFormat, isTimeRangeFormat])
 
   // Format display value for date/timerange columns
   const displayValue = (() => {
@@ -144,11 +152,13 @@ export function TableCell({
     <div
       className={`relative min-h-[48px] flex items-center transition-colors duration-200 ${
         isDateFormat || isTimeRangeFormat
-          ? 'bg-date-column hover:bg-date-column/80'
+          ? 'bg-date-column hover:bg-date-column/80 cursor-pointer md:cursor-default'
           : 'hover:bg-muted/30'
       } ${isEditing ? 'ring-2 ring-primary/20 bg-interaction-highlight' : ''}`}
+      onClick={handleCellClick}
+      data-cell={`${row}-${col}`}
     >
-      <div className="flex items-center space-x-1 w-full px-3">
+      <div className="flex items-center space-x-2 w-full px-3">
         <Input
           type="text"
           value={isEditing ? localValue : displayValue}
@@ -156,12 +166,12 @@ export function TableCell({
           onFocus={handleFocus}
           onBlur={handleBlur}
           readOnly={isTimeRangeFormat}
-          className={`flex-1 min-h-[40px] border-none shadow-none p-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0`}
+          className={`flex-1 min-h-[40px] border-none shadow-none p-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 truncate`}
         />
 
-        {/* DatePicker button for both date and timerange columns */}
+        {/* DatePicker button for desktop only */}
         {(isDateFormat || isTimeRangeFormat) && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 hidden md:block">
             <DatePicker
               value={dateValue}
               onChange={handleDatePickerChange}
@@ -171,6 +181,18 @@ export function TableCell({
           </div>
         )}
       </div>
+
+      {/* Mobile Date Picker Dialog */}
+      {(isDateFormat || isTimeRangeFormat) && (
+        <MobileDatePicker
+          value={dateValue}
+          onChange={handleDatePickerChange}
+          format={format}
+          open={showMobileDatePicker}
+          onOpenChange={setShowMobileDatePicker}
+          title={format === 'timerange' ? 'Select Time Range' : 'Select Date'}
+        />
+      )}
     </div>
   )
 }
