@@ -153,12 +153,15 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
             </Alert>
           )}
 
+          {/* Divider */}
+          <div className="border-t border-border" />
+
           {/* Table Settings */}
           <div className="space-y-4">
             <h3 className="text-heading-3">{t('admin.basicSettings')}</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2 md:order-1">
                 <Label htmlFor="title" className="text-body font-medium">
                   {t('admin.tableTitle')}
                 </Label>
@@ -170,7 +173,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 md:order-2">
                 <Label htmlFor="description" className="text-body font-medium">
                   {t('admin.tableDescription')}
                 </Label>
@@ -183,43 +186,46 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                   className="max-h-40 resize-y"
                 />
               </div>
-            </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="fixedRows"
-                  checked={fixedRows}
-                  onChange={e => setFixedRows(e.target.checked)}
-                  className="rounded border-border"
-                />
-                <Label htmlFor="fixedRows" className="text-body font-medium">
-                  {t('admin.fixedRows')}
-                </Label>
-              </div>
+              <div className="flex items-center justify-between md:order-3 md:col-span-1">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="fixedRows"
+                    checked={fixedRows}
+                    onChange={e => setFixedRows(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  <Label htmlFor="fixedRows" className="text-body font-medium">
+                    {t('admin.fixedRows')}
+                  </Label>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="rows" className={`text-body ${fixedRows ? '' : 'text-muted-foreground'}`}>
-                  {t('admin.numberOfRows')}
-                </Label>
-                <Input
-                  id="rows"
-                  type="number"
-                  min="1"
-                  max="1000"
-                  value={rows}
-                  onChange={e => setRows(parseInt(e.target.value) || 1)}
-                  disabled={!fixedRows}
-                  className="w-20"
-                  aria-describedby={fixedRows ? undefined : "rows-disabled-description"}
-                />
-                <span id="rows-disabled-description" className="sr-only">
-                  {!fixedRows ? "Input is disabled when Fixed Rows is not checked" : ""}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="rows" className={`text-body ${fixedRows ? '' : 'text-muted-foreground'}`}>
+                    {t('admin.numberOfRows')}
+                  </Label>
+                  <Input
+                    id="rows"
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={rows}
+                    onChange={e => setRows(parseInt(e.target.value) || 1)}
+                    disabled={!fixedRows}
+                    className="w-20"
+                    aria-describedby={fixedRows ? undefined : "rows-disabled-description"}
+                  />
+                  <span id="rows-disabled-description" className="sr-only">
+                    {!fixedRows ? "Input is disabled when Fixed Rows is not checked" : ""}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-border" />
 
           {/* Column Management */}
           <div className="space-y-4">
@@ -316,6 +322,9 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
               </Button>
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-border" />
 
           {/* Action Buttons */}
         </form>
