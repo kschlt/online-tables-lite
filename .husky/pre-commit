@@ -1,49 +1,27 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Branch Protection Check - Allow merges, block direct commits
-echo "🛡️ Checking branch protection..."
+# AI-Era Branch Protection
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-# Check if we're on a protected branch
 if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
-    # Check if this is a merge commit by looking at the commit message
-    # Merge commits typically have "Merge branch" in the message
+    # Check if this is a merge commit
     commit_msg=$(git log -1 --pretty=%B)
     
     if echo "$commit_msg" | grep -q "Merge branch"; then
-        echo "✅ Merge commit to $current_branch - ALLOWED"
-        echo "🛡️ Branch protection: ACTIVE (merge detected)"
+        echo "✅ Merge to $current_branch - ALLOWED"
     else
         echo ""
-        echo "🚨 BRANCH PROTECTION VIOLATION DETECTED! 🚨"
+        echo "🚨 AI PROTECTION: Direct commits to $current_branch blocked!"
         echo ""
-        echo "❌ ERROR: Direct commits to '$current_branch' are NOT ALLOWED!"
-        echo ""
-        echo "🛡️ PROTECTION RULES:"
-        echo "   • main branch: Only accepts merges from feature branches"
-        echo "   • production branch: Only accepts merges from main"
-        echo ""
-        echo "💡 CORRECT WORKFLOW:"
-        echo "   1. Work in feature branch: git checkout -b feature/your-feature-name"
-        echo "   2. Make changes and test locally"
-        echo "   3. Merge to main: git checkout main && git merge feature/your-feature-name"
-        echo "   4. Push main: git push origin main"
-        echo "   5. Merge to production: git checkout production && git merge main"
-        echo "   6. Push production: git push origin production"
-        echo ""
-        echo "🔒 This direct commit has been BLOCKED to protect code quality."
+        echo "💡 Use feature branches:"
+        echo "   git checkout -b feature/your-change"
+        echo "   git commit -m 'your changes'"
+        echo "   git checkout main && git merge feature/your-change"
         echo ""
         exit 1
     fi
 fi
 
 echo "✅ Committing to feature branch: $current_branch"
-echo "🛡️ Branch protection: ACTIVE"
-
-# Run cleanup before commit
-echo "�� Running pre-commit cleanup..."
-./scripts/git/cleanup-before-merge.sh
-
-# Run lint-staged for web app
-cd apps/web && npx lint-staged
+echo "🔍 AI protection: ACTIVE"

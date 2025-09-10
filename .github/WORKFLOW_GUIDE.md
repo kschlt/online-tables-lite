@@ -22,8 +22,24 @@ cd apps/web && npm run check && npm run build
 cd apps/api && ruff check . && ruff format --check .
 ```
 
-### 2. Pull Request Process
-When you create a PR to main, the following checks run automatically:
+### 2. Local Merge to Main
+When you're ready to merge your feature branch:
+
+```bash
+# Switch to main
+git checkout main
+
+# Merge your feature branch
+git merge feature/your-feature-name
+
+# Push to GitHub
+git push origin main
+```
+
+**Note:** The branch protection allows merges but blocks direct commits to main.
+
+### 3. Pull Request Process (Optional)
+If you prefer to use pull requests instead of local merges:
 
 #### PR Checks Workflow (`.github/workflows/pr-checks.yml`)
 - **Web App Checks:**
@@ -43,18 +59,18 @@ When you create a PR to main, the following checks run automatically:
   - Full build process validation
   - Cross-platform compatibility checks
 
-### 3. Main Branch Protection
-Once PR is merged to main, additional validation runs:
+### 4. Main Branch Protection
+Once code is merged to main, additional validation runs:
 
 #### Main Branch Checks (`.github/workflows/main-checks.yml`)
 - Comprehensive validation of main branch
 - Integration testing
 - Production readiness verification
 
-### 4. Production Branch Workflow
+### 5. Production Branch Workflow
 **This is the key part of your workflow:**
 
-#### Step 4a: Local Production Branch Update
+#### Step 5a: Local Production Branch Update
 ```bash
 # Switch to production branch
 git checkout production
@@ -67,20 +83,20 @@ git merge main
 git push origin production
 ```
 
-#### Step 4b: Pre-Push Validation (`.husky/pre-push`)
+#### Step 5b: Pre-Push Validation (`.husky/pre-push`)
 **BEFORE** you can push to production, comprehensive checks run locally:
 - ✅ Web app: TypeScript + linting + formatting + build
 - ✅ API: linting + formatting + structure validation
 - ❌ **If any check fails, the push is BLOCKED**
 - 💡 **You get immediate feedback in your terminal**
 
-#### Step 4c: GitHub Production Validation (`.github/workflows/production-push-checks.yml`)
+#### Step 5c: GitHub Production Validation (`.github/workflows/production-push-checks.yml`)
 After successful push, GitHub runs additional validation:
 - Same comprehensive checks as pre-push
 - Ensures consistency across environments
 - Triggers production deployments if successful
 
-### 5. Production Deployment
+### 6. Production Deployment
 Production deployments now run automatically after validation:
 
 #### Web Deployment (`.github/workflows/deploy-web.yml`)
@@ -96,7 +112,7 @@ Production deployments now run automatically after validation:
 ## Key Guardrails
 
 ### 🛡️ Branch Protection
-- **Main branch**: Protected, requires PRs with checks
+- **Main branch**: Protected, allows merges but blocks direct commits
 - **Production branch**: Protected by pre-push hooks + GitHub validation
 - **Feature branches**: Free development, but must pass all checks
 
@@ -115,8 +131,8 @@ Production deployments now run automatically after validation:
 ## Your Exact Workflow
 
 1. **Feature Branch** → Develop and test locally
-2. **PR to Main** → Automated checks + manual review
-3. **Merge to Main** → Automated validation
+2. **Local Merge to Main** → `git checkout main && git merge feature/your-feature-name`
+3. **Push Main** → `git push origin main` (triggers main branch checks)
 4. **Local Production** → `git checkout production && git merge main`
 5. **Push Production** → **Pre-push hooks run checks locally**
    - ✅ **If checks pass** → Push succeeds, GitHub validation runs, deployment triggers
@@ -128,7 +144,7 @@ Production deployments now run automatically after validation:
 ### Pre-Push Hook Failure (Local)
 ```bash
 $ git push origin production
-�� PRODUCTION PUSH DETECTED - Running comprehensive checks...
+🚨 PRODUCTION PUSH DETECTED - Running comprehensive checks...
 ❌ Web app checks failed!
 💡 Fix the issues and try pushing again
 💡 Or go back to your feature branch to fix issues
@@ -169,8 +185,8 @@ If you need to make urgent fixes:
 1. Create hotfix branch: `git checkout -b hotfix/urgent-fix`
 2. Make minimal changes
 3. Test thoroughly locally
-4. Create PR with clear explanation
-5. Fast-track review and merge
+4. Merge to main: `git checkout main && git merge hotfix/urgent-fix`
+5. Push main: `git push origin main`
 6. Follow normal production workflow
 
 ### Rollback
@@ -182,10 +198,10 @@ If you need to make urgent fixes:
 
 1. **Always use feature branches** - never commit directly to main
 2. **Test locally first** - run `npm run check` and `ruff check .`
-3. **Write descriptive PR titles** - helps with review process
-4. **Review your own PR** - check the automated checks before requesting review
+3. **Write descriptive commit messages** - helps with tracking
+4. **Review your changes** - check the automated checks before merging
 5. **Deploy during business hours** - easier to monitor and rollback if needed
-6. **Keep PRs small** - easier to review and less risk of issues
+6. **Keep feature branches focused** - easier to review and less risk of issues
 7. **Use pre-push feedback** - fix issues locally before pushing to production
 
 ## Troubleshooting
@@ -194,6 +210,11 @@ If you need to make urgent fixes:
 - Ensure `.husky/pre-push` is executable: `chmod +x .husky/pre-push`
 - Check if husky is installed: `npm list husky`
 - Reinstall husky if needed: `npm install husky --save-dev`
+
+### Branch Protection Blocking Merges
+- Check if you're trying to commit directly to main/production
+- Use `git merge` instead of `git commit` for merging branches
+- Ensure merge commit messages contain "Merge branch"
 
 ### PR Checks Failing
 - Check the specific error in GitHub Actions
@@ -233,3 +254,4 @@ This pipeline ensures that:
 - ✅ **All checks run before deployment** (local + GitHub validation)
 - ✅ **Production is always in a deployable state**
 - ✅ **You can fix issues in feature branches** before they reach production
+- ✅ **Local merges are allowed** but direct commits are blocked

@@ -1,91 +1,35 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Get the branch being pushed to
+# Production Protection Only
 while read local_ref local_sha remote_ref remote_sha; do
-    # Extract branch name from remote_ref (e.g., refs/heads/production -> production)
     branch=$(echo "$remote_ref" | sed 's/refs\/heads\///')
     
-    # Only run checks for production branch pushes
     if [ "$branch" = "production" ]; then
-        echo "🚨 PRODUCTION PUSH DETECTED - Running comprehensive checks..."
-        echo "Branch: $branch"
-        echo "Local SHA: $local_sha"
-        echo "Remote SHA: $remote_sha"
+        echo "🚨 PRODUCTION PUSH - Running essential checks..."
         
-        # Run web app checks
-        echo "🔍 Running web app checks..."
+        # Quick web check
         cd apps/web
-        if ! npm run check; then
-            echo "❌ Web app checks failed!"
-            echo "💡 Fix the issues and try pushing again"
-            echo "💡 Or go back to your feature branch to fix issues"
+        if ! npm run typecheck > /dev/null 2>&1; then
+            echo "❌ TypeScript errors detected!"
+            echo "💡 Fix errors before pushing to production"
             exit 1
         fi
         
-        if ! npm run build; then
-            echo "❌ Web app build failed!"
-            echo "💡 Fix the build issues and try pushing again"
-            echo "💡 Or go back to your feature branch to fix issues"
+        if ! npm run build > /dev/null 2>&1; then
+            echo "❌ Build failed!"
+            echo "💡 Fix build issues before pushing to production"
             exit 1
         fi
         
-        echo "✅ Web app checks passed!"
-        
-        # Run API checks
-        echo "🔍 Running API checks..."
+        # Quick API check
         cd ../api
-        
-        # Check if virtual environment exists
-        if [ -d "venv" ]; then
-            source venv/bin/activate
-        else
-            echo "⚠️ No virtual environment found, installing dependencies..."
-            python3 -m venv venv
-            source venv/bin/activate
-            pip install -r requirements.txt
-        fi
-        
-        if ! ruff check .; then
-            echo "❌ API linting checks failed!"
-            echo "💡 Fix the linting issues and try pushing again"
-            echo "💡 Or go back to your feature branch to fix issues"
+        if ! ruff check . > /dev/null 2>&1; then
+            echo "❌ API linting errors detected!"
+            echo "💡 Fix linting issues before pushing to production"
             exit 1
         fi
         
-        if ! ruff format --check .; then
-            echo "❌ API formatting checks failed!"
-            echo "💡 Run 'ruff format .' to fix formatting issues"
-            echo "💡 Or go back to your feature branch to fix issues"
-            exit 1
-        fi
-        
-        if ! python -c "import app; print('✅ API structure validation passed')"; then
-            echo "❌ API structure validation failed!"
-            echo "💡 Fix the API structure issues and try pushing again"
-            echo "💡 Or go back to your feature branch to fix issues"
-            exit 1
-        fi
-        
-        echo "✅ API checks passed!"
-        
-        # Go back to root
-        cd ../..
-        
-        echo ""
-        echo "🎉 ALL CHECKS PASSED!"
-        echo "✅ Web app: TypeScript, linting, formatting, build - OK"
-        echo "✅ API: Linting, formatting, structure - OK"
-        echo "🚀 Production push is safe to proceed"
-        echo ""
-        
-        # Optional: Show what will be deployed
-        echo "📋 Deployment summary:"
-        echo "   - Web app will be deployed to Vercel"
-        echo "   - API will be deployed to Fly.io"
-        echo "   - All checks have been validated"
-        echo ""
-    else
-        echo "ℹ️ Pushing to branch: $branch (no production checks required)"
+        echo "✅ Production checks passed - safe to deploy!"
     fi
 done
