@@ -5,10 +5,13 @@
 echo "🛡️ Checking branch protection..."
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-# Check if this is a merge commit (has multiple parents)
+# Check if we're on a protected branch
 if [ "$current_branch" = "main" ] || [ "$current_branch" = "production" ]; then
-    # Check if this is a merge commit
-    if [ $(git rev-list --count --parents HEAD | cut -d' ' -f1) -gt 1 ]; then
+    # Check if this is a merge commit by looking at the commit message
+    # Merge commits typically have "Merge branch" in the message
+    commit_msg=$(git log -1 --pretty=%B)
+    
+    if echo "$commit_msg" | grep -q "Merge branch"; then
         echo "✅ Merge commit to $current_branch - ALLOWED"
         echo "🛡️ Branch protection: ACTIVE (merge detected)"
     else
@@ -39,7 +42,7 @@ echo "✅ Committing to feature branch: $current_branch"
 echo "🛡️ Branch protection: ACTIVE"
 
 # Run cleanup before commit
-echo "🧹 Running pre-commit cleanup..."
+echo "�� Running pre-commit cleanup..."
 ./scripts/git/cleanup-before-merge.sh
 
 # Run lint-staged for web app
