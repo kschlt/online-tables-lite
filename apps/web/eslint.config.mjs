@@ -1,10 +1,9 @@
-import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
+import { FlatCompat } from '@eslint/eslintrc'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
-import nextPlugin from '@next/eslint-plugin-next'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -12,9 +11,9 @@ const __dirname = path.dirname(__filename)
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
 })
 
+/** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = [
   // Ignore patterns for build and config files
   {
@@ -27,7 +26,20 @@ const eslintConfig = [
       '*.config.ts',
     ],
   },
-  ...compat.extends('next/core-web-vitals'),
+
+  // Let Next's detector see this configuration
+  ...compat.config({
+    extends: ['next/core-web-vitals', 'next/typescript'],
+    settings: {
+      next: { rootDir: 'apps/web' }, // Monorepo: set to app directory
+    },
+    rules: {
+      // Configure Next.js specific rules
+      '@next/next/no-html-link-for-pages': ['error', 'src/app'],
+    },
+  }),
+
+  // Keep your other flat rules/plugins after the Next.js block
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
@@ -42,13 +54,8 @@ const eslintConfig = [
     },
     plugins: {
       '@typescript-eslint': typescriptEslint,
-      '@next/next': nextPlugin,
     },
     rules: {
-      // Next.js specific rules
-      ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs['core-web-vitals'].rules,
-
       // Code quality rules
       'react/no-unescaped-entities': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
@@ -100,6 +107,8 @@ const eslintConfig = [
       // TypeScript-specific patterns
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off', // Allow any type for flexibility
+      '@typescript-eslint/triple-slash-reference': 'off', // Allow triple slash references
     },
   },
 ]
