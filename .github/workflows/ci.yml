@@ -28,9 +28,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # Temporarily disable cache to debug type issues
-          # cache: 'npm'
-          # cache-dependency-path: apps/web/package-lock.json
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
       
       - name: Cache Next.js build
         uses: actions/cache@v4
@@ -47,40 +46,11 @@ jobs:
       - name: Web App Quality Checks
         working-directory: apps/web
         run: |
-          echo "🔍 Clearing npm cache and node_modules..."
-          rm -rf node_modules
-          
-          echo "🔍 Debugging package.json and package-lock.json..."
-          echo "=== PACKAGE.JSON ==="
-          cat package.json | grep -A 10 -B 5 "@types/node"
-          echo "=== PACKAGE-LOCK.JSON ==="
-          grep -A 5 -B 5 "@types/node" package-lock.json || echo "No @types/node found in package-lock.json"
-          
-          echo "🔍 Debugging npm configuration..."
-          echo "=== NPM CONFIG ==="
-          npm config list
-          echo "=== NPM VERSION ==="
-          npm --version
-          echo "=== NODE VERSION ==="
-          node --version
-          
           echo "🔍 Installing dependencies..."
-          npm ci --verbose
+          npm ci
           
-          echo "⏳ Waiting for installation to complete..."
-          sleep 2
-          
-          echo "🔍 Verifying Node.js types installation..."
-          echo "=== NPM LIST @TYPES/NODE ==="
-          npm list @types/node || echo "npm list failed, checking alternative methods..."
-          echo "=== CHECKING NODE_MODULES DIRECTORY ==="
-          ls -la node_modules/@types/ | grep node || echo "No @types/node directory found"
-          echo "=== CHECKING INSTALLED PACKAGES ==="
-          npm list --depth=0 | grep "@types/node" || echo "No @types/node in npm list"
-          echo "=== CHECKING PACKAGE.JSON DEV DEPENDENCIES ==="
-          grep -A 20 '"devDependencies"' package.json | grep "@types/node" || echo "@types/node not found in package.json devDependencies"
-          echo "=== VERIFYING TYPESCRIPT CAN FIND TYPES ==="
-          npx tsc --showConfig | grep -i "types" || echo "TypeScript config check failed"
+          echo "🔍 Verifying @types/node installation..."
+          npm list @types/node
           
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
@@ -96,12 +66,8 @@ jobs:
           
           echo "✅ Web app quality checks passed!"
         env:
-          # Enable Next.js build caching
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-          # Ensure TypeScript can find Node.js types
-          TS_NODE_TYPES: node
-          NODE_OPTIONS: --max-old-space-size=4096
       
       # API Quality Checks
       - name: Setup Python
