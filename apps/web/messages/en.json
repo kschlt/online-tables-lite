@@ -18,7 +18,9 @@
     "tableCreatedSuccessfully": "Table Created Successfully!",
     "genericError": "An error occurred. Please try again.",
     "errorLabel": "Error",
-    "titleRequired": "Title is required"
+    "titleRequired": "Title is required",
+    "columnsOutOfRange": "Columns must be between 1 and 64",
+    "rowsOutOfRange": "Rows must be between 1 and 500"
   },
   "app": {
     "title": "Online Tables Lite",
@@ -85,7 +87,8 @@
     "column": "Column"
   },
   "validation": {
-    "selectStartAndEndTimes": "Please select start and end times."
+    "selectStartAndEndTimes": "Please select start and end times.",
+    "rowsRequired": "At least 1 row required"
   },
   "links": {
     "adminTitle": "Admin Link (Configure Table)",

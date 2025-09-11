@@ -18,11 +18,13 @@
     "tableCreatedSuccessfully": "Tabelle erfolgreich erstellt!",
     "genericError": "Ein Fehler ist aufgetreten. Bitte versuche es erneut.",
     "errorLabel": "Fehler",
-    "titleRequired": "Titel ist erforderlich"
+    "titleRequired": "Titel ist erforderlich",
+    "columnsOutOfRange": "Spalten müssen zwischen 1 und 64 sein.",
+    "rowsOutOfRange": "Zeilen müssen zwischen 1 und 500 sein."
   },
   "app": {
     "title": "Online Tabellen Lite",
-    "description": "App um gemeinsam Tabellen zu erstellen und zu bearbeiten",
+    "description": "App um gemeinsam Tabellen zu erstellen und zu bearbeiten.",
     "createTable": "Tabelle erstellen",
     "tableCreated": "Tabelle erfolgreich erstellt!"
   },
@@ -81,7 +83,8 @@
     "failedToAddRow": "Zeile konnte nicht hinzugefügt werden"
   },
   "validation": {
-    "selectStartAndEndTimes": "Bitte Start- und Endzeit auswählen."
+    "selectStartAndEndTimes": "Bitte Start- und Endzeit auswählen.",
+    "rowsRequired": "Mind. 1 Zeile erforderlich"
   },
   "links": {
     "adminTitle": "Admin-Link (Tabelle konfigurieren)",
