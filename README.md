@@ -32,7 +32,7 @@ A collaborative table editing application with real-time synchronization and int
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 22+ and npm
 - Python 3.11+  
 - Supabase account (for database)
 

@@ -34,8 +34,8 @@ const eslintConfig = [
       next: { rootDir: 'apps/web' }, // Monorepo: set to app directory
     },
     rules: {
-      // Configure Next.js specific rules
-      '@next/next/no-html-link-for-pages': ['error', 'src/app'],
+      // App Router doesn't use /pages; silence the legacy rule
+      '@next/next/no-html-link-for-pages': 'off',
     },
   }),
 
