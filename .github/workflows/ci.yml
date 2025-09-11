@@ -48,6 +48,9 @@ jobs:
           echo "🔍 Installing dependencies..."
           npm ci
           
+          echo "🔍 Verifying Node.js types installation..."
+          npm list @types/node
+          
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
           
@@ -65,6 +68,9 @@ jobs:
           # Enable Next.js build caching
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
+          # Ensure TypeScript can find Node.js types
+          TS_NODE_TYPES: node
+          NODE_OPTIONS: --max-old-space-size=4096
       
       # API Quality Checks
       - name: Setup Python
