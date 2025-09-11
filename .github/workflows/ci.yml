@@ -50,7 +50,7 @@ jobs:
           rm -rf node_modules
           
           echo "🔍 Installing dependencies..."
-          npm ci
+          npm ci --include=dev
           
           echo "🔍 Verifying Node.js types installation..."
           npm list @types/node
