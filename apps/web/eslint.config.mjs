@@ -4,6 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
+import nextPlugin from '@next/eslint-plugin-next'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -41,8 +42,13 @@ const eslintConfig = [
     },
     plugins: {
       '@typescript-eslint': typescriptEslint,
+      '@next/next': nextPlugin,
     },
     rules: {
+      // Next.js specific rules
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs['core-web-vitals'].rules,
+
       // Code quality rules
       'react/no-unescaped-entities': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
