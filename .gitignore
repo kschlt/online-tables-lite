@@ -99,3 +99,14 @@ CLAUDE.md
 .vscode/settings.json.bak
 .idea/workspace.xml.bak
 *.sublime-*
+
+# Playwright-mcp files
+playwright-mcp/
+playwright-mcp.log
+playwright-mcp.log.*
+playwright-mcp.log.*.*
+playwright-mcp.log.*.*.*
+playwright-mcp.log.*.*.*.*
+playwright-mcp.log.*.*.*.*.*
+playwright-mcp.log.*.*.*.*.*.*
+.playwright-mcp/
