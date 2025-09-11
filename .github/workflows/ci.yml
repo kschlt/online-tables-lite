@@ -18,6 +18,8 @@ jobs:
   quality-checks:
     name: Quality Checks
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: development
     
     steps:
       - name: Checkout code
@@ -48,16 +50,6 @@ jobs:
         run: |
           echo "🔍 Installing dependencies..."
           npm ci
-          
-          echo "🔍 Debugging @types/node installation..."
-          echo "=== Package.json @types/node ==="
-          grep "@types/node" package.json || echo "Not found in package.json"
-          echo "=== Installed @types/node ==="
-          npm list @types/node || echo "Not found via npm list"
-          echo "=== Check node_modules/@types/ ==="
-          ls -la node_modules/@types/ | grep node || echo "No node directory in @types"
-          echo "=== Check if types are globally available ==="
-          find node_modules -name "*.d.ts" | grep -i node | head -3 || echo "No node .d.ts files"
           
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
