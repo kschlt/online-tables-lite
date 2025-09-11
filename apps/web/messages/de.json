@@ -92,5 +92,8 @@
     "editorTitle": "Editor-Link (Tabelle bearbeiten)",
     "editorDescription": "Teile diesen Link mit anderen, um ihnen zu ermöglichen, die Tabelle zu bearbeiten:",
     "createAnother": "Weitere Tabelle erstellen"
+  },
+  "navigation": {
+    "moreOptionsComingSoon": "Weitere Menüoptionen kommen bald..."
   }
 }
