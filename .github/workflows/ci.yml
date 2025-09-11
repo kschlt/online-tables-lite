@@ -266,7 +266,7 @@ jobs:
         if: steps.api_health.outputs.api_healthy == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20.18.0'
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
       
