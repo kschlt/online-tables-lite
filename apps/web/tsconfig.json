@@ -4,6 +4,7 @@
     "lib": ["dom", "dom.iterable", "es2020", "es2017", "es2016"],
     "allowJs": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
