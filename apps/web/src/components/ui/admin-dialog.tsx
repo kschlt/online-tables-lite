@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 
@@ -199,17 +200,36 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                       >
                         {t('admin.numberOfRows')}
                       </Label>
-                      <Input
-                        id="rows"
-                        type="number"
-                        min="1"
-                        max="1000"
-                        value={rows}
-                        onChange={e => setRows(parseInt(e.target.value) || 1)}
-                        disabled={!fixedRows}
-                        className="w-20"
-                        aria-describedby={fixedRows ? undefined : 'rows-disabled-description'}
-                      />
+                      {fixedRows ? (
+                        <NumericInput
+                          id="rows"
+                          value={rows}
+                          onChange={setRows}
+                          min={1}
+                          max={1000}
+                          defaultValue={1}
+                          className="w-20"
+                          compact={true}
+                          validateFn={(value) => {
+                            if (value < 1) {
+                              return t('validation.rowsRequired')
+                            }
+                            return null
+                          }}
+                        />
+                      ) : (
+                        <Input
+                          id="rows"
+                          type="number"
+                          min="1"
+                          max="1000"
+                          value={rows}
+                          onChange={e => setRows(parseInt(e.target.value) || 1)}
+                          disabled={true}
+                          className="w-20"
+                          aria-describedby="rows-disabled-description"
+                        />
+                      )}
                       <span id="rows-disabled-description" className="sr-only">
                         {!fixedRows ? 'Input is disabled when Fixed Rows is not checked' : ''}
                       </span>
@@ -256,17 +276,36 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                     >
                       {t('admin.numberOfRows')}
                     </Label>
-                    <Input
-                      id="rowsMobile"
-                      type="number"
-                      min="1"
-                      max="1000"
-                      value={rows}
-                      onChange={e => setRows(parseInt(e.target.value) || 1)}
-                      disabled={!fixedRows}
-                      className="w-20"
-                      aria-describedby={fixedRows ? undefined : 'rows-disabled-description-mobile'}
-                    />
+                    {fixedRows ? (
+                      <NumericInput
+                        id="rowsMobile"
+                        value={rows}
+                        onChange={setRows}
+                        min={1}
+                        max={1000}
+                        defaultValue={1}
+                        className="w-20"
+                        compact={true}
+                        validateFn={(value) => {
+                          if (value < 1) {
+                            return t('validation.rowsRequired')
+                          }
+                          return null
+                        }}
+                      />
+                    ) : (
+                      <Input
+                        id="rowsMobile"
+                        type="number"
+                        min="1"
+                        max="1000"
+                        value={rows}
+                        onChange={e => setRows(parseInt(e.target.value) || 1)}
+                        disabled={true}
+                        className="w-20"
+                        aria-describedby="rows-disabled-description-mobile"
+                      />
+                    )}
                     <span id="rows-disabled-description-mobile" className="sr-only">
                       {!fixedRows ? 'Input is disabled when Fixed Rows is not checked' : ''}
                     </span>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 import { FormField } from '@/components/ui/form-field'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createTable } from '@/lib/api'
 import { CheckCircle, Settings, Edit } from 'lucide-react'
@@ -144,41 +145,9 @@ export default function Home() {
     }
   }
 
-  const handleNumericFieldChange = (field: 'cols' | 'rows', value: string) => {
-    // Allow empty string
-    if (value === '') {
-      setFormData(prev => ({ ...prev, [field]: '' as any }))
-      // Clear field error on change
-      if (fieldErrors[field]) {
-        setFieldErrors(prev => ({ ...prev, [field]: null }))
-      }
-      return
-    }
-
-    const numericValue = parseInt(value, 10)
-    if (!isNaN(numericValue)) {
-      const min = field === 'cols' ? 1 : 1
-      const max = field === 'cols' ? 64 : 500
-      const clampedValue = Math.max(min, Math.min(max, numericValue))
-      handleFieldChange(field, clampedValue)
-    }
-  }
-
   const handleFieldBlur = (field: string, value: any) => {
     const error = validateField(field, value)
     setFieldErrors(prev => ({ ...prev, [field]: error }))
-  }
-
-  const handleNumericFieldBlur = (field: 'cols' | 'rows') => {
-    // If field is empty after blur, set to default value
-    if (
-      typeof formData[field] === 'string' &&
-      (formData[field] === '' || formData[field] === null || formData[field] === undefined)
-    ) {
-      const defaultValue = field === 'cols' ? 3 : 5
-      setFormData(prev => ({ ...prev, [field]: defaultValue }))
-    }
-    handleFieldBlur(field, formData[field])
   }
 
   // Don't render success state until client-side hydration is complete
@@ -280,29 +249,43 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField label={t('table.columns')} htmlFor="cols" required error={fieldErrors.cols}>
-              <Input
-                type="number"
+            <FormField label={t('table.columns')} htmlFor="cols" required>
+              <NumericInput
                 id="cols"
-                min="1"
-                max="64"
-                value={formData.cols}
-                onChange={e => handleNumericFieldChange('cols', e.target.value)}
-                onBlur={() => handleNumericFieldBlur('cols')}
-                className={fieldErrors.cols ? 'border-destructive' : ''}
+                value={formData.cols || 3}
+                onChange={(value) => handleFieldChange('cols', value)}
+                onValidationChange={(isValid, error) => {
+                  setFieldErrors(prev => ({ ...prev, cols: error }))
+                }}
+                min={1}
+                max={64}
+                defaultValue={3}
+                validateFn={(value) => {
+                  if (isNaN(value) || value < 1 || value > 64) {
+                    return t('errors.columnsOutOfRange')
+                  }
+                  return null
+                }}
               />
             </FormField>
 
-            <FormField label={t('table.rows')} htmlFor="rows" required error={fieldErrors.rows}>
-              <Input
-                type="number"
+            <FormField label={t('table.rows')} htmlFor="rows" required>
+              <NumericInput
                 id="rows"
-                min="1"
-                max="500"
-                value={formData.rows}
-                onChange={e => handleNumericFieldChange('rows', e.target.value)}
-                onBlur={() => handleNumericFieldBlur('rows')}
-                className={fieldErrors.rows ? 'border-destructive' : ''}
+                value={formData.rows || 5}
+                onChange={(value) => handleFieldChange('rows', value)}
+                onValidationChange={(isValid, error) => {
+                  setFieldErrors(prev => ({ ...prev, rows: error }))
+                }}
+                min={1}
+                max={500}
+                defaultValue={5}
+                validateFn={(value) => {
+                  if (isNaN(value) || value < 1 || value > 500) {
+                    return t('errors.rowsOutOfRange')
+                  }
+                  return null
+                }}
               />
             </FormField>
           </div>
