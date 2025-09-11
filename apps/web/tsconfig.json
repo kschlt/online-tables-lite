@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": ["dom", "dom.iterable", "es2020", "es2017", "es2016"],
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -23,6 +24,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["src", "next-env.d.ts", "tailwind.config.ts", "postcss.config.js", "next.config.*"],
   "exclude": ["node_modules"]
 }

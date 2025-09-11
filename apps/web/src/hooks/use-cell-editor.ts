@@ -20,7 +20,7 @@ export function useCellEditor({ tableId, tableSlug, token, initialCells }: UseCe
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>()
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
   const DEBOUNCE_MS = 500
 
   // Handle real-time cell updates from other clients
