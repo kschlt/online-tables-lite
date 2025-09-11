@@ -50,7 +50,13 @@ jobs:
           npm ci
           
           echo "🔍 Verifying @types/node installation..."
-          npm list @types/node
+          if [ -d "node_modules/@types/node" ]; then
+            echo "✅ @types/node directory exists in node_modules"
+            echo "Version: $(cat node_modules/@types/node/package.json | grep '"version"' | cut -d'"' -f4)"
+          else
+            echo "❌ @types/node not found in node_modules, installing..."
+            npm install @types/node
+          fi
           
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
