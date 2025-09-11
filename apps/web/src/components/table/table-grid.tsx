@@ -173,7 +173,7 @@ export function TableGrid({ tableData }: TableGridProps) {
                               : t('table.dateFormat')
                           }
                         >
-                          {column.format === 'timerange' ? '🕐' : t('table.dateFormatIcon')}
+                          {t('table.dateFormatIcon')}
                         </span>
                       )}
                     </div>
