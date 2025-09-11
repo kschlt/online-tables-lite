@@ -65,6 +65,43 @@ export function TimePickerInput({
   // Generate minute options (00-59, in 5-minute increments)
   const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'))
 
+  // Handle wheel scrolling
+  const handleWheel = (e: React.WheelEvent, containerRef: React.RefObject<HTMLDivElement>) => {
+    e.preventDefault()
+    if (containerRef.current) {
+      containerRef.current.scrollTop += e.deltaY > 0 ? 32 : -32 // 32px is height of each button
+    }
+  }
+
+  // Touch handling state and functions
+  const [touchStart, setTouchStart] = React.useState<{ y: number; scrollTop: number } | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent, containerRef: React.RefObject<HTMLDivElement>) => {
+    if (containerRef.current) {
+      setTouchStart({
+        y: e.touches[0].clientY,
+        scrollTop: containerRef.current.scrollTop
+      })
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent, containerRef: React.RefObject<HTMLDivElement>) => {
+    if (!touchStart || !containerRef.current) return
+    
+    e.preventDefault()
+    const currentY = e.touches[0].clientY
+    const diff = touchStart.y - currentY
+    containerRef.current.scrollTop = touchStart.scrollTop + diff
+  }
+
+  const handleTouchEnd = () => {
+    setTouchStart(null)
+  }
+
+  // Refs for scroll containers
+  const hoursContainerRef = React.useRef<HTMLDivElement>(null)
+  const minutesContainerRef = React.useRef<HTMLDivElement>(null)
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -96,7 +133,14 @@ export function TimePickerInput({
           {/* Hours */}
           <div className="p-2 border-r">
             <div className="text-xs font-medium text-muted-foreground mb-2 text-center">Hours</div>
-            <div className="grid max-h-[200px] overflow-y-auto">
+            <div 
+              ref={hoursContainerRef}
+              className="grid max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              onWheel={(e) => handleWheel(e, hoursContainerRef)}
+              onTouchStart={(e) => handleTouchStart(e, hoursContainerRef)}
+              onTouchMove={(e) => handleTouchMove(e, hoursContainerRef)}
+              onTouchEnd={handleTouchEnd}
+            >
               {hourOptions.map(hour => (
                 <Button
                   key={hour}
@@ -119,7 +163,14 @@ export function TimePickerInput({
             <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
               Minutes
             </div>
-            <div className="grid max-h-[200px] overflow-y-auto">
+            <div 
+              ref={minutesContainerRef}
+              className="grid max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              onWheel={(e) => handleWheel(e, minutesContainerRef)}
+              onTouchStart={(e) => handleTouchStart(e, minutesContainerRef)}
+              onTouchMove={(e) => handleTouchMove(e, minutesContainerRef)}
+              onTouchEnd={handleTouchEnd}
+            >
               {minuteOptions.map(minute => (
                 <Button
                   key={minute}
