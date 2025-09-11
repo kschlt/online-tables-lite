@@ -64,14 +64,22 @@ jobs:
           node --version
           
           echo "🔍 Installing dependencies..."
-          npm ci --include=dev --verbose
+          npm ci --verbose
+          
+          echo "⏳ Waiting for installation to complete..."
+          sleep 2
           
           echo "🔍 Verifying Node.js types installation..."
-          npm list @types/node
-          echo "=== CHECKING NODE_MODULES ==="
+          echo "=== NPM LIST @TYPES/NODE ==="
+          npm list @types/node || echo "npm list failed, checking alternative methods..."
+          echo "=== CHECKING NODE_MODULES DIRECTORY ==="
           ls -la node_modules/@types/ | grep node || echo "No @types/node directory found"
           echo "=== CHECKING INSTALLED PACKAGES ==="
           npm list --depth=0 | grep "@types/node" || echo "No @types/node in npm list"
+          echo "=== CHECKING PACKAGE.JSON DEV DEPENDENCIES ==="
+          grep -A 20 '"devDependencies"' package.json | grep "@types/node" || echo "@types/node not found in package.json devDependencies"
+          echo "=== VERIFYING TYPESCRIPT CAN FIND TYPES ==="
+          npx tsc --showConfig | grep -i "types" || echo "TypeScript config check failed"
           
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
