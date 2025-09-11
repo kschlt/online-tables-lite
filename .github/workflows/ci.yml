@@ -107,7 +107,7 @@ jobs:
             const d = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: context.ref,
+              ref: context.sha,  // Use commit SHA instead of branch ref to avoid merge conflicts
               environment: 'production',
               description: 'Production deployment',
               required_contexts: []  // allow deployment without status checks gating
