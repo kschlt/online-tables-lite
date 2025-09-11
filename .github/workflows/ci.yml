@@ -120,10 +120,33 @@ jobs:
         working-directory: apps/api
         run: |
           echo "🚀 Deploying API to Fly.io..."
+          
+          # Install Fly.io CLI
           curl -L https://fly.io/install.sh | sh
           export PATH="$PATH:$HOME/.fly/bin"
-          flyctl deploy --remote-only --strategy rolling --ha=false
-          echo "✅ API deployed to Fly.io!"
+          
+          # Validate Fly.io configuration
+          echo "🔍 Validating Fly.io configuration..."
+          if ! flyctl config validate; then
+            echo "❌ Fly.io configuration validation failed"
+            exit 1
+          fi
+          
+          # Check if app exists and is accessible
+          echo "🔍 Checking app status..."
+          if ! flyctl status --json > /dev/null 2>&1; then
+            echo "❌ Cannot access Fly.io app"
+            exit 1
+          fi
+          
+          # Deploy with enhanced error handling
+          echo "🚀 Starting deployment..."
+          if flyctl deploy --remote-only --strategy rolling --ha=false; then
+            echo "✅ API deployed to Fly.io successfully!"
+          else
+            echo "❌ API deployment failed"
+            exit 1
+          fi
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       
@@ -131,22 +154,54 @@ jobs:
         id: api_health
         run: |
           echo "🔍 Checking API health..."
-          sleep 30  # Wait for deployment to stabilize
-          for i in {1..10}; do
-            echo "⏳ API health check attempt $i/10..."
-            if curl -f -s --max-time 10 https://online-table-lite-api.fly.dev/healthz; then
+          
+          # Wait for deployment to stabilize with exponential backoff
+          echo "⏳ Waiting for deployment to stabilize..."
+          sleep 30
+          
+          # Enhanced health check with better error reporting
+          API_URL="https://online-table-lite-api.fly.dev"
+          MAX_ATTEMPTS=15
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "⏳ API health check attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            
+            # Test basic connectivity
+            if curl -f -s --max-time 15 --connect-timeout 10 "$API_URL/healthz" > /dev/null 2>&1; then
               echo "✅ API health check passed!"
-              echo "api_healthy=true" >> $GITHUB_OUTPUT
-              break
-            else
-              echo "❌ API health check attempt $i failed"
-              if [ $i -eq 10 ]; then
-                echo "❌ API health check failed after 10 attempts"
-                echo "api_healthy=false" >> $GITHUB_OUTPUT
-                exit 1
+              
+              # Additional validation - check if response is valid JSON
+              HEALTH_RESPONSE=$(curl -f -s --max-time 10 "$API_URL/healthz" 2>/dev/null)
+              if echo "$HEALTH_RESPONSE" | jq -e '.status' > /dev/null 2>&1; then
+                echo "✅ API health response is valid JSON"
+                echo "api_healthy=true" >> $GITHUB_OUTPUT
+                break
+              else
+                echo "⚠️ API responded but health check format is invalid"
+                echo "Response: $HEALTH_RESPONSE"
               fi
-              sleep 15
+            else
+              echo "❌ API health check attempt $ATTEMPT failed"
+              
+              # Show more diagnostic info on failure
+              echo "🔍 Diagnostic information:"
+              echo "  - Testing connectivity to $API_URL"
+              curl -v --max-time 5 "$API_URL/healthz" 2>&1 | head -10 || true
             fi
+            
+            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+              echo "❌ API health check failed after $MAX_ATTEMPTS attempts"
+              echo "api_healthy=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+            
+            # Exponential backoff: 15s, 30s, 45s, 60s, then 60s intervals
+            WAIT_TIME=$((15 * ATTEMPT))
+            if [ $WAIT_TIME -gt 60 ]; then WAIT_TIME=60; fi
+            echo "⏳ Waiting ${WAIT_TIME}s before next attempt..."
+            sleep $WAIT_TIME
+            ATTEMPT=$((ATTEMPT + 1))
           done
       
       - name: Rollback API on Health Check Failure
@@ -154,10 +209,40 @@ jobs:
         working-directory: apps/api
         run: |
           echo "🔄 Rolling back API deployment..."
+          
+          # Install Fly.io CLI
           curl -L https://fly.io/install.sh | sh
           export PATH="$PATH:$HOME/.fly/bin"
-          flyctl releases list --json | jq -r '.[1].Version' | xargs -I {} flyctl releases rollback {} --yes
-          echo "✅ API rolled back to previous version"
+          
+          # Get previous release version
+          echo "🔍 Finding previous release..."
+          PREVIOUS_RELEASE=$(flyctl releases list --json | jq -r '.[1].Version' 2>/dev/null)
+          
+          if [ -n "$PREVIOUS_RELEASE" ] && [ "$PREVIOUS_RELEASE" != "null" ]; then
+            echo "🔄 Rolling back to release: $PREVIOUS_RELEASE"
+            if flyctl releases rollback "$PREVIOUS_RELEASE" --yes; then
+              echo "✅ API rolled back to previous version successfully"
+              
+              # Wait a bit and verify rollback
+              echo "⏳ Waiting for rollback to stabilize..."
+              sleep 30
+              
+              # Quick health check of rolled back version
+              if curl -f -s --max-time 10 https://online-table-lite-api.fly.dev/healthz > /dev/null 2>&1; then
+                echo "✅ Rollback verification successful"
+              else
+                echo "⚠️ Rollback completed but health check failed"
+              fi
+            else
+              echo "❌ Rollback failed"
+              exit 1
+            fi
+          else
+            echo "❌ No previous release found for rollback"
+            echo "🔍 Available releases:"
+            flyctl releases list --json | jq -r '.[] | "\(.Version) - \(.CreatedAt)"' || true
+            exit 1
+          fi
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       
