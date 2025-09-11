@@ -96,5 +96,8 @@
     "editorTitle": "Editor Link (Edit Table)",
     "editorDescription": "Share this link with others to allow them to edit the table:",
     "createAnother": "Create Another Table"
+  },
+  "navigation": {
+    "moreOptionsComingSoon": "More menu options coming soon..."
   }
 }

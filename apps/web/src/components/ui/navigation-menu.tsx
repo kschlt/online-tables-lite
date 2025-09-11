@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { DropdownLanguageSwitcher } from '@/components/ui/dropdown-language-switcher'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -13,6 +14,7 @@ interface NavigationMenuProps {
 
 export function NavigationMenu({ className }: NavigationMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const t = useTranslations('navigation')
 
   return (
     <div className={cn('relative', className)}>
@@ -37,7 +39,7 @@ export function NavigationMenu({ className }: NavigationMenuProps) {
 
           <div className="mt-12 space-y-4">
             {/* Future menu items can go here */}
-            <div className="text-sm text-muted-foreground">More menu options coming soon...</div>
+            <div className="text-sm text-muted-foreground">{t('moreOptionsComingSoon')}</div>
           </div>
         </SheetContent>
       </Sheet>
