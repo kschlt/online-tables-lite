@@ -26,7 +26,6 @@ if [ -n "$AGENT_FILES" ]; then
     echo "❌ ERROR: Found .agent/ files in staged changes:"
     echo "$AGENT_FILES"
     echo ""
-    echo "🚨 .agent/ directory should be ignored by git!"
     echo "💡 Check your .gitignore file"
     echo ""
     exit 1
@@ -46,4 +45,3 @@ if [ "$BACKUP_FILES" -gt 0 ] || [ "$TEMP_FILES" -gt 0 ]; then
 fi
 
 echo "✅ Commit verification passed!"
-echo "🚀 Ready to commit/merge to main"
