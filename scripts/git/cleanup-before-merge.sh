@@ -3,7 +3,7 @@
 # Cleanup script to run before merging to main or pushing to production
 # This ensures no temporary files, backup files, or agent-generated files end up in production
 
-echo "🧹 Cleaning up before merge/push to production..."
+echo "🧹 Cleaning up..."
 
 # Create .agent directory structure if it doesn't exist
 mkdir -p .agent/backups .agent/temp
@@ -64,5 +64,4 @@ else
 fi
 
 echo ""
-echo "✅ Cleanup complete! Ready for merge/push to production."
-echo "💡 Remember: .agent/ directory is ignored by git and won't be pushed to GitHub."
+echo "✅ Cleanup complete!"
