@@ -305,12 +305,15 @@ socket_app = socketio.ASGIApp(sio, app)
 
 if __name__ == "__main__":
     import os
+
     import uvicorn
 
     # Environment-aware port configuration
     port = int(os.getenv("PORT", "8000"))  # Default to 8000 for local dev, Fly.io sets PORT=8080
-    host = os.getenv("HOST", "0.0.0.0")    # Always bind to all interfaces for containerized deployments
+    host = os.getenv(
+        "HOST", "0.0.0.0"
+    )  # Always bind to all interfaces for containerized deployments
     reload = os.getenv("ENVIRONMENT", "development") == "development"
-    
+
     print(f"🚀 Starting server on {host}:{port} (reload={reload})")
     uvicorn.run("main:socket_app", host=host, port=port, reload=reload)
