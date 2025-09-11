@@ -107,7 +107,7 @@ jobs:
     
     environment: 
       name: production
-      url: https://online-table-lite.vercel.app
+      url: https://online-tables-lite.vercel.app
     
     steps:
       - name: Checkout code
@@ -314,31 +314,25 @@ jobs:
           # Skip dev tools in CI
           CI: true
       
-      - name: Health Check Web App
-        id: web_health
+      - name: Verify Web App Deployment
+        id: web_deployment
         if: steps.api_health.outputs.api_healthy == 'true'
         run: |
-          echo "🔍 Checking web app health..."
+          echo "🔍 Verifying web app deployment..."
           sleep 30  # Wait for deployment to stabilize
-          for i in {1..10}; do
-            echo "⏳ Web app health check attempt $i/10..."
-            if curl -f -s --max-time 10 https://online-table-lite.vercel.app; then
-              echo "✅ Web app health check passed!"
-              echo "web_healthy=true" >> $GITHUB_OUTPUT
-              break
-            else
-              echo "❌ Web app health check attempt $i failed"
-              if [ $i -eq 10 ]; then
-                echo "❌ Web app health check failed after 10 attempts"
-                echo "web_healthy=false" >> $GITHUB_OUTPUT
-                exit 1
-              fi
-              sleep 15
-            fi
-          done
+          
+          # Simple verification that the app is accessible
+          if curl -f -s --max-time 10 https://online-tables-lite.vercel.app/en > /dev/null; then
+            echo "✅ Web app is accessible and deployed successfully!"
+            echo "web_deployed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Web app deployment verification failed"
+            echo "web_deployed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
       
-      - name: Rollback Web App on Health Check Failure
-        if: steps.web_health.outputs.web_healthy == 'false'
+      - name: Rollback Web App on Deployment Failure
+        if: steps.web_deployment.outputs.web_deployed == 'false'
         working-directory: apps/web
         run: |
           echo "🔄 Rolling back web app deployment..."
@@ -350,7 +344,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       
       - name: Update deployment status - Success
-        if: steps.api_health.outputs.api_healthy == 'true' && steps.web_health.outputs.web_healthy == 'true'
+        if: steps.api_health.outputs.api_healthy == 'true' && steps.web_deployment.outputs.web_deployed == 'true'
         uses: actions/github-script@v7
         with:
           script: |
@@ -360,11 +354,11 @@ jobs:
               deployment_id: process.env.DEPLOYMENT_ID,
               state: 'success',
               description: 'Production deployment successful',
-              environment_url: 'https://online-table-lite.vercel.app'
+              environment_url: 'https://online-tables-lite.vercel.app'
             });
       
       - name: Update deployment status - Failure
-        if: steps.api_health.outputs.api_healthy == 'false' || steps.web_health.outputs.web_healthy == 'false'
+        if: steps.api_health.outputs.api_healthy == 'false' || steps.web_deployment.outputs.web_deployed == 'false'
         uses: actions/github-script@v7
         with:
           script: |
@@ -377,17 +371,17 @@ jobs:
             });
       
       - name: Deployment Complete
-        if: steps.api_health.outputs.api_healthy == 'true' && steps.web_health.outputs.web_healthy == 'true'
+        if: steps.api_health.outputs.api_healthy == 'true' && steps.web_deployment.outputs.web_deployed == 'true'
         run: |
           echo ""
           echo "🎉 PRODUCTION DEPLOYMENT COMPLETE!"
           echo "✅ API deployed to Fly.io: https://online-table-lite-api.fly.dev"
-          echo "✅ Web app deployed to Vercel: https://online-table-lite.vercel.app"
+          echo "✅ Web app deployed to Vercel: https://online-tables-lite.vercel.app"
           echo ""
           echo "🌐 Applications are now live in production!"
       
       - name: Deployment Failed
-        if: steps.api_health.outputs.api_healthy == 'false' || steps.web_health.outputs.web_healthy == 'false'
+        if: steps.api_health.outputs.api_healthy == 'false' || steps.web_deployment.outputs.web_deployed == 'false'
         run: |
           echo ""
           echo "❌ PRODUCTION DEPLOYMENT FAILED!"
