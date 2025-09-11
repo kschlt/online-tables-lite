@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
       
@@ -50,6 +50,10 @@ jobs:
           npm run build
           
           echo "✅ Web app quality checks passed!"
+        env:
+          # Enable Next.js build caching
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: production
       
       # API Quality Checks
       - name: Setup Python
@@ -251,7 +255,7 @@ jobs:
         if: steps.api_health.outputs.api_healthy == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
       
@@ -261,15 +265,31 @@ jobs:
         working-directory: apps/web
         run: |
           echo "🚀 Deploying web app to Vercel..."
+          
+          # Install dependencies with clean cache
           npm ci
+          
+          # Build with Next.js optimizations
+          echo "🔨 Building Next.js application..."
           npm run build
+          
+          # Install Vercel CLI
           npm install --global vercel@latest
+          
+          # Deploy to Vercel
+          echo "🚀 Deploying to Vercel..."
           vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+          
           echo "✅ Web app deployed to Vercel!"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          # Next.js optimizations
+          NEXT_TELEMETRY_DISABLED: 1
+          NODE_ENV: production
+          # Skip Husky in CI
+          CI: true
       
       - name: Health Check Web App
         id: web_health
