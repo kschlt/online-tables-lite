@@ -49,11 +49,29 @@ jobs:
           echo "🔍 Clearing npm cache and node_modules..."
           rm -rf node_modules
           
+          echo "🔍 Debugging package.json and package-lock.json..."
+          echo "=== PACKAGE.JSON ==="
+          cat package.json | grep -A 10 -B 5 "@types/node"
+          echo "=== PACKAGE-LOCK.JSON ==="
+          grep -A 5 -B 5 "@types/node" package-lock.json || echo "No @types/node found in package-lock.json"
+          
+          echo "🔍 Debugging npm configuration..."
+          echo "=== NPM CONFIG ==="
+          npm config list
+          echo "=== NPM VERSION ==="
+          npm --version
+          echo "=== NODE VERSION ==="
+          node --version
+          
           echo "🔍 Installing dependencies..."
-          npm ci --include=dev
+          npm ci --include=dev --verbose
           
           echo "🔍 Verifying Node.js types installation..."
           npm list @types/node
+          echo "=== CHECKING NODE_MODULES ==="
+          ls -la node_modules/@types/ | grep node || echo "No @types/node directory found"
+          echo "=== CHECKING INSTALLED PACKAGES ==="
+          npm list --depth=0 | grep "@types/node" || echo "No @types/node in npm list"
           
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
