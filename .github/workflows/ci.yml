@@ -49,22 +49,15 @@ jobs:
           echo "🔍 Installing dependencies..."
           npm ci
           
-          echo "🔍 Ensuring @types/node is available..."
-          # Force install @types/node to be absolutely sure
-          npm install --save-dev @types/node@^22.18.1
-          
-          echo "🔍 Verifying TypeScript can resolve Node types..."
-          npx tsc --noEmit --skipLibCheck src/constants/api.ts || {
-            echo "❌ TypeScript cannot resolve Node types, debugging..."
-            echo "=== Available @types packages ==="
-            ls -la node_modules/@types/ || echo "No @types directory"
-            echo "=== TypeScript configuration ==="
-            cat tsconfig.json | grep -A 10 -B 5 "types"
-            echo "=== Re-installing with --force ==="
-            npm install --save-dev --force @types/node
-            echo "=== Retry TypeScript check ==="
-            npx tsc --noEmit --skipLibCheck src/constants/api.ts
-          }
+          echo "🔍 Debugging @types/node installation..."
+          echo "=== Package.json @types/node ==="
+          grep "@types/node" package.json || echo "Not found in package.json"
+          echo "=== Installed @types/node ==="
+          npm list @types/node || echo "Not found via npm list"
+          echo "=== Check node_modules/@types/ ==="
+          ls -la node_modules/@types/ | grep node || echo "No node directory in @types"
+          echo "=== Check if types are globally available ==="
+          find node_modules -name "*.d.ts" | grep -i node | head -3 || echo "No node .d.ts files"
           
           echo "🔍 Running TypeScript type check..."
           npm run typecheck
