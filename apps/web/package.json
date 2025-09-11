@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check",
     "fix": "npm run lint:fix && npm run format",
-    "prepare": "is-ci || husky"
+    "prepare": "husky"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -37,18 +37,17 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.0",
-    "@eslint/js": "^9.0.0",
+    "@eslint/js": "^9.35.0",
     "@types/node": "^24.3.1",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
     "autoprefixer": "^10.0.1",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint": "^9.35.0",
+    "eslint-config-next": "15.5.3",
     "eslint-plugin-unicorn": "^55.0.0",
     "husky": "^9.1.7",
-    "is-ci": "^3.0.1",
     "lint-staged": "^16.1.6",
     "postcss": "^8",
     "prettier": "^3.0.0",

@@ -311,9 +311,8 @@ jobs:
           # Next.js optimizations
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-          # Skip Husky and other dev tools in CI
+          # Skip dev tools in CI
           CI: true
-          HUSKY: 0
       
       - name: Health Check Web App
         id: web_health
