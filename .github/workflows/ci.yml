@@ -38,10 +38,11 @@ jobs:
           path: |
             apps/web/.next/cache
             apps/web/node_modules/.cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/**/*.{js,ts,tsx,jsx}') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('apps/web/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('apps/web/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('apps/web/package-lock.json') }}
             ${{ runner.os }}-nextjs-
+            ${{ runner.os }}-
       
       - name: Web App Quality Checks
         working-directory: apps/web
@@ -313,10 +314,12 @@ jobs:
           path: |
             apps/web/.next/cache
             apps/web/node_modules/.cache
-          key: ${{ runner.os }}-nextjs-deploy-${{ hashFiles('apps/web/package-lock.json') }}-${{ hashFiles('apps/web/**/*.{js,ts,tsx,jsx}') }}
+          key: ${{ runner.os }}-nextjs-deploy-${{ hashFiles('apps/web/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-deploy-${{ hashFiles('apps/web/package-lock.json') }}-
+            ${{ runner.os }}-nextjs-deploy-${{ hashFiles('apps/web/package-lock.json') }}
             ${{ runner.os }}-nextjs-deploy-
+            ${{ runner.os }}-nextjs-
+            ${{ runner.os }}-
       
       - name: Deploy Web App to Vercel
         id: deploy_web
