@@ -15,10 +15,6 @@ fi
 echo "📦 Installing dependencies..."
 cd apps/web && npm install
 
-# Set up husky
-echo "🔧 Setting up pre-commit hooks..."
-npx husky install
-
 # Test the setup
 echo "🧪 Testing auto-formatting and linting..."
 

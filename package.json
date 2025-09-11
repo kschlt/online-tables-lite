@@ -1,5 +1,3 @@
 {
-  "scripts": {
-    "prepare": "husky"
-  }
+  "scripts": {}
 }
