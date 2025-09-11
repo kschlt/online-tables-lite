@@ -28,8 +28,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: apps/web/package-lock.json
+          # Temporarily disable cache to debug type issues
+          # cache: 'npm'
+          # cache-dependency-path: apps/web/package-lock.json
       
       - name: Cache Next.js build
         uses: actions/cache@v4
@@ -45,6 +46,9 @@ jobs:
       - name: Web App Quality Checks
         working-directory: apps/web
         run: |
+          echo "🔍 Clearing npm cache and node_modules..."
+          rm -rf node_modules
+          
           echo "🔍 Installing dependencies..."
           npm ci
           
