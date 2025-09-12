@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PageLayout, ErrorMessage, Header } from '@/components/ui'
@@ -43,17 +43,25 @@ export default function Home() {
     setIsClient(true)
   }, [])
 
+  // Memoize default config to prevent unnecessary re-renders
+  const defaultConfig = useMemo(() => getDefaultTableConfig(), [getDefaultTableConfig])
+
   // Load default table configuration
   useEffect(() => {
     if (isClient) {
-      const defaultConfig = getDefaultTableConfig()
-      setFormData(prev => ({
-        ...prev,
-        cols: prev.cols ?? defaultConfig.cols,
-        rows: prev.rows ?? defaultConfig.rows,
-      }))
+      setFormData(prev => {
+        // Only update if values are actually undefined
+        if (prev.cols === undefined || prev.rows === undefined) {
+          return {
+            ...prev,
+            cols: prev.cols ?? defaultConfig.cols,
+            rows: prev.rows ?? defaultConfig.rows,
+          }
+        }
+        return prev
+      })
     }
-  }, [isClient, getDefaultTableConfig])
+  }, [isClient, defaultConfig])
 
   // Check for success state in URL parameters
   useEffect(() => {
@@ -122,7 +130,6 @@ export default function Home() {
 
     try {
       // Ensure numeric values are properly typed, use defaults if null
-      const defaultConfig = getDefaultTableConfig()
       const requestData: CreateTableRequest = {
         title: formData.title?.trim() || '',
         description: formData.description?.trim() || '',
@@ -146,12 +153,11 @@ export default function Home() {
 
   const resetForm = () => {
     setResult(null)
-    const defaultConfig = getDefaultTableConfig()
-    setFormData({ 
-      title: '', 
-      description: '', 
-      cols: defaultConfig.cols, 
-      rows: defaultConfig.rows 
+    setFormData({
+      title: '',
+      description: '',
+      cols: defaultConfig.cols,
+      rows: defaultConfig.rows,
     })
     setFieldErrors({ title: null, cols: null, rows: null })
     // Clear URL parameters
@@ -272,14 +278,14 @@ export default function Home() {
             <FormField label={t('table.columns')} htmlFor="cols" required>
               <NumericInput
                 id="cols"
-                value={formData.cols || getDefaultTableConfig().cols}
+                value={formData.cols || defaultConfig.cols}
                 onChange={value => handleFieldChange('cols', value)}
                 onValidationChange={(isValid, error) => {
                   setFieldErrors(prev => ({ ...prev, cols: error }))
                 }}
                 min={1}
                 max={64}
-                defaultValue={getDefaultTableConfig().cols}
+                defaultValue={defaultConfig.cols}
                 validateFn={value => {
                   if (isNaN(value) || value < 1 || value > 64) {
                     return t('errors.columnsOutOfRange')
@@ -292,14 +298,14 @@ export default function Home() {
             <FormField label={t('table.rows')} htmlFor="rows" required>
               <NumericInput
                 id="rows"
-                value={formData.rows || getDefaultTableConfig().rows}
+                value={formData.rows || defaultConfig.rows}
                 onChange={value => handleFieldChange('rows', value)}
                 onValidationChange={(isValid, error) => {
                   setFieldErrors(prev => ({ ...prev, rows: error }))
                 }}
                 min={1}
                 max={500}
-                defaultValue={getDefaultTableConfig().rows}
+                defaultValue={defaultConfig.rows}
                 validateFn={value => {
                   if (isNaN(value) || value < 1 || value > 500) {
                     return t('errors.rowsOutOfRange')

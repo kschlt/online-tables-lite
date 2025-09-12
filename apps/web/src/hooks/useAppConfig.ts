@@ -36,7 +36,7 @@ export const useAppConfig = () => {
     try {
       setLoading(true)
       setError(null)
-      
+
       const configData = await getConfig()
       setConfig(configData)
     } catch (err) {
@@ -75,8 +75,8 @@ export const useAppConfig = () => {
         columns: appConfig.table.defaultColumns.map(col => ({
           index: col.index,
           header: col.header[locale] || col.header.en,
-          format: col.format
-        }))
+          format: col.format,
+        })),
       }
     } catch {
       // Failed to load app config, using hardcoded fallback
@@ -90,7 +90,7 @@ export const useAppConfig = () => {
           { index: 2, header: 'No 2', format: 'text' },
           { index: 3, header: 'No 3', format: 'text' },
           { index: 4, header: 'No 4', format: 'text' },
-        ]
+        ],
       }
     }
   }
@@ -104,6 +104,6 @@ export const useAppConfig = () => {
     getAppTitle,
     getAppDescription,
     getDefaultTableConfig,
-    refresh: loadConfig
+    refresh: loadConfig,
   }
 }
