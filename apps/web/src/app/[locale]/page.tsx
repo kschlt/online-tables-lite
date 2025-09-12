@@ -13,12 +13,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createTable } from '@/lib/api'
 import { CheckCircle, Settings, Edit } from 'lucide-react'
 import type { CreateTableRequest, CreateTableResponse } from '@/types'
+import { useAppConfig } from '@/hooks/useAppConfig'
 
 export default function Home() {
   const t = useTranslations()
   const locale = useLocale()
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { getAppTitle, getAppDescription, getDefaultTableConfig } = useAppConfig()
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<CreateTableResponse | null>(null)
@@ -32,14 +34,26 @@ export default function Home() {
   const [formData, setFormData] = useState<CreateTableRequest>({
     title: '',
     description: '',
-    cols: 3,
-    rows: 5,
+    cols: undefined, // Will be set from config
+    rows: undefined, // Will be set from config
   })
 
   // Ensure we're on the client side
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Load default table configuration
+  useEffect(() => {
+    if (isClient) {
+      const defaultConfig = getDefaultTableConfig()
+      setFormData(prev => ({
+        ...prev,
+        cols: prev.cols ?? defaultConfig.cols,
+        rows: prev.rows ?? defaultConfig.rows,
+      }))
+    }
+  }, [isClient, getDefaultTableConfig])
 
   // Check for success state in URL parameters
   useEffect(() => {
@@ -107,15 +121,16 @@ export default function Home() {
     }
 
     try {
-      // Ensure numeric values are properly typed
+      // Ensure numeric values are properly typed, use defaults if null
+      const defaultConfig = getDefaultTableConfig()
       const requestData: CreateTableRequest = {
         title: formData.title?.trim() || '',
         description: formData.description?.trim() || '',
-        cols: Number(formData.cols),
-        rows: Number(formData.rows),
+        cols: formData.cols ?? defaultConfig.cols,
+        rows: formData.rows ?? defaultConfig.rows,
       }
 
-      const response = await createTable(requestData)
+      const response = await createTable(requestData, locale)
       setResult(response)
 
       // Store success state in URL parameters
@@ -131,7 +146,13 @@ export default function Home() {
 
   const resetForm = () => {
     setResult(null)
-    setFormData({ title: '', description: '', cols: 3, rows: 5 })
+    const defaultConfig = getDefaultTableConfig()
+    setFormData({ 
+      title: '', 
+      description: '', 
+      cols: defaultConfig.cols, 
+      rows: defaultConfig.rows 
+    })
     setFieldErrors({ title: null, cols: null, rows: null })
     // Clear URL parameters
     router.replace(`/${locale}`)
@@ -149,7 +170,6 @@ export default function Home() {
     const error = validateField(field, value)
     setFieldErrors(prev => ({ ...prev, [field]: error }))
   }
-
   // Don't render success state until client-side hydration is complete
   if (result && isClient) {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -158,7 +178,7 @@ export default function Home() {
 
     return (
       <PageLayout
-        header={<Header title={t('app.title')} description={t('app.description')} />}
+        header={<Header title={getAppTitle()} description={getAppDescription()} />}
         maxWidth="xl"
       >
         <div className="card-elevated p-6">
@@ -215,7 +235,7 @@ export default function Home() {
 
   return (
     <PageLayout
-      header={<Header title={t('app.title')} description={t('app.description')} />}
+      header={<Header title={getAppTitle()} description={getAppDescription()} />}
       maxWidth="xl"
     >
       <div className="card-elevated p-6">
@@ -252,14 +272,14 @@ export default function Home() {
             <FormField label={t('table.columns')} htmlFor="cols" required>
               <NumericInput
                 id="cols"
-                value={formData.cols || 3}
+                value={formData.cols || getDefaultTableConfig().cols}
                 onChange={value => handleFieldChange('cols', value)}
                 onValidationChange={(isValid, error) => {
                   setFieldErrors(prev => ({ ...prev, cols: error }))
                 }}
                 min={1}
                 max={64}
-                defaultValue={3}
+                defaultValue={getDefaultTableConfig().cols}
                 validateFn={value => {
                   if (isNaN(value) || value < 1 || value > 64) {
                     return t('errors.columnsOutOfRange')
@@ -272,14 +292,14 @@ export default function Home() {
             <FormField label={t('table.rows')} htmlFor="rows" required>
               <NumericInput
                 id="rows"
-                value={formData.rows || 5}
+                value={formData.rows || getDefaultTableConfig().rows}
                 onChange={value => handleFieldChange('rows', value)}
                 onValidationChange={(isValid, error) => {
                   setFieldErrors(prev => ({ ...prev, rows: error }))
                 }}
                 min={1}
                 max={500}
-                defaultValue={5}
+                defaultValue={getDefaultTableConfig().rows}
                 validateFn={value => {
                   if (isNaN(value) || value < 1 || value > 500) {
                     return t('errors.rowsOutOfRange')

@@ -3,6 +3,7 @@
 import socketio
 
 from app.services.table_service import TableService
+from app.services.config_service import ConfigService
 
 # Global reference to the socketio server (set by main.py)
 _socketio_server: socketio.AsyncServer | None = None
@@ -24,3 +25,8 @@ def get_socketio_server() -> socketio.AsyncServer:
 def get_table_service() -> TableService:
     """Get table service instance."""
     return TableService()
+
+
+def get_config_service() -> ConfigService:
+    """Get config service instance."""
+    return ConfigService()

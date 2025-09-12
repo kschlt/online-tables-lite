@@ -12,6 +12,7 @@ from starlette.responses import JSONResponse, Response
 
 from app.api.dependencies import set_socketio_server
 from app.api.v1.cells import router as cells_router
+from app.api.v1.config import router as config_router
 from app.api.v1.tables import router as tables_router
 from app.core.config import settings
 from app.core.logging import RequestLoggingMiddleware, setup_logging
@@ -289,6 +290,7 @@ def create_app() -> FastAPI:
     # API routes
     app.include_router(tables_router, prefix="/api/v1")
     app.include_router(cells_router, prefix="/api/v1")
+    app.include_router(config_router, prefix="/api/v1")
 
     return app
 

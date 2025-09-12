@@ -24,10 +24,11 @@ router = APIRouter(prefix="/tables", tags=["tables"])
 @router.post("", response_model=CreateTableResponse)
 async def create_table(
     request: CreateTableRequest,
+    locale: str = "en",
     table_service: TableService = Depends(get_table_service),
 ):
     """Create a new table with admin and editor tokens."""
-    return await table_service.create_table(request)
+    return await table_service.create_table(request, locale)
 
 
 @router.get("/{slug}", response_model=TableResponse)
