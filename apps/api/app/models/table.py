@@ -18,8 +18,8 @@ class CreateTableRequest(BaseModel):
 
     title: str | None = None
     description: str | None = None
-    cols: int = 4
-    rows: int = 10
+    cols: int | None = None  # Will use config defaults if None
+    rows: int | None = None  # Will use config defaults if None
 
 
 class CreateTableResponse(BaseModel):

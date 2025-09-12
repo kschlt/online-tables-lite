@@ -60,8 +60,8 @@ async function apiRequest<T>(endpoint: string, options: ApiRequestOptions = {}):
 }
 
 export const api = {
-  async createTable(request: CreateTableRequest): Promise<CreateTableResponse> {
-    return apiRequest<CreateTableResponse>(API_ENDPOINTS.TABLES, {
+  async createTable(request: CreateTableRequest, locale: string = 'en'): Promise<CreateTableResponse> {
+    return apiRequest<CreateTableResponse>(`${API_ENDPOINTS.TABLES}?locale=${locale}`, {
       method: 'POST',
       body: JSON.stringify(request),
     })
@@ -151,6 +151,16 @@ export const api = {
       body: JSON.stringify(request),
     })
   },
+
+  // Configuration endpoints
+  async getConfig(): Promise<Record<string, { en: string | null; de: string | null }>> {
+    return apiRequest<Record<string, { en: string | null; de: string | null }>>(`${API_BASE_URL}/api/v1/config`)
+  },
+
+  async getConfigValue(key: string, locale: string = 'en'): Promise<{ key: string; value: string; locale: string }> {
+    return apiRequest<{ key: string; value: string; locale: string }>(`${API_BASE_URL}/api/v1/config/${key}?locale=${locale}`)
+  },
+
 }
 
 export { ApiError }
@@ -159,3 +169,5 @@ export { ApiError }
 export const createTable = api.createTable
 export const updateCells = api.updateCells
 export const updateTableConfig = api.updateTableConfig
+export const getConfig = api.getConfig
+export const getConfigValue = api.getConfigValue

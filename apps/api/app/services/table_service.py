@@ -1,6 +1,6 @@
 """Table business logic service."""
 
-from typing import Any
+from typing import Any, Optional
 
 from app.core.config import settings
 from app.core.database import get_supabase_client
@@ -24,11 +24,20 @@ from app.models.table import (
 class TableService:
     """Service for table operations."""
 
-    def __init__(self):
+    def __init__(self, config_service: Optional["ConfigService"] = None):
+        from app.services.config_service import ConfigService
+        
         self.supabase = get_supabase_client()
+        self.config_service = config_service or ConfigService()
 
-    async def create_table(self, request: CreateTableRequest) -> CreateTableResponse:
+    async def create_table(self, request: CreateTableRequest, locale: str = "en") -> CreateTableResponse:
         """Create a new table with tokens."""
+        # Use config defaults if values not provided
+        if request.cols is None:
+            request.cols = await self.config_service.get_default_table_cols()
+        if request.rows is None:
+            request.rows = await self.config_service.get_default_table_rows()
+            
         # Validate limits upfront
         if request.cols > settings.table_col_limit:
             raise ValueError(f"Columns cannot exceed {settings.table_col_limit}")
@@ -70,17 +79,35 @@ class TableService:
             print(f"Table data: {table_data}")
             raise
 
-        # Create default columns
-        columns_data = [
-            {
-                "table_id": table_id,
-                "idx": i,
-                "header": f"Column {i + 1}",
-                "width": None,
-                "format": "text",  # Default to text format
-            }
-            for i in range(request.cols)
-        ]
+        # Create default columns using configuration
+        try:
+            default_columns = await self.config_service.get_default_column_config(locale)
+        except Exception as e:
+            print(f"Warning: Failed to load column config, using fallbacks: {e}")
+            default_columns = []
+
+        columns_data = []
+        for i in range(request.cols):
+            # Use config if available for this column index
+            if i < len(default_columns):
+                config_col = default_columns[i]
+                column_data = {
+                    "table_id": table_id,
+                    "idx": i,
+                    "header": config_col.get("header", f"Column {i + 1}"),
+                    "width": None,
+                    "format": config_col.get("format", "text"),
+                }
+            else:
+                # Fallback for columns beyond configured defaults
+                column_data = {
+                    "table_id": table_id,
+                    "idx": i,
+                    "header": f"Column {i + 1}",
+                    "width": None,
+                    "format": "text",
+                }
+            columns_data.append(column_data)
 
         self.supabase.table("columns").insert(columns_data).execute()
 
