@@ -1,8 +1,9 @@
 import createMiddleware from 'next-intl/middleware'
+import appConfig from '../config/app.json'
 
 export default createMiddleware({
   locales: ['en', 'de'],
-  defaultLocale: 'en',
+  defaultLocale: appConfig.defaultLanguage as 'en' | 'de',
   localePrefix: 'always',
 })
 

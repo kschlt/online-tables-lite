@@ -1,0 +1,49 @@
+{
+  "defaultLanguage": "en",
+  "table": {
+    "defaultRows": 10,
+    "defaultCols": 5,
+    "defaultColumns": [
+      {
+        "index": 0,
+        "header": {
+          "en": "Date",
+          "de": "Datum"
+        },
+        "format": "date"
+      },
+      {
+        "index": 1,
+        "header": {
+          "en": "No 1",
+          "de": "No 1"
+        },
+        "format": "text"
+      },
+      {
+        "index": 2,
+        "header": {
+          "en": "No 2", 
+          "de": "No 2"
+        },
+        "format": "text"
+      },
+      {
+        "index": 3,
+        "header": {
+          "en": "No 3",
+          "de": "No 3"  
+        },
+        "format": "text"
+      },
+      {
+        "index": 4,
+        "header": {
+          "en": "No 4",
+          "de": "No 4"
+        },
+        "format": "text"
+      }
+    ]
+  }
+}
