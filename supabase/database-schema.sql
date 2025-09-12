@@ -1,6 +1,7 @@
 -- Online Table Lite - Complete Database Schema
 -- This file represents the complete database schema for both development and production
 -- Run this in Supabase SQL Editor to create the full schema
+-- For setup/updates, use setup.sql instead (it handles both creation and updates)
 
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -90,6 +91,20 @@ CREATE TABLE IF NOT EXISTS snapshots (
 CREATE INDEX IF NOT EXISTS idx_snapshots_table_id ON snapshots(table_id);
 CREATE INDEX IF NOT EXISTS idx_snapshots_created_at ON snapshots(created_at);
 
+-- App configuration table - stores translatable application content only
+-- NOTE: Non-translatable configuration (like table defaults) is handled by JSON files
+CREATE TABLE IF NOT EXISTS app_config (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    key VARCHAR(255) NOT NULL UNIQUE,
+    value_en TEXT,
+    value_de TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_app_config_key ON app_config(key);
+
 -- Row Level Security (RLS) Policies
 -- Enable RLS on all tables
 ALTER TABLE tables ENABLE ROW LEVEL SECURITY;
@@ -97,6 +112,7 @@ ALTER TABLE columns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cells ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
 
 -- Tables policies
 CREATE POLICY IF NOT EXISTS "Tables are viewable by everyone" ON tables
@@ -148,6 +164,16 @@ CREATE POLICY IF NOT EXISTS "Snapshots are viewable by everyone" ON snapshots
 CREATE POLICY IF NOT EXISTS "Snapshots are insertable by everyone" ON snapshots
     FOR INSERT WITH CHECK (true);
 
+-- App config policies
+CREATE POLICY IF NOT EXISTS "App config is viewable by everyone" ON app_config
+    FOR SELECT USING (true);
+
+CREATE POLICY IF NOT EXISTS "App config is insertable by everyone" ON app_config
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY IF NOT EXISTS "App config is updatable by everyone" ON app_config
+    FOR UPDATE USING (true);
+
 -- Functions and Triggers
 -- Update updated_at timestamp automatically
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -169,6 +195,11 @@ CREATE TRIGGER update_cells_updated_at
     BEFORE UPDATE ON cells
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_app_config_updated_at ON app_config;
+CREATE TRIGGER update_app_config_updated_at
+    BEFORE UPDATE ON app_config
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Update last_activity_at when tables are accessed
 CREATE OR REPLACE FUNCTION update_table_activity()
 RETURNS TRIGGER AS $$
@@ -183,3 +214,10 @@ DROP TRIGGER IF EXISTS update_table_activity_on_cell_change ON cells;
 CREATE TRIGGER update_table_activity_on_cell_change
     AFTER INSERT OR UPDATE ON cells
     FOR EACH ROW EXECUTE FUNCTION update_table_activity();
+
+-- Initial seed data for translatable app configuration only
+-- NOTE: Table defaults and other non-translatable config is in JSON files
+INSERT INTO app_config (key, value_en, value_de) VALUES
+    ('app.title', 'Online Tables Lite', 'Online Tabellen Lite'),
+    ('app.description', 'Collaborative table editing application', 'App um gemeinsam Tabellen zu erstellen und zu bearbeiten')
+ON CONFLICT (key) DO NOTHING;
