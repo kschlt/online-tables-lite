@@ -25,8 +25,9 @@ A collaborative table editing application with real-time synchronization and int
 
 - **Frontend**: Next.js 15 + TypeScript + Tailwind CSS + Radix UI
 - **Backend**: FastAPI + Socket.IO + Pydantic v2  
-- **Database**: Supabase Postgres
-- **Internationalization**: next-intl
+- **Database**: Supabase Postgres with smart setup script
+- **Configuration**: Mixed architecture (JSON for settings, DB for translations)
+- **Internationalization**: next-intl with configurable defaults
 - **Deployment**: Vercel (frontend) + Fly.io (backend) via GitHub Actions
 
 ## 🚀 Quick Start
@@ -44,7 +45,7 @@ cd online-tables-lite
 
 ### 2. Database Setup
 1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Run the SQL schema from `docs/TECHNOTES.md` in the Supabase SQL editor
+2. Run `supabase/setup.sql` in the Supabase SQL Editor (creates/updates schema automatically)
 3. Get your Supabase URL and Service Role key from Project Settings → API
 
 ### 3. Backend Setup
@@ -178,10 +179,20 @@ Configure these secrets in your GitHub repository settings:
 3. Merge to `main`, delete feature branch
 4. When stable: merge `main` → `production` (triggers deployment)
 
+## 🗄️ Database Architecture
+
+The application uses a mixed configuration approach:
+- **Database** (`app_config` table): Translatable content (app title, description)  
+- **JSON files** (`config/app.json`): Non-translatable settings (table defaults, language)
+
+**Database Scripts:**
+- `supabase/database-schema.sql` - Single source of truth for schema
+- `supabase/setup.sql` - Smart script to create/update database (safe for production)
+
 ## 📚 Documentation
 
-- **[docs/](./docs/)** - Technical implementation details and phases
-- **[CLAUDE.md](./CLAUDE.md)** - AI assistant guidance and architecture
+- **[supabase/](./supabase/)** - Database schema and setup scripts
+- **[CLAUDE.md](./CLAUDE.md)** - Development workflow and architecture
 - **[apps/web/DESIGN_SYSTEM.md](./apps/web/DESIGN_SYSTEM.md)** - UI component design system
 
 ## Key Security Notes

@@ -4,14 +4,14 @@ This folder contains the database schema and setup scripts for Online Table Lite
 
 ## Files
 
-- **`setup.sql`** - **🎯 SINGLE SOURCE OF TRUTH** - Smart script for all database operations
-- **`database-schema.sql`** - Reference schema file (for documentation)
+- **`database-schema.sql`** - **🎯 SINGLE SOURCE OF TRUTH** - Complete schema definition
+- **`setup.sql`** - Smart script to create/update database to match the schema
 
 ## How to Use
 
-### 🚀 One Script to Rule Them All
+### 🚀 Always Use setup.sql
 
-**Always use `setup.sql`** - it's smart enough to handle both scenarios:
+**Run `setup.sql` in Supabase SQL Editor** - it ensures your database matches the schema:
 
 **Fresh Database:**
 - ✅ Creates all tables, indexes, policies, triggers
@@ -26,11 +26,7 @@ This folder contains the database schema and setup scripts for Online Table Lite
 
 ### 🔒 Production Safety
 
-```sql
--- This script is SAFE to run multiple times on production
--- It automatically detects if app_config has data and preserves it
--- No more worrying about overwriting your custom titles/descriptions!
-```
+The `setup.sql` script is safe to run multiple times - it automatically detects existing data and preserves it while updating the schema to match `database-schema.sql`.
 
 ## What's in the Database
 
@@ -45,9 +41,13 @@ This folder contains the database schema and setup scripts for Online Table Lite
 - `app_config` - **Only translatable content** (app title, description)
 - Table defaults (rows, columns, default language) are stored in JSON config files, not the database
 
-## Architecture Decision
+## Architecture
 
-**Database**: Only stores translatable content that needs multi-language support
-**JSON Files**: Stores configuration settings that don't need translation
+**`database-schema.sql`**: The definitive schema - what the database should look like  
+**`setup.sql`**: Implementation script - makes the database match the schema safely  
 
-This keeps the database focused and makes configuration management simpler.
+**Data Storage**:
+- **Database**: Only translatable content (app title, description)
+- **JSON Files**: Configuration settings (table defaults, language settings)
+
+This separation keeps the database focused and configuration management simple.
