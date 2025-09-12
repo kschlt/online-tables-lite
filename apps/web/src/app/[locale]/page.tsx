@@ -253,14 +253,14 @@ export default function Home() {
               <NumericInput
                 id="cols"
                 value={formData.cols || 3}
-                onChange={(value) => handleFieldChange('cols', value)}
+                onChange={value => handleFieldChange('cols', value)}
                 onValidationChange={(isValid, error) => {
                   setFieldErrors(prev => ({ ...prev, cols: error }))
                 }}
                 min={1}
                 max={64}
                 defaultValue={3}
-                validateFn={(value) => {
+                validateFn={value => {
                   if (isNaN(value) || value < 1 || value > 64) {
                     return t('errors.columnsOutOfRange')
                   }
@@ -273,14 +273,14 @@ export default function Home() {
               <NumericInput
                 id="rows"
                 value={formData.rows || 5}
-                onChange={(value) => handleFieldChange('rows', value)}
+                onChange={value => handleFieldChange('rows', value)}
                 onValidationChange={(isValid, error) => {
                   setFieldErrors(prev => ({ ...prev, rows: error }))
                 }}
                 min={1}
                 max={500}
                 defaultValue={5}
-                validateFn={(value) => {
+                validateFn={value => {
                   if (isNaN(value) || value < 1 || value > 500) {
                     return t('errors.rowsOutOfRange')
                   }

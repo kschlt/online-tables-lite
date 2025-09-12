@@ -80,14 +80,16 @@ export function TimePickerInput({
     if (containerRef.current) {
       setTouchStart({
         y: e.touches[0].clientY,
-        scrollTop: containerRef.current.scrollTop
+        scrollTop: containerRef.current.scrollTop,
       })
     }
   }
 
   const handleTouchMove = (e: React.TouchEvent, containerRef: React.RefObject<HTMLDivElement>) => {
-    if (!touchStart || !containerRef.current) return
-    
+    if (!touchStart || !containerRef.current) {
+      return
+    }
+
     e.preventDefault()
     const currentY = e.touches[0].clientY
     const diff = touchStart.y - currentY
@@ -133,12 +135,12 @@ export function TimePickerInput({
           {/* Hours */}
           <div className="p-2 border-r">
             <div className="text-xs font-medium text-muted-foreground mb-2 text-center">Hours</div>
-            <div 
+            <div
               ref={hoursContainerRef}
               className="grid max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-              onWheel={(e) => handleWheel(e, hoursContainerRef)}
-              onTouchStart={(e) => handleTouchStart(e, hoursContainerRef)}
-              onTouchMove={(e) => handleTouchMove(e, hoursContainerRef)}
+              onWheel={e => handleWheel(e, hoursContainerRef)}
+              onTouchStart={e => handleTouchStart(e, hoursContainerRef)}
+              onTouchMove={e => handleTouchMove(e, hoursContainerRef)}
               onTouchEnd={handleTouchEnd}
             >
               {hourOptions.map(hour => (
@@ -163,12 +165,12 @@ export function TimePickerInput({
             <div className="text-xs font-medium text-muted-foreground mb-2 text-center">
               Minutes
             </div>
-            <div 
+            <div
               ref={minutesContainerRef}
               className="grid max-h-[200px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-              onWheel={(e) => handleWheel(e, minutesContainerRef)}
-              onTouchStart={(e) => handleTouchStart(e, minutesContainerRef)}
-              onTouchMove={(e) => handleTouchMove(e, minutesContainerRef)}
+              onWheel={e => handleWheel(e, minutesContainerRef)}
+              onTouchStart={e => handleTouchStart(e, minutesContainerRef)}
+              onTouchMove={e => handleTouchMove(e, minutesContainerRef)}
               onTouchEnd={handleTouchEnd}
             >
               {minuteOptions.map(minute => (
