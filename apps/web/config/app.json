@@ -23,7 +23,7 @@
       {
         "index": 2,
         "header": {
-          "en": "No 2", 
+          "en": "No 2",
           "de": "No 2"
         },
         "format": "text"
@@ -32,7 +32,7 @@
         "index": 3,
         "header": {
           "en": "No 3",
-          "de": "No 3"  
+          "de": "No 3"
         },
         "format": "text"
       },
