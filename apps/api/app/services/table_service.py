@@ -1,6 +1,9 @@
 """Table business logic service."""
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from app.services.config_service import ConfigService
 
 from app.core.config import settings
 from app.core.database import get_supabase_client
@@ -26,18 +29,20 @@ class TableService:
 
     def __init__(self, config_service: Optional["ConfigService"] = None):
         from app.services.config_service import ConfigService
-        
+
         self.supabase = get_supabase_client()
         self.config_service = config_service or ConfigService()
 
-    async def create_table(self, request: CreateTableRequest, locale: str = "en") -> CreateTableResponse:
+    async def create_table(
+        self, request: CreateTableRequest, locale: str = "en"
+    ) -> CreateTableResponse:
         """Create a new table with tokens."""
         # Use config defaults if values not provided
         if request.cols is None:
             request.cols = await self.config_service.get_default_table_cols()
         if request.rows is None:
             request.rows = await self.config_service.get_default_table_rows()
-            
+
         # Validate limits upfront
         if request.cols > settings.table_col_limit:
             raise ValueError(f"Columns cannot exceed {settings.table_col_limit}")

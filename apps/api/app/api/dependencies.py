@@ -2,8 +2,8 @@
 
 import socketio
 
-from app.services.table_service import TableService
 from app.services.config_service import ConfigService
+from app.services.table_service import TableService
 
 # Global reference to the socketio server (set by main.py)
 _socketio_server: socketio.AsyncServer | None = None
