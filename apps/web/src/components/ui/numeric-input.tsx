@@ -46,7 +46,7 @@ export function NumericInput({
     if (validateFn) {
       return validateFn(val)
     }
-    
+
     if (isNaN(val) || val < min || val > max) {
       if (compact) {
         return `${min}-${max}`
@@ -73,7 +73,7 @@ export function NumericInput({
       const clampedValue = Math.max(min, Math.min(max, numericValue))
       setInternalValue(clampedValue)
       onChange(clampedValue)
-      
+
       // Clear error when user enters valid input
       if (error) {
         setError(null)
@@ -94,7 +94,8 @@ export function NumericInput({
     }
 
     // Validate current value
-    const currentValue = typeof internalValue === 'string' ? parseInt(internalValue, 10) : internalValue
+    const currentValue =
+      typeof internalValue === 'string' ? parseInt(internalValue, 10) : internalValue
     const validationError = validateValue(currentValue)
     setError(validationError)
     onValidationChange?.(validationError === null, validationError)
@@ -115,9 +116,7 @@ export function NumericInput({
         disabled={disabled}
       />
       {error && (
-        <div className={`text-destructive text-xs ${compact ? 'leading-tight' : ''}`}>
-          {error}
-        </div>
+        <div className={`text-destructive text-xs ${compact ? 'leading-tight' : ''}`}>{error}</div>
       )}
     </div>
   )

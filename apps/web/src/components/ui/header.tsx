@@ -28,20 +28,16 @@ export function Header({ title, description, children, className }: HeaderProps)
           <NavigationMenu />
         </div>
       </div>
-      
+
       {/* Description below - left aligned */}
       {description && (
         <div className="mt-1">
           <p className="text-body-sm text-muted-foreground truncate">{description}</p>
         </div>
       )}
-      
+
       {/* Additional children below */}
-      {children && (
-        <div className="mt-2">
-          {children}
-        </div>
-      )}
+      {children && <div className="mt-2">{children}</div>}
     </div>
   )
 }

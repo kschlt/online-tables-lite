@@ -210,7 +210,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                           defaultValue={1}
                           className="w-20"
                           compact={true}
-                          validateFn={(value) => {
+                          validateFn={value => {
                             if (value < 1) {
                               return t('validation.rowsRequired')
                             }
@@ -286,7 +286,7 @@ export function AdminDialog({ tableData, token, isOpen, onClose }: AdminDialogPr
                         defaultValue={1}
                         className="w-20"
                         compact={true}
-                        validateFn={(value) => {
+                        validateFn={value => {
                           if (value < 1) {
                             return t('validation.rowsRequired')
                           }

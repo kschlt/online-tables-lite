@@ -70,13 +70,27 @@ cleanup:
 verify:
 	./scripts/git/verify-clean-commit.sh
 
-# Run all quality checks
+# Fix issues then run quality checks (recommended workflow)
 check: verify
-	@echo "🔍 Running all quality checks..."
-	cd apps/web && npm run typecheck
-	cd apps/web && npm run lint
+	@echo "🔧 Auto-fixing and checking..."
+	@echo "🔧 Frontend: Auto-fixing..."
+	cd apps/web && npm run fix
+	@echo "🔧 Backend: Auto-fixing..."
+	cd apps/api && source venv/bin/activate && ruff check --fix . && ruff format .
+	@echo "🔍 Frontend: Validating..."
+	cd apps/web && npm run check
+	@echo "🔍 Backend: Linting..."
+	cd apps/api && source venv/bin/activate && ruff check . && ruff format --check .
+	@echo "🔍 Building..."
 	cd apps/web && npm run build
-	@echo "✅ All checks passed!"
+	@echo "✅ All fixes applied and checks passed!"
+
+# Fix issues only (no validation)
+fix:
+	@echo "🔧 Auto-fixing all issues..."
+	cd apps/web && npm run fix
+	cd apps/api && source venv/bin/activate && ruff check --fix . && ruff format .
+	@echo "✅ All fixes applied!"
 
 # Help command
 help:
