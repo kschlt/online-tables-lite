@@ -217,6 +217,11 @@ ship:
 	if [ -f "$$CACHE_FILE" ]; then \
 		echo "⚡ Using cached commit metadata from pre-commit hook"; \
 		. "$$CACHE_FILE"; \
+		CH_CODE=$$(echo "$$CH_CODE" | tr ' ' '\n' | grep -v '^$$'); \
+		CH_DOCS=$$(echo "$$CH_DOCS" | tr ' ' '\n' | grep -v '^$$'); \
+		LOG=$$(echo "$$LOG" | tr '|' '\n'); \
+		STATS=$$(echo "$$STATS" | tr '|' '\n'); \
+		CHANGELOG_ENTRY=$$(echo "$$CHANGELOG_ENTRY" | tr '|' '\n'); \
 	else \
 		echo "🔍 No commit cache found - calculating git diff..."; \
 		BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
