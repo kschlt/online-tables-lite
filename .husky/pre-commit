@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Pre-commit hook for Online Tables Lite (Husky)
+# Runs quality checks and auto-fixes before every commit
+
+set -e  # Exit on any error
+
+echo "🔧 Running pre-commit quality checks..."
+
+# Check if we're in the correct directory (project root)
+if [ ! -f "Makefile" ]; then
+    echo "❌ Error: Not in project root directory. Pre-commit hook expects to run from project root."
+    exit 1
+fi
+
+# 1. Cleanup temp files and organize project
+echo "📁 Cleaning up temporary files..."
+make cleanup
+if [ $? -ne 0 ]; then
+    echo "❌ Cleanup failed"
+    exit 1
+fi
+
+# 2. Auto-fix linting and formatting issues
+echo "🛠️  Auto-fixing code issues..."
+make fix
+if [ $? -ne 0 ]; then
+    echo "⚠️  Some auto-fixes failed, but continuing..."
+fi
+
+# 3. Stage any auto-fixes that were made
+echo "📝 Staging auto-fixes..."
+git add -A
+
+# 4. Verify no problematic files remain in staged changes
+echo "🔍 Verifying clean commit..."
+make verify
+if [ $? -ne 0 ]; then
+    echo "❌ Pre-commit verification failed!"
+    echo "💡 Please review the issues above and fix them before committing."
+    echo "💡 You may need to run 'make cleanup' and 'make fix' manually."
+    exit 1
+fi
+
+# 5. Cache commit metadata for ship workflow efficiency
+echo "💾 Caching commit metadata for workflow optimization..."
+CACHE_DIR=".git/commit-cache"
+mkdir -p "$CACHE_DIR"
+
+# Calculate base and diff info once
+BASE=$(git merge-base origin/main HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Cache the expensive git operations with error handling
+cat > "$CACHE_DIR/last-commit-meta" << EOF
+BASE=$BASE
+BRANCH=$BRANCH
+COMMIT_TIME=$(date +%s)
+CH_CODE=$(git diff --name-only $BASE...HEAD -- 'apps/**' 'supabase/**' 'scripts/**' ':!**/*.md' 2>/dev/null || true)
+CH_DOCS=$(git diff --name-only $BASE...HEAD -- '**/*.md' 2>/dev/null || true)
+LOG=$(git log --pretty=format:'* %s (%h)' $BASE..HEAD 2>/dev/null || echo "No commits found")
+STATS=$(git diff --numstat $BASE..HEAD 2>/dev/null | awk '{printf "- %s (+%s/-%s)\n", $3, $1, $2}' || echo "No changes")
+CHANGELOG_ENTRY=$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected")
+EOF
+
+echo "✅ Pre-commit checks passed! Metadata cached for efficient ship workflow."
