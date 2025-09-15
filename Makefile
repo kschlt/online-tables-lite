@@ -135,21 +135,25 @@ fix:
 
 # Generate conventional commit message using git-cliff configuration and agent assistance
 commit:
-	@BASE=$$(git merge-base $(BASE_REF) HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1); \
-	STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
-	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
-	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
+	@echo "🔍 Checking staged changes..."
+	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
 	if [ "$$STAGED" -eq 0 ]; then \
+		UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
+		UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
 		echo "❌ No staged changes found."; \
 		if [ "$$UNSTAGED" -gt 0 ]; then \
 			echo "💡 Found $$UNSTAGED unstaged file(s). Run: git add -A"; \
+			echo "💡 Or use: make commit-all (auto-stages and commits)"; \
 		elif [ "$$UNTRACKED" -gt 0 ]; then \
 			echo "💡 Found $$UNTRACKED untracked file(s). Run: git add -A"; \
+			echo "💡 Or use: make commit-all (auto-stages and commits)"; \
 		else \
 			echo "ℹ️  Working tree is clean - no changes to commit."; \
 		fi; \
 		exit 1; \
 	fi; \
+	echo "📝 Found $$STAGED staged file(s). Generating commit message..."; \
+	BASE=$$(git merge-base $(BASE_REF) HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1); \
 	PREVIEW=$$(git-cliff --unreleased --bump 2>/dev/null | head -5 | tail -1 | sed 's/^## \[//' | sed 's/\].*//' || echo "preview unavailable"); \
 	DIFF_SUMMARY=$$(git diff --staged --stat | head -10); \
 	COMMIT_TYPES=$$(grep -E '^\s*\{\s*message\s*=\s*"\^[a-z]+' cliff.toml 2>/dev/null | sed -E 's/.*"\^([a-z]+).*/\1/' | tr '\n' '|' | sed 's/|$$//' || echo "feat|fix|docs|refactor|chore|test|ci|build|perf"); \
@@ -189,16 +193,23 @@ commit:
 
 # Convenience command: stage all changes and generate commit message
 commit-all:
-	@echo "🔍 Checking for changes to stage..."
-	@UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
+	@echo "🔍 Checking for changes..."
+	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
+	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
 	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
-	if [ "$$UNSTAGED" -gt 0 ] || [ "$$UNTRACKED" -gt 0 ]; then \
+	TOTAL_CHANGES=$$((STAGED + UNSTAGED + UNTRACKED)); \
+	if [ "$$TOTAL_CHANGES" -eq 0 ]; then \
+		echo "ℹ️  No changes found. Working tree is clean - skipping commit."; \
+		exit 0; \
+	fi; \
+	if [ "$$STAGED" -gt 0 ]; then \
+		echo "📝 Found $$STAGED staged file(s). Generating commit message..."; \
+		$(MAKE) commit; \
+	else \
 		echo "📁 Staging $$((UNSTAGED + UNTRACKED)) file(s)..."; \
 		git add -A; \
 		echo "✅ Files staged. Generating commit message..."; \
 		$(MAKE) commit; \
-	else \
-		echo "ℹ️  No changes to stage. Working tree is clean."; \
 	fi
 
 # ---------- Ship workflow (agent-friendly PR creation) ----------
