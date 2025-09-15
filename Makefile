@@ -117,20 +117,21 @@ ship: cleanup verify check
 	LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
 	STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
 	echo "{"; \
-	echo '  "action_required": true,'; \
-	echo '  "task": "docs_update",'; \
-	echo '  "what_to_do": ['; \
-	echo '    "Identify impacted docs and update them to match current implementation",'; \
-	echo '    "Update CLI usage, API changes, configuration changes in README.md",'; \
-	echo '    "Update design system docs if UI components changed",'; \
-	echo '    "If nothing needs updating, reply exactly: NO-OP"'; \
-	echo '  ],'; \
-	printf '  "context": {\n    "diff_base": "%s",\n    "branch": "%s",\n' "$$BASE" "$$BRANCH"; \
-	printf '    "changed_code_files": "%s",\n    "changed_docs_files": "%s",\n' "$$CH_CODE" "$$CH_DOCS"; \
-	echo '    "allowed_paths": "$(DOC_PATHS)",'; \
-	echo '    "forbidden": "any edits outside allowed paths"'; \
-	echo '  },'; \
-	echo '  "next_commands": ["make docs-commit"]'; \
+	echo '  "task": {'; \
+	echo '    "type": "documentation_update",'; \
+	echo '    "instructions": ['; \
+	echo '      "Identify impacted docs and update them to match current implementation",'; \
+	echo '      "Update CLI usage, API changes, configuration changes in README.md",'; \
+	echo '      "Update design system docs if UI components changed",'; \
+	echo '      "If nothing needs updating, reply exactly: NO-OP"'; \
+	echo '    ],'; \
+	printf '    "context": {\n      "diff_base": "%s",\n      "branch": "%s",\n' "$$BASE" "$$BRANCH"; \
+	printf '      "changed_code_files": "%s",\n      "changed_docs_files": "%s",\n' "$$CH_CODE" "$$CH_DOCS"; \
+	echo '      "allowed_paths": "$(DOC_PATHS)",'; \
+	echo '      "forbidden": "any edits outside allowed paths"'; \
+	echo '    },'; \
+	echo '    "next_steps": ["make docs-commit"]'; \
+	echo '  }'; \
 	echo "}"; echo; \
 	SUBJ=$$(git log --format='%s' $$BASE..HEAD | head -1); \
 	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
@@ -221,6 +222,15 @@ branch-suggest:
 	echo "$(BRANCH_BEGIN)"; \
 	echo "Current: $$BRANCH"; echo "Suggested: $$SUG"; \
 	echo "To rename: make branch-rename NAME=$$SUG"; \
+	echo; \
+	echo "🤖 Rename when:"; \
+	echo "  ✅ Current name is generic (feature/update, feature/fix)"; \
+	echo "  ✅ Suggested name is significantly more descriptive"; \
+	echo "  ✅ Suggested name better reflects actual changes"; \
+	echo; \
+	echo "🤖 Keep current when:"; \
+	echo "  ❌ Current name is already clear and specific"; \
+	echo "  ❌ Only minor wording differences"; \
 	echo "$(BRANCH_END)"
 
 # Rename branch
