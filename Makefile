@@ -133,7 +133,7 @@ fix:
 
 # ---------- Commit workflow (conventional commits with git-cliff) ----------
 
-# Generate conventional commit message using git-cliff and agent assistance
+# Generate conventional commit message using git-cliff configuration and agent assistance
 commit:
 	@BASE=$$(git merge-base $(BASE_REF) HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1); \
 	STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
@@ -143,27 +143,37 @@ commit:
 	fi; \
 	PREVIEW=$$(git-cliff --unreleased --bump 2>/dev/null | head -5 | tail -1 | sed 's/^## \[//' | sed 's/\].*//' || echo "preview unavailable"); \
 	DIFF_SUMMARY=$$(git diff --staged --stat | head -10); \
+	COMMIT_TYPES=$$(grep -E '^\s*\{\s*message\s*=\s*"\^[a-z]+' cliff.toml 2>/dev/null | sed -E 's/.*"\^([a-z]+).*/\1/' | tr '\n' '|' | sed 's/|$$//' || echo "feat|fix|docs|refactor|chore|test|ci|build|perf"); \
+	CLIFF_CONFIG_STATUS=$$(if [ -f "cliff.toml" ]; then echo "✅ Using cliff.toml configuration"; else echo "⚠️ cliff.toml not found, using defaults"; fi); \
+	SAMPLE_ANALYSIS=$$(git-cliff --unreleased --context 2>/dev/null | jq -r '.commits[0].message // "No recent commits"' 2>/dev/null || echo "No context available"); \
 	echo "{"; \
 	echo '  "task": {'; \
 	echo '    "type": "conventional_commit_generation",'; \
 	echo '    "instructions": ['; \
 	echo '      "Analyze staged changes with: git diff --staged",'; \
-	echo '      "Use git-cliff version preview to understand appropriate commit type",'; \
+	echo '      "Use git-cliff preview and configuration to determine appropriate commit type",'; \
 	echo '      "Generate conventional commit message: type(scope): description (<72 chars)",'; \
-	echo '      "Validate with commitlint if available",'; \
+	echo '      "Ensure format matches cliff.toml commit_parsers configuration",'; \
+	echo '      "Validate with: echo \"message\" | git-cliff --unreleased --context",'; \
 	echo '      "Execute: git commit -m \"generated-message\""'; \
 	echo '    ],'; \
 	echo '    "context": {'; \
 	echo '      "staged_files": '$$STAGED','; \
 	echo '      "suggested_version": "'"$$PREVIEW"'",'; \
 	echo '      "diff_summary": "'"$$DIFF_SUMMARY"'",'; \
-	echo '      "format": "feat|fix|docs|refactor|chore|test|ci|build|perf(scope): description",'; \
+	echo '      "git_cliff_config": "'"$$CLIFF_CONFIG_STATUS"'",'; \
+	echo '      "allowed_types": "'"$$COMMIT_TYPES"'",'; \
+	echo '      "format_from_cliff": "type(scope): description - extracted from cliff.toml commit_parsers",'; \
+	echo '      "sample_analysis": "'"$$SAMPLE_ANALYSIS"'",'; \
 	echo '      "examples": ['; \
 	echo '        "feat(ui): add user dashboard",'; \
 	echo '        "fix(api): resolve authentication issue",'; \
-	echo '        "docs: update README with setup instructions"'; \
+	echo '        "docs: update README with setup instructions",'; \
+	echo '        "perf(core): optimize database queries",'; \
+	echo '        "refactor(auth): simplify token validation"'; \
 	echo '      ],'; \
-	echo '      "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)"'; \
+	echo '      "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)",'; \
+	echo '      "validation": "Use git-cliff --context to validate message format"'; \
 	echo '    }'; \
 	echo '  }'; \
 	echo "}"

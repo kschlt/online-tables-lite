@@ -47,7 +47,7 @@ This document tracks all dependencies and setup requirements for the git-cliff +
 
 ### 1. `/Makefile`
 - **New commands**:
-  - `make commit` - Generate conventional commit messages via JSON promptlet
+  - `make commit` - Generate conventional commit messages via JSON promptlet (uses cliff.toml config)
   - `make setup-git-tools` - Install and verify git-cliff dependencies
 - **Enhanced commands**:
   - `make setup` - Now includes git-cliff setup
@@ -80,8 +80,8 @@ This document tracks all dependencies and setup requirements for the git-cliff +
 
 ### New Commit Workflow
 1. `git add -A`
-2. `make commit` (generates JSON task for conventional message)
-3. Agent creates conventional commit message
+2. `make commit` (generates JSON task using cliff.toml configuration)
+3. Agent creates conventional commit message (following cliff.toml commit_parsers)
 4. `git commit -m "generated-conventional-message"`
 5. Pre-commit hook runs (cleanup → fix → verify)
 
