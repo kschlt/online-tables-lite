@@ -54,13 +54,6 @@ stop:
 setup: install-all
 	@echo "🎉 Setup complete! Run 'make dev' to start development"
 
-# Development environment setup (using organized scripts)
-setup-dev:
-	./scripts/dev/setup-dev.sh
-
-# Start development servers (using organized scripts)
-start-dev:
-	./scripts/dev/start-dev.sh
 
 # Clean up before merge/push (using organized scripts)
 cleanup:
@@ -258,8 +251,6 @@ help:
 	@echo "📦 Setup (Manual):"
 	@echo "  make install-all     - Install all dependencies"
 	@echo "  make setup           - Quick setup for new developers"
-	@echo "  make setup-dev       - Full development environment setup"
-	@echo "  make start-dev       - Start development servers"
 	@echo ""
 	@echo "🔧 Quality Control (Manual + Hooks):"
 	@echo "  make cleanup         - Clean up before merge/push"
@@ -280,7 +271,7 @@ help:
 	@echo ""
 	@echo "🔄 Git Hooks (Automatic):"
 	@echo "  pre-commit          - Auto-runs: cleanup → fix → verify"
-	@echo "  pre-push            - Auto-runs: check → displays docs promptlet"
+	@echo "  pre-push            - Lightweight verification (agent handles analysis)"
 	@echo ""
 	@echo "ℹ️  Help:"
 	@echo "  make help            - Show this help message"
