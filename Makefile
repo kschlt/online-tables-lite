@@ -97,8 +97,7 @@ DOC_PATHS       := README.md apps/web/DESIGN_SYSTEM.md scripts/README.md **/*.md
 CODE_HINTS      := apps/** supabase/** scripts/**
 EXCLUDE_GLOBS   := node_modules/** venv/** .next/** dist/** build/** .git/** .agent/**
 
-PROMPT_BEGIN := ### BEGIN DOCS PROMPT
-PROMPT_END   := ### END DOCS PROMPT
+# Delimiters for human-readable sections (PR/branch output only)
 PRBODY_BEGIN := ### BEGIN PR BODY
 PRBODY_END   := ### END PR BODY
 TITLE_BEGIN  := ### BEGIN PR TITLE
@@ -117,33 +116,28 @@ ship: cleanup verify check
 		$(foreach p,$(EXCLUDE_GLOBS),:!$(p)) || true); \
 	LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
 	STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
-	echo "$(PROMPT_BEGIN)"; echo; \
-	echo "You are a documentation editor for Online Tables Lite."; \
-	echo "Update ONLY documentation files to reflect the current code changes."; \
-	echo; \
-	echo "Rules:"; \
-	echo " - Allowed paths: $(DOC_PATHS)"; \
-	echo " - Forbidden: any edits outside allowed paths"; \
-	echo " - Keep headings/anchors/examples consistent; minimal accurate changes"; \
-	echo " - If nothing needs updating, reply exactly: NO-OP"; \
-	echo; \
-	echo "Context (diff base: $$BASE) — changed CODE files:"; \
-	if [[ -n "$$CH_CODE" ]]; then printf '\n```\n%s\n```\n\n' "$$CH_CODE"; else echo "_(none)_\n"; fi; \
-	echo "Docs already changed in this branch:"; \
-	if [[ -n "$$CH_DOCS" ]]; then printf '\n```\n%s\n```\n\n' "$$CH_DOCS"; else echo "_(none)_\n"; fi; \
-	echo "Tasks:"; \
-	echo " 1) Identify impacted docs and update them to match current implementation"; \
-	echo " 2) Update CLI usage, API changes, configuration changes in README.md"; \
-	echo " 3) Update design system docs if UI components changed"; \
-	printf '\nFinish by running:\n```bash\nmake docs-commit\n```\n'; \
-	echo; echo "$(PROMPT_END)"; echo; \
+	echo "{"; \
+	echo '  "action_required": true,'; \
+	echo '  "task": "docs_update",'; \
+	echo '  "what_to_do": ['; \
+	echo '    "Identify impacted docs and update them to match current implementation",'; \
+	echo '    "Update CLI usage, API changes, configuration changes in README.md",'; \
+	echo '    "Update design system docs if UI components changed",'; \
+	echo '    "If nothing needs updating, reply exactly: NO-OP"'; \
+	echo '  ],'; \
+	printf '  "context": {\n    "diff_base": "%s",\n    "branch": "%s",\n' "$$BASE" "$$BRANCH"; \
+	printf '    "changed_code_files": "%s",\n    "changed_docs_files": "%s",\n' "$$CH_CODE" "$$CH_DOCS"; \
+	echo '    "allowed_paths": "$(DOC_PATHS)",'; \
+	echo '    "forbidden": "any edits outside allowed paths"'; \
+	echo '  },'; \
+	echo '  "next_commands": ["make docs-commit"]'; \
+	echo "}"; echo; \
 	SUBJ=$$(git log --format='%s' $$BASE..HEAD | head -1); \
 	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
 	TITLE=$$(printf "%s" "$$SUBJ" | sed 's/[[:space:]]\+/ /g'); \
 	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"; echo; \
 	echo "$(PRBODY_BEGIN)"; \
-	echo "# Summary"; \
-	echo "$$TITLE"; echo; \
+	echo "# Summary"; echo "$$TITLE"; echo; \
 	echo "## Changes"; \
 	if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
 	echo; echo "## Affected files (added/removed lines)"; \
@@ -162,7 +156,7 @@ ship: cleanup verify check
 		echo "To rename: make branch-rename NAME=$$SUG"; \
 		echo "$(BRANCH_END)"; echo; \
 	fi; \
-	echo "➡️  Next: Execute the DOCS PROMPT above, then run: make docs-commit pr-open"
+	echo "🤖 Agent: Execute JSON task above, then run: make docs-commit pr-open"
 
 # Commit doc edits (only if there are any)
 docs-commit:
