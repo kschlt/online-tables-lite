@@ -1,6 +1,6 @@
-# Git-cliff & Conventional Commits Setup Dependencies
+# Git-cliff, Conventional Commits & Husky Setup Dependencies
 
-This document tracks all dependencies and setup requirements for the git-cliff + conventional commits integration.
+This document tracks all dependencies and setup requirements for the modern git-cliff + conventional commits + Husky integration.
 
 ## New Dependencies Added
 
@@ -19,6 +19,11 @@ This document tracks all dependencies and setup requirements for the git-cliff +
 - **@commitlint/config-conventional** (dev dependency)
   - Purpose: Conventional commits configuration for commitlint
   - Status: ✅ Added to package.json
+
+- **husky** (dev dependency)
+  - Purpose: Modern git hooks management via npm
+  - Installation: `npm install --save-dev husky`
+  - Status: ✅ Added to package.json and configured
 
 ## New Configuration Files
 
@@ -42,6 +47,18 @@ This document tracks all dependencies and setup requirements for the git-cliff +
 - **Auto-updates**: Via git-cliff during pre-push hook
 - **Initial content**: Project history from git commits
 - **Status**: ✅ Created
+
+### 4. `/.husky/pre-commit`
+- **Purpose**: Husky-managed pre-commit hook with optimizations
+- **Features**: Quality checks, auto-fixes, commit metadata caching
+- **Integration**: Works with existing Makefile commands
+- **Status**: ✅ Created and configured
+
+### 5. `/.husky/pre-push`
+- **Purpose**: Husky-managed pre-push hook for changelog automation  
+- **Features**: Automatic CHANGELOG.md updates via git-cliff
+- **Integration**: Seamless with git push workflow
+- **Status**: ✅ Created and configured
 
 ## Modified Files
 
@@ -115,12 +132,14 @@ echo "feat: test message" | npx commitlint --from-stdin
 
 - ✅ **git-cliff**: Integrated into Makefile setup process
 - ✅ **commitlint**: Added to npm dependencies
+- ✅ **husky**: Modern git hooks management (replaces direct hooks)
 - ✅ **CHANGELOG.md**: Auto-generated and maintained
 - ✅ **cliff.toml**: Version controlled configuration
 - ✅ **commitlint.config.js**: Version controlled configuration
-- ✅ **Makefile**: Enhanced with new commands and setup
-- ✅ **Git hooks**: Updated for automation
-- ✅ **CLAUDE.md**: Updated with new workflow
+- ✅ **Makefile**: Enhanced with optimized commands and caching
+- ✅ **Husky hooks**: Modern `.husky/` directory with pre-commit and pre-push
+- ✅ **CLAUDE.md**: Updated with modern Husky workflow documentation
+- ✅ **Performance optimizations**: Caching system and redundancy elimination
 
 ## Verification Commands
 
@@ -137,4 +156,4 @@ git-cliff --unreleased
 make check
 ```
 
-All dependencies are now properly integrated into the project setup and workflow!
+All dependencies are now properly integrated with modern Husky-based workflow and performance optimizations!
