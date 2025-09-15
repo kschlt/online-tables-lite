@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup cleanup verify ship docs-commit docs-update pr-title-suggest pr-body pr-open branch-suggest branch-rename
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup cleanup verify ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename
 
 # Start frontend development server
 dev-frontend:
@@ -181,8 +181,6 @@ docs-commit:
 		echo "✅ Documentation changes committed."; \
 	fi
 
-# Alternative target name for docs promptlet generation
-docs-update: ship
 
 # Print PR title suggestion
 pr-title-suggest:
@@ -279,11 +277,10 @@ help:
 	@echo "🤖 Ship Workflow - Agent Commands:"
 	@echo "  make docs-commit     - Commit documentation updates"
 	@echo "  make pr-open         - Push branch + create GitHub PR"
-	@echo "  make docs-update     - Alias for 'make ship'"
 	@echo ""
 	@echo "🔄 Git Hooks (Automatic):"
 	@echo "  pre-commit          - Auto-runs: cleanup → fix → verify"
-	@echo "  pre-push            - Auto-runs: check → ship → docs-commit → PR"
+	@echo "  pre-push            - Auto-runs: check → displays docs promptlet"
 	@echo ""
 	@echo "ℹ️  Help:"
 	@echo "  make help            - Show this help message"
