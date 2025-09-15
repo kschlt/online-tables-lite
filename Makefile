@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup cleanup verify ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename
 
 # Start frontend development server
 dev-frontend:
@@ -51,8 +51,38 @@ stop:
 	@echo "✅ All services stopped"
 
 # Quick setup for new developers
-setup: install-all
+setup: install-all setup-git-tools
 	@echo "🎉 Setup complete! Run 'make dev' to start development"
+
+# Setup git-cliff and related tools for changelog automation
+setup-git-tools:
+	@echo "🔧 Setting up git-cliff and changelog tools..."
+	@if ! command -v git-cliff >/dev/null 2>&1; then \
+		echo "📦 Installing git-cliff via Homebrew..."; \
+		if command -v brew >/dev/null 2>&1; then \
+			brew install git-cliff; \
+		else \
+			echo "❌ Homebrew not found. Please install git-cliff manually:"; \
+			echo "   https://git-cliff.org/docs/installation"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "✅ git-cliff already installed"; \
+	fi
+	@echo "🔍 Verifying git-cliff configuration..."
+	@if [ -f "cliff.toml" ]; then \
+		echo "✅ cliff.toml configuration found"; \
+	else \
+		echo "❌ cliff.toml not found - this should not happen"; \
+		exit 1; \
+	fi
+	@echo "🔍 Verifying commitlint dependencies..."
+	@if [ -f "apps/web/node_modules/.bin/commitlint" ]; then \
+		echo "✅ commitlint installed in web app"; \
+	else \
+		echo "⚠️  commitlint not found - run 'cd apps/web && npm install' to install"; \
+	fi
+	@echo "✅ Git tools setup complete!"
 
 
 # Clean up before merge/push (using organized scripts)
@@ -76,6 +106,22 @@ check: verify
 	cd apps/api && source venv/bin/activate && ruff check . && ruff format --check .
 	@echo "🔍 Building..."
 	cd apps/web && npm run build
+	@echo "🔍 Validating conventional commits..."
+	@if command -v git-cliff >/dev/null 2>&1; then \
+		if git-cliff --unreleased >/dev/null 2>&1; then \
+			echo "✅ Git-cliff validation passed"; \
+		else \
+			echo "⚠️  Some commits may not follow conventional format"; \
+		fi; \
+	else \
+		echo "ℹ️  git-cliff not available, skipping commit validation"; \
+	fi
+	@echo "🔍 Validating CHANGELOG.md format..."
+	@if [ -f "CHANGELOG.md" ]; then \
+		echo "✅ CHANGELOG.md exists and will be validated by git-cliff during ship"; \
+	else \
+		echo "ℹ️  CHANGELOG.md not found"; \
+	fi
 	@echo "✅ All fixes applied and checks passed!"
 
 # Fix issues only (no validation)
@@ -84,6 +130,43 @@ fix:
 	cd apps/web && npm run fix
 	cd apps/api && source venv/bin/activate && ruff check --fix . && ruff format .
 	@echo "✅ All fixes applied!"
+
+# ---------- Commit workflow (conventional commits with git-cliff) ----------
+
+# Generate conventional commit message using git-cliff and agent assistance
+commit:
+	@BASE=$$(git merge-base $(BASE_REF) HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1); \
+	STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
+	if [ "$$STAGED" -eq 0 ]; then \
+		echo "❌ No staged changes found. Please stage changes first with: git add -A"; \
+		exit 1; \
+	fi; \
+	PREVIEW=$$(git-cliff --unreleased --bump 2>/dev/null | head -5 | tail -1 | sed 's/^## \[//' | sed 's/\].*//' || echo "preview unavailable"); \
+	DIFF_SUMMARY=$$(git diff --staged --stat | head -10); \
+	echo "{"; \
+	echo '  "task": {'; \
+	echo '    "type": "conventional_commit_generation",'; \
+	echo '    "instructions": ['; \
+	echo '      "Analyze staged changes with: git diff --staged",'; \
+	echo '      "Use git-cliff version preview to understand appropriate commit type",'; \
+	echo '      "Generate conventional commit message: type(scope): description (<72 chars)",'; \
+	echo '      "Validate with commitlint if available",'; \
+	echo '      "Execute: git commit -m \"generated-message\""'; \
+	echo '    ],'; \
+	echo '    "context": {'; \
+	echo '      "staged_files": '$$STAGED','; \
+	echo '      "suggested_version": "'"$$PREVIEW"'",'; \
+	echo '      "diff_summary": "'"$$DIFF_SUMMARY"'",'; \
+	echo '      "format": "feat|fix|docs|refactor|chore|test|ci|build|perf(scope): description",'; \
+	echo '      "examples": ['; \
+	echo '        "feat(ui): add user dashboard",'; \
+	echo '        "fix(api): resolve authentication issue",'; \
+	echo '        "docs: update README with setup instructions"'; \
+	echo '      ],'; \
+	echo '      "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)"'; \
+	echo '    }'; \
+	echo '  }'; \
+	echo "}"
 
 # ---------- Ship workflow (agent-friendly PR creation) ----------
 SHELL := bash
@@ -125,8 +208,11 @@ ship: cleanup verify check
 	echo '      "Update design system docs if UI components changed",'; \
 	echo '      "If nothing needs updating, reply exactly: NO-OP"'; \
 	echo '    ],'; \
+	CHANGELOG_ENTRY=$$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected"); \
 	printf '    "context": {\n      "diff_base": "%s",\n      "branch": "%s",\n' "$$BASE" "$$BRANCH"; \
 	printf '      "changed_code_files": "%s",\n      "changed_docs_files": "%s",\n' "$$CH_CODE" "$$CH_DOCS"; \
+	printf '      "changelog_entry": "%s",\n' "$$(echo "$$CHANGELOG_ENTRY" | tr '\n' ' ' | sed 's/"/\\"/g')"; \
+	echo '      "changelog_update_needed": "Review and update CHANGELOG.md if code changes require it",'; \
 	echo '      "allowed_paths": "$(DOC_PATHS)",'; \
 	echo '      "forbidden": "any edits outside allowed paths"'; \
 	echo '    },'; \
@@ -255,6 +341,10 @@ help:
 	@echo "📦 Setup (Manual):"
 	@echo "  make install-all     - Install all dependencies"
 	@echo "  make setup           - Quick setup for new developers"
+	@echo "  make setup-git-tools - Install git-cliff and changelog tools"
+	@echo ""
+	@echo "📝 Conventional Commits (Agent Workflow):"
+	@echo "  make commit          - Generate conventional commit message (agent task)"
 	@echo ""
 	@echo "🔧 Quality Control (Manual + Hooks):"
 	@echo "  make cleanup         - Clean up before merge/push"
