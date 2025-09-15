@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup cleanup verify ship docs-commit docs-update pr-title-suggest pr-body pr-open branch-suggest branch-rename
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup cleanup verify ship docs-commit docs-update pr-title-suggest pr-body pr-open branch-suggest branch-rename push-and-pr
 
 # Start frontend development server
 dev-frontend:
@@ -245,6 +245,16 @@ branch-rename:
 	git branch -m "$$NEW"; \
 	echo "🔁 Renamed branch: $$CUR → $$NEW"
 
+# Complete push and PR workflow (fixes the missing post-push hook issue)
+push-and-pr:
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	echo "🚀 Pushing branch '$$BRANCH' and creating PR..."; \
+	echo ""; \
+	git push origin $$BRANCH; \
+	echo ""; \
+	echo "📋 Push completed! Now creating PR..."; \
+	make pr-open
+
 # Help command
 help:
 	@echo "📋 Available commands:"
@@ -278,6 +288,7 @@ help:
 	@echo "🤖 Ship Workflow - Agent Commands:"
 	@echo "  make docs-commit     - Commit documentation updates"
 	@echo "  make pr-open         - Push branch + create GitHub PR"
+	@echo "  make push-and-pr     - Complete push + PR workflow (RECOMMENDED)"
 	@echo "  make docs-update     - Alias for 'make ship'"
 	@echo ""
 	@echo "🔄 Git Hooks (Automatic):"
