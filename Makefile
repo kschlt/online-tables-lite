@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit commit-all ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename
 
 # Start frontend development server
 dev-frontend:
@@ -137,8 +137,17 @@ fix:
 commit:
 	@BASE=$$(git merge-base $(BASE_REF) HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1); \
 	STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
+	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
+	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
 	if [ "$$STAGED" -eq 0 ]; then \
-		echo "❌ No staged changes found. Please stage changes first with: git add -A"; \
+		echo "❌ No staged changes found."; \
+		if [ "$$UNSTAGED" -gt 0 ]; then \
+			echo "💡 Found $$UNSTAGED unstaged file(s). Run: git add -A"; \
+		elif [ "$$UNTRACKED" -gt 0 ]; then \
+			echo "💡 Found $$UNTRACKED untracked file(s). Run: git add -A"; \
+		else \
+			echo "ℹ️  Working tree is clean - no changes to commit."; \
+		fi; \
 		exit 1; \
 	fi; \
 	PREVIEW=$$(git-cliff --unreleased --bump 2>/dev/null | head -5 | tail -1 | sed 's/^## \[//' | sed 's/\].*//' || echo "preview unavailable"); \
@@ -177,6 +186,20 @@ commit:
 	echo '    }'; \
 	echo '  }'; \
 	echo "}"
+
+# Convenience command: stage all changes and generate commit message
+commit-all:
+	@echo "🔍 Checking for changes to stage..."
+	@UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
+	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
+	if [ "$$UNSTAGED" -gt 0 ] || [ "$$UNTRACKED" -gt 0 ]; then \
+		echo "📁 Staging $$((UNSTAGED + UNTRACKED)) file(s)..."; \
+		git add -A; \
+		echo "✅ Files staged. Generating commit message..."; \
+		$(MAKE) commit; \
+	else \
+		echo "ℹ️  No changes to stage. Working tree is clean."; \
+	fi
 
 # ---------- Ship workflow (agent-friendly PR creation) ----------
 SHELL := bash
@@ -355,6 +378,7 @@ help:
 	@echo ""
 	@echo "📝 Conventional Commits (Agent Workflow):"
 	@echo "  make commit          - Generate conventional commit message (agent task)"
+	@echo "  make commit-all      - Stage all changes + generate commit message"
 	@echo ""
 	@echo "🔧 Quality Control (Manual + Hooks):"
 	@echo "  make cleanup         - Clean up before merge/push"
