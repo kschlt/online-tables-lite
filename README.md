@@ -2,6 +2,8 @@
 
 A collaborative table editing application with real-time synchronization and internationalization support. Create and share editable tables with secure token-based access control.
 
+> **New!** Enhanced Git workflow with automated quality checks and PR creation.
+
 ## �� Features
 
 - **Real-time Collaboration**: Multiple users can edit tables simultaneously with live updates
