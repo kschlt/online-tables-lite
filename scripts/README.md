@@ -32,12 +32,21 @@ scripts/
 
 ### Git Workflow Scripts
 ```bash
-# Clean up before merging
+# Clean up before merging (used by Husky pre-commit hook)
 ./scripts/git/cleanup-before-merge.sh
 
-# Verify clean commit
+# Verify clean commit (used by Husky pre-commit hook)
 ./scripts/git/verify-clean-commit.sh
 ```
+
+**Note**: These scripts are automatically executed by Husky git hooks (`.husky/pre-commit` and `.husky/pre-push`) as part of the modern git workflow. Manual execution is typically not needed.
+
+### Modern Git Hooks Integration
+The git workflow scripts integrate seamlessly with Husky-managed git hooks:
+- **`.husky/pre-commit`**: Calls `cleanup-before-merge.sh` and `verify-clean-commit.sh`
+- **`.husky/pre-push`**: Handles changelog automation and documentation workflows
+- **Automatic execution**: No manual intervention needed for quality checks
+- **Team consistency**: Hooks install automatically via `npm install`
 
 ## 🎯 Benefits
 
