@@ -14,7 +14,14 @@ scripts/
 │   ├── aggregate-pr-metadata.sh      # PR description generation from commit cache
 │   ├── cleanup-before-merge.sh       # Pre-merge cleanup
 │   ├── protect-main-branch.sh        # Main branch protection guardrails
+│   ├── promptlet-reader.sh           # Promptlet library reader with variable substitution
+│   ├── promptlet-sources.json        # Configuration for promptlet compliance monitoring
+│   ├── promptlet-template.json       # Template structure for promptlet validation
+│   ├── promptlets.json               # Single source of truth promptlet library
 │   ├── validate-branch-name.sh       # Branch naming policy enforcement
+│   ├── validate-promptlet-compliance.sh  # Comprehensive 4-stage promptlet validation
+│   ├── validate-promptlet-patterns.sh    # Legacy promptlet pattern validation
+│   ├── validate-promptlet-system.sh      # Basic promptlet system validation
 │   └── verify-clean-commit.sh        # Commit verification
 ├── deploy/                # Deployment scripts
 │   └── (future deployment scripts)
@@ -53,11 +60,40 @@ scripts/
 
 **Note**: Most scripts are automatically executed by Husky git hooks (`.husky/pre-commit` and `.husky/pre-push`) as part of the modern git workflow. Manual execution is available for testing or special cases.
 
+### Promptlet Compliance System
+This project implements a comprehensive **single source of truth** promptlet system that eliminates duplication and ensures consistency across all agent tasks:
+
+```bash
+# Comprehensive 4-stage validation (enforced by pre-commit hook)
+./scripts/git/validate-promptlet-compliance.sh
+
+# Access promptlets with variable substitution
+./scripts/git/promptlet-reader.sh [promptlet_name] [key=value...]
+
+# Basic system validation
+./scripts/git/validate-promptlet-system.sh
+```
+
+**Architecture Components**:
+- **`promptlets.json`**: Single source of truth library containing all agent task definitions
+- **`promptlet-template.json`**: Template structure rules for validation
+- **`promptlet-sources.json`**: Configuration defining monitored files and patterns
+- **`promptlet-reader.sh`**: Core reader function with Python-based variable substitution
+- **`validate-promptlet-compliance.sh`**: 4-stage comprehensive validation system
+
+**Key Benefits**:
+- ✅ **Zero Duplication**: All promptlets defined once, referenced everywhere
+- ✅ **Type Safety**: Template validation ensures structural consistency
+- ✅ **Automatic Enforcement**: Pre-commit hooks prevent non-compliant code
+- ✅ **Variable Substitution**: Dynamic content injection (`${variable}` → actual values)
+- ✅ **Agent-Ready**: JSON tasks consumable by AI agents without modification
+
 ### Modern Git Hooks Integration
 The git workflow scripts integrate seamlessly with Husky-managed git hooks:
 - **`.husky/pre-commit`**: 
   - Branch validation (`validate-branch-name.sh`, `protect-main-branch.sh`)
   - Quality checks (`cleanup-before-merge.sh`, `verify-clean-commit.sh`)
+  - **Promptlet compliance** (`validate-promptlet-compliance.sh`) - 4-stage validation
   - Metadata collection for incremental PR building (`aggregate-pr-metadata.sh`)
 - **`.husky/pre-push`**: Handles changelog automation and documentation workflows
 - **Automatic execution**: No manual intervention needed for quality checks
