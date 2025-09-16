@@ -278,9 +278,9 @@ pr-body:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	CACHE_FILE=".git/commit-cache/last-commit-meta"; \
 	if [ -f "$$CACHE_FILE" ] && [ -n "$$(grep COMMIT_CACHE_FILE $$CACHE_FILE 2>/dev/null)" ]; then \
-		PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
-		if [ -n "$$PR_PROMPTLET" ]; then \
-			echo "$$PR_PROMPTLET"; \
+		PR_DESCRIPTION=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo ""); \
+		if [ -n "$$PR_DESCRIPTION" ]; then \
+			echo "$$PR_DESCRIPTION"; \
 		else \
 			echo "⚠️  Enhanced metadata unavailable, using fallback..."; \
 			BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
