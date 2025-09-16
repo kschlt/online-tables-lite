@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename branch-new
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename branch-new validate-promptlets
 
 # Start frontend development server
 dev-frontend:
@@ -157,37 +157,13 @@ commit:
 	COMMIT_TYPES=$$(grep -E '^\s*\{\s*message\s*=\s*"\^[a-z]+' cliff.toml 2>/dev/null | sed -E 's/.*"\^([a-z]+).*/\1/' | tr '\n' '|' | sed 's/|$$//' || echo "feat|fix|docs|refactor|chore|test|ci|build|perf"); \
 	CLIFF_CONFIG_STATUS=$$(if [ -f "cliff.toml" ]; then echo "✅ Using cliff.toml configuration"; else echo "⚠️ cliff.toml not found, using defaults"; fi); \
 	SAMPLE_ANALYSIS=$$(git-cliff --unreleased --context 2>/dev/null | jq -r '.commits[0].message // "No recent commits"' 2>/dev/null || echo "No context available"); \
-	echo "{"; \
-	echo '  "task": {'; \
-	echo '    "type": "conventional_commit_generation",'; \
-	echo '    "instructions": ['; \
-	echo '      "Analyze staged changes with: git diff --staged",'; \
-	echo '      "Use git-cliff preview and configuration to determine appropriate commit type",'; \
-	echo '      "Generate conventional commit message: type(scope): description (<72 chars)",'; \
-	echo '      "Ensure format matches cliff.toml commit_parsers configuration",'; \
-	echo '      "Validate with: echo \"message\" | git-cliff --unreleased --context",'; \
-	echo '      "Execute: git commit -m \"generated-message\""'; \
-	echo '    ],'; \
-	echo '    "context": {'; \
-	echo '      "staged_files": '$$STAGED','; \
-	echo '      "suggested_version": "'"$$PREVIEW"'",'; \
-	echo '      "diff_summary": "'"$$DIFF_SUMMARY"'",'; \
-	echo '      "git_cliff_config": "'"$$CLIFF_CONFIG_STATUS"'",'; \
-	echo '      "allowed_types": "'"$$COMMIT_TYPES"'",'; \
-	echo '      "format_from_cliff": "type(scope): description - extracted from cliff.toml commit_parsers",'; \
-	echo '      "sample_analysis": "'"$$SAMPLE_ANALYSIS"'",'; \
-	echo '      "examples": ['; \
-	echo '        "feat(ui): add user dashboard",'; \
-	echo '        "fix(api): resolve authentication issue",'; \
-	echo '        "docs: update README with setup instructions",'; \
-	echo '        "perf(core): optimize database queries",'; \
-	echo '        "refactor(auth): simplify token validation"'; \
-	echo '      ],'; \
-	echo '      "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)",'; \
-	echo '      "validation": "Use git-cliff --context to validate message format"'; \
-	echo '    }'; \
-	echo '  }'; \
-	echo "}"
+	./scripts/git/promptlet-reader.sh conventional_commit_generation \
+		staged_files="$$STAGED" \
+		suggested_version="$$PREVIEW" \
+		diff_summary="$$DIFF_SUMMARY" \
+		git_cliff_config="$$CLIFF_CONFIG_STATUS" \
+		allowed_types="$$COMMIT_TYPES" \
+		sample_analysis="$$SAMPLE_ANALYSIS"
 
 
 # ---------- Ship workflow (agent-friendly PR creation) ----------
@@ -235,25 +211,13 @@ ship:
 		STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
 		CHANGELOG_ENTRY=$$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected"); \
 	fi; \
-	echo "{"; \
-	echo '  "task": {'; \
-	echo '    "type": "documentation_update",'; \
-	echo '    "instructions": ['; \
-	echo '      "Identify impacted docs and update them to match current implementation",'; \
-	echo '      "Update CLI usage, API changes, configuration changes in README.md",'; \
-	echo '      "Update design system docs if UI components changed",'; \
-	echo '      "If nothing needs updating, reply exactly: NO-OP"'; \
-	echo '    ],'; \
-	printf '    "context": {\n      "diff_base": "%s",\n      "branch": "%s",\n' "$$BASE" "$$BRANCH"; \
-	printf '      "changed_code_files": "%s",\n      "changed_docs_files": "%s",\n' "$$CH_CODE" "$$CH_DOCS"; \
-	printf '      "changelog_entry": "%s",\n' "$$(echo "$$CHANGELOG_ENTRY" | tr '\n' ' ' | sed 's/"/\\"/g')"; \
-	echo '      "changelog_update_needed": "Review and update CHANGELOG.md if code changes require it",'; \
-	echo '      "allowed_paths": "$(DOC_PATHS)",'; \
-	echo '      "forbidden": "any edits outside allowed paths"'; \
-	echo '    },'; \
-	echo '    "next_steps": ["make docs-commit"]'; \
-	echo '  }'; \
-	echo "}"; echo; \
+	./scripts/git/promptlet-reader.sh documentation_update \
+		diff_base="$$BASE" \
+		branch="$$BRANCH" \
+		changed_code_files="$$CH_CODE" \
+		changed_docs_files="$$CH_DOCS" \
+		changelog_entry="$$(echo "$$CHANGELOG_ENTRY" | tr '\n' ' ' | sed 's/"/\\"/g')"; \
+	echo; \
 	SUBJ=$$(git log --format='%s' $$BASE..HEAD | head -1); \
 	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
 	TITLE=$$(printf "%s" "$$SUBJ" | sed 's/[[:space:]]\+/ /g'); \
@@ -382,15 +346,16 @@ branch-suggest:
 	echo "Current: $$BRANCH"; echo "Suggested: $$SUG"; \
 	echo "To rename: make branch-rename NAME=$$SUG"; \
 	echo; \
-	echo "🤖 Rename when:"; \
-	echo "  ✅ Current name is generic (feature/update, feature/fix)"; \
-	echo "  ✅ Suggested name is significantly more descriptive"; \
-	echo "  ✅ Suggested name better reflects actual changes"; \
-	echo; \
-	echo "🤖 Keep current when:"; \
-	echo "  ❌ Current name is already clear and specific"; \
-	echo "  ❌ Only minor wording differences"; \
+	./scripts/git/promptlet-reader.sh branch_evaluation \
+		current_branch="$$BRANCH" \
+		suggested_name="$$SUG" \
+		changes_context="Recent commits and file changes"; \
 	echo "$(BRANCH_END)"
+
+# Validate promptlet system (multi-stage compliance)
+validate-promptlets:
+	@echo "🤖 Validating promptlet system compliance..."
+	@./scripts/git/validate-promptlet-system.sh --force
 
 # Rename branch (PR-safe)
 branch-rename:
@@ -453,27 +418,13 @@ branch-new:
 		echo "⚠️  Currently on: $$CURRENT_BRANCH"; \
 		if ! git diff --quiet || ! git diff --cached --quiet; then \
 			echo "⚠️  You have uncommitted changes"; \
-			echo "{"; \
-			echo '  "task": {'; \
-			echo '    "type": "uncommitted_changes_handling",'; \
-			echo '    "instructions": ['; \
-			echo '      "Uncommitted changes block branch creation",'; \
-			if ! git diff --cached --quiet; then \
-				echo '      "Changes are staged - ready for commit",'; \
-				echo '      "Execute: make commit, then retry make branch-new"'; \
-			else \
-				echo '      "Changes are unstaged - stash before proceeding",'; \
-				echo '      "Execute: git stash && make branch-new && git stash pop"'; \
-			fi; \
-			echo '    ],'; \
-			echo '    "context": {'; \
-			echo '      "current_branch": "'$$CURRENT_BRANCH'",'; \
-			echo '      "has_staged_changes": '$$(if ! git diff --cached --quiet; then echo "true"; else echo "false"; fi)','; \
-			echo '      "has_unstaged_changes": '$$(if ! git diff --quiet; then echo "true"; else echo "false"; fi)','; \
-			echo '      "decision": "'$$(if ! git diff --cached --quiet; then echo "commit_first"; else echo "stash_first"; fi)'"'; \
-			echo '    }'; \
-			echo '  }'; \
-			echo "}"; \
+			ACTION_INSTRUCTION=$$(if ! git diff --cached --quiet; then echo "Changes are staged - ready for commit. Execute: make commit, then retry make branch-new"; else echo "Changes are unstaged - stash before proceeding. Execute: git stash && make branch-new && git stash pop"; fi); \
+			./scripts/git/promptlet-reader.sh uncommitted_changes_handling \
+				current_branch="$$CURRENT_BRANCH" \
+				has_staged_changes="$$(if ! git diff --cached --quiet; then echo "true"; else echo "false"; fi)" \
+				has_unstaged_changes="$$(if ! git diff --quiet; then echo "true"; else echo "false"; fi)" \
+				decision="$$(if ! git diff --cached --quiet; then echo "commit_first"; else echo "stash_first"; fi)" \
+				action_instruction="$$ACTION_INSTRUCTION"; \
 			exit 1; \
 		fi; \
 		echo "🔄 Switching to main..."; \
@@ -498,24 +449,9 @@ branch-new:
 			echo "⚠️  Found $$PR_COUNT open PR(s):"; \
 			echo "$$OPEN_PRS" | jq -r '.[] | "  #\(.number): \(.title) (\(.headRefName))"' 2>/dev/null || echo "  Could not parse PR details"; \
 			echo; \
-			echo "{"; \
-			echo '  "task": {'; \
-			echo '    "type": "branch_creation_with_open_prs",'; \
-			echo '    "instructions": ['; \
-			echo '      "Review open PRs to avoid conflicts",'; \
-			echo '      "Consider if new branch relates to existing PRs",'; \
-			echo '      "Proceed with branch creation if work is independent",'; \
-			echo '      "Use: make branch-new NAME=feature/descriptive-name"'; \
-			echo '    ],'; \
-			echo '    "context": {'; \
-			printf '      "open_prs": %s,\n' "$$OPEN_PRS"; \
-			echo '      "pr_count": '$$PR_COUNT','; \
-			echo '      "recommendation": "Review PR list and ensure new work does not conflict",'; \
-			echo '      "main_status": "up to date",'; \
-			echo '      "next_action": "specify branch name or proceed with caution"'; \
-			echo '    }'; \
-			echo '  }'; \
-			echo "}"; \
+			./scripts/git/promptlet-reader.sh branch_creation_with_open_prs \
+				open_prs="$$OPEN_PRS" \
+				pr_count="$$PR_COUNT"; \
 		else \
 			echo "✅ No open PRs found"; \
 		fi; \
@@ -527,28 +463,8 @@ branch-new:
 		BRANCH_NAME=$${NAME:-}; \
 		if [ -z "$$BRANCH_NAME" ]; then \
 			echo; \
-			echo "{"; \
-			echo '  "task": {'; \
-			echo '    "type": "branch_name_generation",'; \
-			echo '    "instructions": ['; \
-			echo '      "Generate compliant branch name based on planned work",'; \
-			echo '      "REQUIRED: Use feat/ or fix/ prefix only (no feature/)",'; \
-			echo '      "Format: feat/kebab-case or fix/kebab-case (≤48 chars)",'; \
-			echo '      "Execute: make branch-new NAME=generated-branch-name"'; \
-			echo '    ],'; \
-			echo '    "context": {'; \
-			echo '      "required_prefixes": ["feat/", "fix/"],'; \
-			echo '      "format": "kebab-case (lowercase, hyphens only)",'; \
-			echo '      "max_length": 48,'; \
-			echo '      "current_branch": "main",'; \
-			echo '      "main_status": "up to date",'; \
-			echo '      "open_prs": '$$PR_COUNT','; \
-			echo '      "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export", "fix/api-timeout"],'; \
-			echo '      "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",'; \
-			echo '      "policy": "Only feat/ and fix/ prefixes allowed by naming policy"'; \
-			echo '    }'; \
-			echo '  }'; \
-			echo "}"; \
+			./scripts/git/promptlet-reader.sh branch_name_generation \
+				open_prs="$$PR_COUNT"; \
 		else \
 			echo "🔍 Validating branch name: $$BRANCH_NAME"; \
 			if ./scripts/git/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \

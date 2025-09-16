@@ -49,7 +49,17 @@ fi
 echo "📝 Staging auto-fixes..."
 git add -A
 
-# 4. Verify no problematic files remain in staged changes
+# 4. Validate promptlet system compliance (multi-stage)
+echo "🤖 Validating promptlet system compliance..."
+./scripts/git/validate-promptlet-system.sh
+if [ $? -ne 0 ]; then
+    echo "❌ Promptlet system validation failed!"
+    echo "💡 Please fix violations above to ensure single source of truth compliance."
+    echo "💡 All agent tasks must use promptlet library."
+    exit 1
+fi
+
+# 5. Verify no problematic files remain in staged changes
 echo "🔍 Verifying clean commit..."
 make verify
 if [ $? -ne 0 ]; then
@@ -59,7 +69,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 5. Enhanced commit metadata collection for incremental PR building
+# 6. Enhanced commit metadata collection for incremental PR building
 echo "💾 Caching enhanced commit metadata..."
 CACHE_DIR=".git/commit-cache"
 BRANCH_CACHE_DIR="$CACHE_DIR/branches"

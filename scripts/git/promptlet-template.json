@@ -1,0 +1,64 @@
+{
+  "template_structure": {
+    "task": {
+      "type": "${type}",
+      "instructions": ["${instructions}"],
+      "context": "${context}"
+    }
+  },
+  "validation_rules": {
+    "required_fields": {
+      "root": ["task"],
+      "task": ["type", "instructions"],
+      "optional": ["context", "metadata"]
+    },
+    "field_types": {
+      "task.type": "string",
+      "task.instructions": "array",
+      "task.context": "object"
+    },
+    "constraints": {
+      "task.type": {
+        "pattern": "^[a-z_]+$",
+        "max_length": 50
+      },
+      "task.instructions": {
+        "min_items": 1,
+        "max_items": 10
+      }
+    }
+  },
+  "guidelines": {
+    "type": "Use snake_case format, describe the agent's primary action (e.g., 'branch_evaluation', 'documentation_update')",
+    "instructions": "Array of clear, actionable steps the agent should take. Use imperative form (e.g., 'Analyze...', 'Generate...', 'Update...')",
+    "context": "Object containing all data the agent needs to make decisions. Include variable placeholders for dynamic values."
+  },
+  "examples": {
+    "minimal": {
+      "task": {
+        "type": "example_task",
+        "instructions": [
+          "Perform the required action",
+          "Complete the task successfully"
+        ]
+      }
+    },
+    "with_context": {
+      "task": {
+        "type": "example_with_context",
+        "instructions": [
+          "Analyze the provided context",
+          "Make decision based on criteria",
+          "Execute appropriate action"
+        ],
+        "context": {
+          "input_data": "${variable_placeholder}",
+          "criteria": {
+            "condition1": "value1",
+            "condition2": "value2"
+          }
+        }
+      }
+    }
+  }
+}

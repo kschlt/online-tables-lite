@@ -1,0 +1,173 @@
+{
+  "branch_evaluation": {
+    "task": {
+      "type": "branch_evaluation",
+      "instructions": [
+        "Analyze current branch name clarity and descriptiveness",
+        "Compare with suggested name based on actual changes",
+        "Decide whether to rename or keep current name",
+        "If renaming: execute 'make branch-rename NAME=${suggested_name}'",
+        "If keeping: continue with current workflow"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "suggested_name": "${suggested_name}",
+        "decision_criteria": {
+          "rename_when": [
+            "Current name is generic (feature/update, feature/fix)",
+            "Suggested name is significantly more descriptive",
+            "Suggested name better reflects actual changes"
+          ],
+          "keep_when": [
+            "Current name is already clear and specific",
+            "Only minor wording differences",
+            "Current name accurately describes the work"
+          ]
+        },
+        "changes_context": "${changes_context}"
+      }
+    }
+  },
+  "branch_name_compliance": {
+    "task": {
+      "type": "branch_name_compliance",
+      "instructions": [
+        "Current branch name violates naming policy",
+        "Rename branch to comply with feat/ or fix/ standard",
+        "Use: make branch-rename NAME=${suggested_name}",
+        "Or create new compliant branch: make branch-new NAME=${suggested_name}"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "suggested_name": "${suggested_name}",
+        "validation_errors": "${validation_errors}",
+        "naming_policy": {
+          "required_prefixes": ["feat/", "fix/"],
+          "format": "kebab-case",
+          "max_length": 70
+        }
+      }
+    }
+  },
+  "pr_description": {
+    "task": {
+      "type": "pr_description",
+      "instructions": [
+        "Generate comprehensive PR description from cached commit metadata",
+        "Include summary of all changes across commits",
+        "Create test plan based on modified files and scope",
+        "Format as GitHub-ready markdown"
+      ],
+      "context": {
+        "branch": "${branch_name}",
+        "base_branch": "${base_branch}",
+        "commits": "${commit_data}",
+        "metadata_source": "incremental_cache"
+      }
+    }
+  },
+  "conventional_commit_generation": {
+    "task": {
+      "type": "conventional_commit_generation",
+      "instructions": [
+        "Analyze staged changes with: git diff --staged",
+        "Use git-cliff preview and configuration to determine appropriate commit type",
+        "Generate conventional commit message: type(scope): description (<72 chars)",
+        "Ensure format matches cliff.toml commit_parsers configuration",
+        "Validate with: echo \"message\" | git-cliff --unreleased --context",
+        "Execute: git commit -m \"generated-message\""
+      ],
+      "context": {
+        "staged_files": "${staged_files}",
+        "suggested_version": "${suggested_version}",
+        "diff_summary": "${diff_summary}",
+        "git_cliff_config": "${git_cliff_config}",
+        "allowed_types": "${allowed_types}",
+        "format_from_cliff": "type(scope): description - extracted from cliff.toml commit_parsers",
+        "sample_analysis": "${sample_analysis}",
+        "examples": [
+          "feat(ui): add user dashboard",
+          "fix(api): resolve authentication issue",
+          "docs: update README with setup instructions",
+          "perf(core): optimize database queries",
+          "refactor(auth): simplify token validation"
+        ],
+        "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)",
+        "validation": "Use git-cliff --context to validate message format"
+      }
+    }
+  },
+  "uncommitted_changes_handling": {
+    "task": {
+      "type": "uncommitted_changes_handling", 
+      "instructions": [
+        "Uncommitted changes block branch creation",
+        "${action_instruction}"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "has_staged_changes": "${has_staged_changes}",
+        "has_unstaged_changes": "${has_unstaged_changes}",
+        "decision": "${decision}"
+      }
+    }
+  },
+  "branch_creation_with_open_prs": {
+    "task": {
+      "type": "branch_creation_with_open_prs",
+      "instructions": [
+        "Review open PRs to avoid conflicts",
+        "Consider if new branch relates to existing PRs", 
+        "Proceed with branch creation if work is independent",
+        "Use: make branch-new NAME=feature/descriptive-name"
+      ],
+      "context": {
+        "open_prs": "${open_prs}",
+        "pr_count": "${pr_count}",
+        "recommendation": "Review PR list and ensure new work does not conflict",
+        "main_status": "up to date",
+        "next_action": "specify branch name or proceed with caution"
+      }
+    }
+  },
+  "branch_name_generation": {
+    "task": {
+      "type": "branch_name_generation",
+      "instructions": [
+        "Generate compliant branch name based on planned work",
+        "REQUIRED: Use feat/ or fix/ prefix only (no feature/)",
+        "Format: feat/kebab-case or fix/kebab-case (≤48 chars)",
+        "Execute: make branch-new NAME=generated-branch-name"
+      ],
+      "context": {
+        "required_prefixes": ["feat/", "fix/"],
+        "format": "kebab-case (lowercase, hyphens only)",
+        "max_length": 48,
+        "current_branch": "main",
+        "main_status": "up to date",
+        "open_prs": "${open_prs}",
+        "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export", "fix/api-timeout"],
+        "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",
+        "policy": "Only feat/ and fix/ prefixes allowed by naming policy"
+      }
+    }
+  },
+  "documentation_update": {
+    "task": {
+      "type": "documentation_update",
+      "instructions": [
+        "Identify impacted docs and update them to match current implementation",
+        "Update CLI usage, API changes, configuration changes in README.md",
+        "Update design system docs if UI components changed",
+        "If nothing needs updating, reply exactly: NO-OP"
+      ],
+      "context": {
+        "diff_base": "${diff_base}",
+        "branch": "${branch}",
+        "changed_code_files": "${changed_code_files}",
+        "changed_docs_files": "${changed_docs_files}",
+        "changelog_entry": "${changelog_entry}"
+      }
+    }
+  }
+}
