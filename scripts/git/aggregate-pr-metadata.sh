@@ -200,109 +200,21 @@ generate_pr_description_promptlet() {
     local branch="$1" 
     local metadata_json="$2"
     
-    # Extract key metrics for template selection
+    # Extract key data for promptlet
     local total_commits=$(echo "$metadata_json" | jq -r '.summary.total_commits' 2>/dev/null || echo "1")
     local feat_count=$(echo "$metadata_json" | jq -r '.commits.feat' 2>/dev/null || echo "0")
     local fix_count=$(echo "$metadata_json" | jq -r '.commits.fix' 2>/dev/null || echo "0")
     local pr_type=$(echo "$metadata_json" | jq -r '.summary.pr_type' 2>/dev/null || echo "mixed")
     local primary_scope=$(echo "$metadata_json" | jq -r '.summary.primary_scope' 2>/dev/null || echo "general")
+    local commit_list=$(echo "$metadata_json" | jq -r '.content.commit_list' 2>/dev/null | sed 's/\\n/, /g' || echo "No commits found")
+    local key_changes=$(echo "$metadata_json" | jq -r '.content.key_changes' 2>/dev/null | sed 's/\\n/, /g' || echo "No changes found")
     
-    # Auto-select best template based on metadata
-    local selected_template="mixed_changes"
-    if [ "$feat_count" -gt "$fix_count" ] && [ "$feat_count" -gt 0 ]; then
-        selected_template="feature_heavy"
-    elif [ "$fix_count" -gt "$feat_count" ] && [ "$fix_count" -gt 0 ]; then
-        selected_template="bugfix_heavy"
-    elif [ "$pr_type" = "maintenance" ]; then
-        selected_template="maintenance"
-    fi
-    
-    # Generate selected template
-    local template_content=""
-    case "$selected_template" in
-        "feature_heavy")
-            template_content="## Summary
-One-line summary of the new functionality
-
-## Motivation  
-Why this feature was needed
-
-## Key Features
-• [Feature 1 with impact]
-• [Feature 2 with impact]
-
-## Impact
-What this affects (users, developers, systems)"
-            ;;
-        "bugfix_heavy")
-            template_content="## Summary
-One-line summary of the fixes
-
-## Problem
-What issues were being experienced
-
-## Solution
-How the problems were resolved
-
-## Impact
-What's improved for users/developers"
-            ;;
-        "maintenance")
-            template_content="## Summary
-One-line summary of maintenance work
-
-## Technical Changes
-• [Change 1 with rationale]
-• [Change 2 with rationale]
-
-## Benefits
-Why this maintenance matters
-
-## Validation
-How changes were verified"
-            ;;
-        *)
-            template_content="## Summary
-One-line summary of the change
-
-## Motivation
-Why this change was needed
-
-## Solution
-How the problem was solved
-
-## Impact
-What this affects (users, developers, systems)"
-            ;;
-    esac
-
-    # Generate streamlined promptlet with clear structure
-    cat << EOF
-**TASK**: Generate GitHub PR description from commit metadata
-
-**TEMPLATE**: Use this exact structure based on analysis:
-$template_content
-
-**DATA TO USE**:
-- Branch: $branch
-- Total commits: $total_commits
-- Features: $feat_count, Fixes: $fix_count
-- Primary scope: $primary_scope
-- Commit details: $(echo "$metadata_json" | jq -r '.content.commit_list' 2>/dev/null | sed 's/\\n/, /g')
-- File changes: $(echo "$metadata_json" | jq -r '.content.key_changes' 2>/dev/null | sed 's/\\n/, /g')
-
-**REQUIREMENTS**:
-1. Use the exact template structure above
-2. Keep each section concise (1-3 sentences)
-3. Focus on user/developer value, not technical details
-4. Include specific file counts and change types from metadata
-5. End with clear review guidance if complex changes
-6. Use active voice and present tense
-
-**OUTPUT**: Return only the formatted PR description, no additional text or explanation.
-EOF
+    # Use promptlet library for single source of truth
+    ./scripts/git/promptlet-reader.sh pr_description \
+        branch_name="$branch" \
+        base_branch="main" \
+        commit_data="Total: $total_commits (feat: $feat_count, fix: $fix_count) | Type: $pr_type | Scope: $primary_scope | Commits: $commit_list | Changes: $key_changes"
 }
-
 # Function to generate basic PR description (fallback)
 generate_basic_pr_description() {
     local branch="$1"
