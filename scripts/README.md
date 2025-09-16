@@ -11,8 +11,11 @@ scripts/
 │   ├── setup-dev.sh       # Development environment setup
 │   └── start-dev.sh       # Development server startup
 ├── git/                   # Git workflow scripts
-│   ├── cleanup-before-merge.sh    # Pre-merge cleanup
-│   └── verify-clean-commit.sh     # Commit verification
+│   ├── aggregate-pr-metadata.sh      # PR description generation from commit cache
+│   ├── cleanup-before-merge.sh       # Pre-merge cleanup
+│   ├── protect-main-branch.sh        # Main branch protection guardrails
+│   ├── validate-branch-name.sh       # Branch naming policy enforcement
+│   └── verify-clean-commit.sh        # Commit verification
 ├── deploy/                # Deployment scripts
 │   └── (future deployment scripts)
 └── utils/                 # Utility scripts
@@ -32,6 +35,15 @@ scripts/
 
 ### Git Workflow Scripts
 ```bash
+# Branch naming validation (enforces feat/fix prefixes)
+./scripts/git/validate-branch-name.sh [branch-name] [suggest|promptlet]
+
+# Main branch protection (prevents accidental commits to main)
+./scripts/git/protect-main-branch.sh
+
+# PR description generation from commit metadata
+./scripts/git/aggregate-pr-metadata.sh [branch] [metadata|description|promptlet|json]
+
 # Clean up before merging (used by Husky pre-commit hook)
 ./scripts/git/cleanup-before-merge.sh
 
@@ -39,14 +51,18 @@ scripts/
 ./scripts/git/verify-clean-commit.sh
 ```
 
-**Note**: These scripts are automatically executed by Husky git hooks (`.husky/pre-commit` and `.husky/pre-push`) as part of the modern git workflow. Manual execution is typically not needed.
+**Note**: Most scripts are automatically executed by Husky git hooks (`.husky/pre-commit` and `.husky/pre-push`) as part of the modern git workflow. Manual execution is available for testing or special cases.
 
 ### Modern Git Hooks Integration
 The git workflow scripts integrate seamlessly with Husky-managed git hooks:
-- **`.husky/pre-commit`**: Calls `cleanup-before-merge.sh` and `verify-clean-commit.sh`
+- **`.husky/pre-commit`**: 
+  - Branch validation (`validate-branch-name.sh`, `protect-main-branch.sh`)
+  - Quality checks (`cleanup-before-merge.sh`, `verify-clean-commit.sh`)
+  - Metadata collection for incremental PR building (`aggregate-pr-metadata.sh`)
 - **`.husky/pre-push`**: Handles changelog automation and documentation workflows
 - **Automatic execution**: No manual intervention needed for quality checks
 - **Team consistency**: Hooks install automatically via `npm install`
+- **Enhanced PR workflow**: Commit metadata accumulates automatically for rich PR descriptions
 
 ## 🎯 Benefits
 

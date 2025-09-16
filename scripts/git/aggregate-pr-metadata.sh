@@ -172,81 +172,155 @@ aggregate_branch_metadata() {
 EOF
 }
 
-# Function to generate intelligent PR description
-generate_pr_description() {
+# Function to generate PR description promptlet for agent
+generate_pr_description_promptlet() {
+    local branch="$1" 
+    local metadata_json="$2"
+    
+    # Extract key metrics for template selection
+    local total_commits=$(echo "$metadata_json" | jq -r '.summary.total_commits' 2>/dev/null || echo "1")
+    local feat_count=$(echo "$metadata_json" | jq -r '.commits.feat' 2>/dev/null || echo "0")
+    local fix_count=$(echo "$metadata_json" | jq -r '.commits.fix' 2>/dev/null || echo "0")
+    local pr_type=$(echo "$metadata_json" | jq -r '.summary.pr_type' 2>/dev/null || echo "mixed")
+    local primary_scope=$(echo "$metadata_json" | jq -r '.summary.primary_scope' 2>/dev/null || echo "general")
+    
+    # Auto-select best template based on metadata
+    local selected_template="mixed_changes"
+    if [ "$feat_count" -gt "$fix_count" ] && [ "$feat_count" -gt 0 ]; then
+        selected_template="feature_heavy"
+    elif [ "$fix_count" -gt "$feat_count" ] && [ "$fix_count" -gt 0 ]; then
+        selected_template="bugfix_heavy"
+    elif [ "$pr_type" = "maintenance" ]; then
+        selected_template="maintenance"
+    fi
+    
+    # Generate selected template
+    local template_content=""
+    case "$selected_template" in
+        "feature_heavy")
+            template_content="## Summary
+One-line summary of the new functionality
+
+## Motivation  
+Why this feature was needed
+
+## Key Features
+• [Feature 1 with impact]
+• [Feature 2 with impact]
+
+## Impact
+What this affects (users, developers, systems)"
+            ;;
+        "bugfix_heavy")
+            template_content="## Summary
+One-line summary of the fixes
+
+## Problem
+What issues were being experienced
+
+## Solution
+How the problems were resolved
+
+## Impact
+What's improved for users/developers"
+            ;;
+        "maintenance")
+            template_content="## Summary
+One-line summary of maintenance work
+
+## Technical Changes
+• [Change 1 with rationale]
+• [Change 2 with rationale]
+
+## Benefits
+Why this maintenance matters
+
+## Validation
+How changes were verified"
+            ;;
+        *)
+            template_content="## Summary
+One-line summary of the change
+
+## Motivation
+Why this change was needed
+
+## Solution
+How the problem was solved
+
+## Impact
+What this affects (users, developers, systems)"
+            ;;
+    esac
+
+    # Generate streamlined promptlet with clear structure
+    cat << EOF
+**TASK**: Generate GitHub PR description from commit metadata
+
+**TEMPLATE**: Use this exact structure based on analysis:
+$template_content
+
+**DATA TO USE**:
+- Branch: $branch
+- Total commits: $total_commits
+- Features: $feat_count, Fixes: $fix_count
+- Primary scope: $primary_scope
+- Commit details: $(echo "$metadata_json" | jq -r '.content.commit_list' 2>/dev/null | sed 's/\\n/, /g')
+- File changes: $(echo "$metadata_json" | jq -r '.content.key_changes' 2>/dev/null | sed 's/\\n/, /g')
+
+**REQUIREMENTS**:
+1. Use the exact template structure above
+2. Keep each section concise (1-3 sentences)
+3. Focus on user/developer value, not technical details
+4. Include specific file counts and change types from metadata
+5. End with clear review guidance if complex changes
+6. Use active voice and present tense
+
+**OUTPUT**: Return only the formatted PR description, no additional text or explanation.
+EOF
+}
+
+# Function to generate basic PR description (fallback)
+generate_basic_pr_description() {
     local branch="$1"
     local metadata_json="$2"
     
-    # Extract metadata fields
-    if command -v jq >/dev/null 2>&1; then
-        local total_commits=$(echo "$metadata_json" | jq -r '.summary.total_commits')
-        local pr_type=$(echo "$metadata_json" | jq -r '.summary.pr_type')
-        local primary_scope=$(echo "$metadata_json" | jq -r '.summary.primary_scope')
-        local commit_list=$(echo "$metadata_json" | jq -r '.content.commit_list')
-        local key_changes=$(echo "$metadata_json" | jq -r '.content.key_changes')
-        local feat_count=$(echo "$metadata_json" | jq -r '.commits.feat')
-        local fix_count=$(echo "$metadata_json" | jq -r '.commits.fix')
-    else
-        print_color $YELLOW "⚠️  jq not available - using fallback parsing"
-        return 1
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "## Summary\n\nChanges from branch: $branch\n\n## Review Notes\n- Please review all changes carefully\n- Ensure all tests pass before merging"
+        return
     fi
     
-    # Generate contextual description based on PR type
-    local description_intro=""
-    case "$pr_type" in
-        "feature")
-            description_intro="This PR introduces $feat_count new feature(s) to the $primary_scope system."
-            ;;
-        "bugfix")
-            description_intro="This PR resolves $fix_count bug(s) in the $primary_scope system."
-            ;;
-        "documentation")
-            description_intro="This PR updates project documentation and developer resources."
-            ;;
-        "maintenance")
-            description_intro="This PR includes maintenance and configuration improvements."
-            ;;
-        *)
-            description_intro="This PR includes $total_commits commits with mixed changes to the $primary_scope system."
-            ;;
-    esac
+    local total_commits=$(echo "$metadata_json" | jq -r '.summary.total_commits')
+    local pr_type=$(echo "$metadata_json" | jq -r '.summary.pr_type') 
+    local primary_scope=$(echo "$metadata_json" | jq -r '.summary.primary_scope')
+    local feat_count=$(echo "$metadata_json" | jq -r '.commits.feat')
+    local fix_count=$(echo "$metadata_json" | jq -r '.commits.fix')
     
-    # Generate comprehensive PR body
     cat << EOF
 ## Summary
 
-$description_intro
+This PR includes $total_commits commits with $pr_type changes to the $primary_scope system.
 
-## Changes Made
-
-$(echo -e "$commit_list")
-
-## Impact & Scope
-
-$(echo -e "$key_changes")
-
-## Commit Breakdown
-- ✨ Features: $feat_count
-- 🐛 Bug fixes: $fix_count  
-- 📚 Documentation: $(echo "$metadata_json" | jq -r '.commits.docs')
-- 🔧 Configuration: $(echo "$metadata_json" | jq -r '.commits.config')
-- 🎯 Other: $(echo "$metadata_json" | jq -r '.commits.other')
+## Changes
+- ✨ **Features**: $feat_count new capabilities added
+- 🐛 **Bug Fixes**: $fix_count issues resolved  
+- 📊 **Total Impact**: $total_commits commits across $primary_scope
 
 ## Review Notes
-- **Primary scope**: $primary_scope changes
-- **Commit count**: $total_commits commits
-- **Quality assured**: All commits passed pre-commit validation
-- **Branch**: $branch → main
+- **Primary Focus**: $primary_scope changes
+- **Change Type**: $pr_type development
+- **Quality**: All commits validated via pre-commit hooks
+- **Target**: Merging $branch → main
 
 ---
-*Generated from incremental commit metadata*
+*Generated from commit metadata - consider using agent promptlet for richer descriptions*
 EOF
 }
 
 # Main function
 main() {
     local branch="${1:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
-    local mode="${2:-description}"  # description|metadata|json
+    local mode="${2:-description}"  # description|metadata|json|promptlet
     
     if [ -z "$branch" ]; then
         print_color $RED "❌ Error: Could not determine branch name"
@@ -260,7 +334,16 @@ main() {
         "description")
             local metadata=$(aggregate_branch_metadata "$branch")
             if [ $? -eq 0 ]; then
-                generate_pr_description "$branch" "$metadata"
+                generate_basic_pr_description "$branch" "$metadata"
+            else
+                print_color $RED "❌ Failed to aggregate metadata for branch: $branch"
+                exit 1
+            fi
+            ;;
+        "promptlet")
+            local metadata=$(aggregate_branch_metadata "$branch")
+            if [ $? -eq 0 ]; then
+                generate_pr_description_promptlet "$branch" "$metadata"
             else
                 print_color $RED "❌ Failed to aggregate metadata for branch: $branch"
                 exit 1
@@ -276,7 +359,7 @@ main() {
             ;;
         *)
             print_color $RED "❌ Invalid mode: $mode"
-            echo "Usage: $0 [branch_name] [description|metadata|json]"
+            echo "Usage: $0 [branch_name] [description|metadata|json|promptlet]"
             exit 1
             ;;
     esac

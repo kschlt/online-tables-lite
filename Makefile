@@ -258,14 +258,18 @@ ship:
 	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
 	TITLE=$$(printf "%s" "$$SUBJ" | sed 's/[[:space:]]\+/ /g'); \
 	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"; echo; \
-	PR_BODY_CONTENT=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo ""); \
 	echo "$(PRBODY_BEGIN)"; \
-	if [ -n "$$PR_BODY_CONTENT" ]; then \
-		echo "$$PR_BODY_CONTENT"; \
-		echo; echo "## Development Workflow"; \
-		echo "- ✅ All commits validated with pre-commit hooks"; \
-		echo "- 🔍 Comprehensive testing completed"; \
-		echo "- 📝 Documentation updated as needed"; \
+	PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
+	if [ -n "$$PR_PROMPTLET" ]; then \
+		echo "🤖 **Agent Task**: Generate PR description from commit metadata"; \
+		echo; \
+		echo "$$PR_PROMPTLET"; \
+		echo; \
+		echo "---"; \
+		echo; \
+		echo "**Fallback Description** (if agent unavailable):"; \
+		PR_FALLBACK=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo "Basic PR from $$BRANCH"); \
+		echo "$$PR_FALLBACK"; \
 	else \
 		echo "# Summary"; echo "$$TITLE"; echo; \
 		echo "## Changes"; \
@@ -307,21 +311,16 @@ pr-title-suggest:
 	[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
 	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"
 
-# Print enhanced PR body using incremental metadata
+# Generate PR body using agent promptlet with cached metadata
 pr-body:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	CACHE_FILE=".git/commit-cache/last-commit-meta"; \
 	if [ -f "$$CACHE_FILE" ] && [ -n "$$(grep COMMIT_CACHE_FILE $$CACHE_FILE 2>/dev/null)" ]; then \
-		echo "⚡ Using enhanced commit metadata for PR description..."; \
-		PR_BODY_CONTENT=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo "Failed to generate enhanced description"); \
-		if [ "$$PR_BODY_CONTENT" != "Failed to generate enhanced description" ]; then \
-			echo "$(PRBODY_BEGIN)"; \
-			echo "$$PR_BODY_CONTENT"; \
-			echo; echo "## Development Workflow"; \
-			echo "- ✅ All commits validated with pre-commit hooks"; \
-			echo "- 🔍 Comprehensive testing completed"; \
-			echo "- 📝 Documentation updated as needed"; \
-			echo "$(PRBODY_END)"; \
+		echo "🤖 **Agent Task**: Generate PR description from commit metadata"; \
+		echo; \
+		PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
+		if [ -n "$$PR_PROMPTLET" ]; then \
+			echo "$$PR_PROMPTLET"; \
 		else \
 			echo "⚠️  Enhanced metadata unavailable, using fallback..."; \
 			BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
