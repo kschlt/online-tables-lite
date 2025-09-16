@@ -198,7 +198,7 @@ validate_reference_integrity() {
     if [ -f "$PROMPTLETS_FILE" ]; then
         while IFS= read -r promptlet; do
             defined_promptlets+=("$promptlet")
-        done < <(grep -o '"[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/"//g' | sed 's/[[:space:]]*:[[:space:]]*{//')
+        done < <(grep '^  "[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/^  "//; s/"[[:space:]]*:[[:space:]]*{.*//')
     fi
     
     # Check for missing definitions (referenced but not defined)
