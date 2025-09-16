@@ -64,7 +64,7 @@ if command -v git-cliff >/dev/null 2>&1 && [ -f "cliff.toml" ]; then
     
     # Generate the updated changelog
     CHANGELOG_UPDATED=false
-    if git-cliff --prepend CHANGELOG.md 2>/dev/null; then
+    if git-cliff --unreleased --prepend CHANGELOG.md 2>/dev/null; then
         # Check if CHANGELOG.md was actually modified
         if ! git diff --quiet CHANGELOG.md 2>/dev/null; then
             echo "✅ CHANGELOG.md updated with new entries"
