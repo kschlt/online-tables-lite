@@ -1,6 +1,6 @@
 # Online Tables Lite - Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit ship docs-commit pr-title-suggest pr-body pr-open branch-suggest branch-rename branch-new
 
 # Start frontend development server
 dev-frontend:
@@ -361,6 +361,94 @@ branch-rename:
 	git branch -m "$$NEW"; \
 	echo "🔁 Renamed branch: $$CUR → $$NEW"
 
+# Create new feature branch with automated checks
+branch-new:
+	@echo "🌿 Initializing new branch workflow..."
+	@CURRENT_BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$CURRENT_BRANCH" != "main" ]; then \
+		echo "⚠️  Currently on: $$CURRENT_BRANCH"; \
+		echo "🔄 Switching to main..."; \
+		git checkout main; \
+	fi; \
+	echo "📡 Checking main branch status..."; \
+	git fetch origin main >/dev/null 2>&1; \
+	LOCAL_MAIN=$$(git rev-parse main); \
+	REMOTE_MAIN=$$(git rev-parse origin/main); \
+	if [ "$$LOCAL_MAIN" != "$$REMOTE_MAIN" ]; then \
+		echo "🔄 Updating main branch..."; \
+		git pull origin main; \
+		echo "✅ Main branch updated"; \
+	else \
+		echo "✅ Main branch is up to date"; \
+	fi; \
+	echo "🔍 Checking for open PRs..."; \
+	if command -v gh >/dev/null 2>&1; then \
+		OPEN_PRS=$$(gh pr list --state open --json number,title,headRefName 2>/dev/null || echo "[]"); \
+		PR_COUNT=$$(echo "$$OPEN_PRS" | jq length 2>/dev/null || echo "0"); \
+		if [ "$$PR_COUNT" -gt 0 ]; then \
+			echo "⚠️  Found $$PR_COUNT open PR(s):"; \
+			echo "$$OPEN_PRS" | jq -r '.[] | "  #\(.number): \(.title) (\(.headRefName))"' 2>/dev/null || echo "  Could not parse PR details"; \
+			echo; \
+			echo "{"; \
+			echo '  "task": {'; \
+			echo '    "type": "branch_creation_with_open_prs",'; \
+			echo '    "instructions": ['; \
+			echo '      "Review open PRs to avoid conflicts",'; \
+			echo '      "Consider if new branch relates to existing PRs",'; \
+			echo '      "Proceed with branch creation if work is independent",'; \
+			echo '      "Use: make branch-new NAME=feature/descriptive-name"'; \
+			echo '    ],'; \
+			echo '    "context": {'; \
+			printf '      "open_prs": %s,\n' "$$OPEN_PRS"; \
+			echo '      "pr_count": '$$PR_COUNT','; \
+			echo '      "recommendation": "Review PR list and ensure new work does not conflict",'; \
+			echo '      "main_status": "up to date",'; \
+			echo '      "next_action": "specify branch name or proceed with caution"'; \
+			echo '    }'; \
+			echo '  }'; \
+			echo "}"; \
+		else \
+			echo "✅ No open PRs found"; \
+		fi; \
+	else \
+		echo "ℹ️  GitHub CLI not found - skipping PR check"; \
+		echo "   Install with: brew install gh"; \
+	fi; \
+	if [ "$$PR_COUNT" -eq 0 ] || [ -z "$$PR_COUNT" ]; then \
+		BRANCH_NAME=$${NAME:-}; \
+		if [ -z "$$BRANCH_NAME" ]; then \
+			echo; \
+			echo "{"; \
+			echo '  "task": {'; \
+			echo '    "type": "branch_name_generation",'; \
+			echo '    "instructions": ['; \
+			echo '      "Generate descriptive branch name based on planned work",'; \
+			echo '      "Use format: feature/descriptive-name (kebab-case)",'; \
+			echo '      "Examples: feature/user-dashboard, feature/api-authentication",'; \
+			echo '      "Execute: make branch-new NAME=generated-branch-name"'; \
+			echo '    ],'; \
+			echo '    "context": {'; \
+			echo '      "format": "feature/descriptive-name",'; \
+			echo '      "current_branch": "main",'; \
+			echo '      "main_status": "up to date",'; \
+			echo '      "open_prs": '$$PR_COUNT','; \
+			echo '      "examples": ["feature/user-authentication", "feature/table-export", "feature/ui-improvements"]'; \
+			echo '    }'; \
+			echo '  }'; \
+			echo "}"; \
+		else \
+			echo "🌿 Creating branch: $$BRANCH_NAME"; \
+			git checkout -b "$$BRANCH_NAME"; \
+			echo "✅ Branch created and switched to: $$BRANCH_NAME"; \
+			echo; \
+			echo "🚀 Ready to start development!"; \
+			echo "📝 Next steps:"; \
+			echo "  - Start coding your feature"; \
+			echo "  - When ready to commit: User says 'commit' → you run 'make commit'"; \
+			echo "  - When ready to push: User says 'push' → you run 'make ship'"; \
+		fi; \
+	fi
+
 
 # Help command
 help:
@@ -387,12 +475,15 @@ help:
 	@echo "  make fix             - Auto-fix linting and formatting"
 	@echo "  make check           - Run all quality checks"
 	@echo ""
+	@echo "🌿 Branch Management:"
+	@echo "  make branch-new      - Create new feature branch with checks (NAME=optional)"
+	@echo "  make branch-suggest  - Suggest better branch name"
+	@echo "  make branch-rename   - Rename branch (NAME=new-name)"
+	@echo ""
 	@echo "🚢 Ship Workflow - Manual Testing:"
 	@echo "  make ship            - Generate docs promptlet + PR materials"
 	@echo "  make pr-title-suggest - Show suggested PR title"
 	@echo "  make pr-body         - Show generated PR body"
-	@echo "  make branch-suggest  - Suggest better branch name"
-	@echo "  make branch-rename   - Rename branch (NAME=new-name)"
 	@echo ""
 	@echo "🤖 Ship Workflow - Agent Commands:"
 	@echo "  make docs-commit     - Commit documentation updates"
