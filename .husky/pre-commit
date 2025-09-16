@@ -13,6 +13,23 @@ if [ ! -f "Makefile" ]; then
     exit 1
 fi
 
+# 0. Branch policy enforcement (fast failure)
+echo "🛡️  Checking branch naming policy and main branch protection..."
+./scripts/git/protect-main-branch.sh
+if [ $? -ne 0 ]; then
+    echo "❌ Main branch protection triggered"
+    exit 1
+fi
+
+./scripts/git/validate-branch-name.sh
+if [ $? -ne 0 ]; then
+    echo "💡 To fix branch naming issues:"
+    echo "   1. Get suggestion: ./scripts/git/validate-branch-name.sh $(git rev-parse --abbrev-ref HEAD) suggest"
+    echo "   2. Rename branch: make branch-rename NAME=suggested-name"
+    echo "   3. Or get detailed guidance: ./scripts/git/validate-branch-name.sh $(git rev-parse --abbrev-ref HEAD) promptlet"
+    exit 1
+fi
+
 # 1. Cleanup temp files and organize project
 echo "📁 Cleaning up temporary files..."
 make cleanup
