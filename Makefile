@@ -322,7 +322,12 @@ pr-body:
 pr-open:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	TITLE=$${TITLE:-$$(git log -1 --pretty='%s' | sed 's/[[:space:]]\+/ /g')}; \
-	BODY=$$(make -s pr-body | sed -n '/$(PRBODY_BEGIN)/, /$(PRBODY_END)/p' | sed '1d; $$d'); \
+	BODY_RAW=$$(make -s pr-body); \
+	if echo "$$BODY_RAW" | grep -q "### BEGIN PR BODY"; then \
+		BODY=$$(echo "$$BODY_RAW" | sed -n '/### BEGIN PR BODY/,/### END PR BODY/p' | sed '1d; $$d'); \
+	else \
+		BODY="$$BODY_RAW"; \
+	fi; \
 	echo "🚀 Pushing $$BRANCH to $(REMOTE)..."; \
 	git push -u $(REMOTE) $$BRANCH >/dev/null 2>&1 || git push -u $(REMOTE) $$BRANCH; \
 	if command -v gh >/dev/null 2>&1; then \
