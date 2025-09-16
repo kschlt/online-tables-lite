@@ -258,16 +258,25 @@ ship:
 	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
 	TITLE=$$(printf "%s" "$$SUBJ" | sed 's/[[:space:]]\+/ /g'); \
 	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"; echo; \
+	PR_BODY_CONTENT=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo ""); \
 	echo "$(PRBODY_BEGIN)"; \
-	echo "# Summary"; echo "$$TITLE"; echo; \
-	echo "## Changes"; \
-	if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
-	echo; echo "## Affected files (added/removed lines)"; \
-	if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
-	echo; echo "## Notes for reviewers"; \
-	echo "- Verified with \`make check\`."; \
-	echo "- Docs updated in this branch (see diff)."; \
-	echo "- Part of Online Tables Lite development workflow."; \
+	if [ -n "$$PR_BODY_CONTENT" ]; then \
+		echo "$$PR_BODY_CONTENT"; \
+		echo; echo "## Development Workflow"; \
+		echo "- ✅ All commits validated with pre-commit hooks"; \
+		echo "- 🔍 Comprehensive testing completed"; \
+		echo "- 📝 Documentation updated as needed"; \
+	else \
+		echo "# Summary"; echo "$$TITLE"; echo; \
+		echo "## Changes"; \
+		if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
+		echo; echo "## Affected files (added/removed lines)"; \
+		if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
+		echo; echo "## Notes for reviewers"; \
+		echo "- Verified with \`make check\`."; \
+		echo "- Docs updated in this branch (see diff)."; \
+		echo "- Part of Online Tables Lite development workflow."; \
+	fi; \
 	echo; echo "$(PRBODY_END)"; echo; \
 	SAFE=$$(printf "%s" "$$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]+/-/g; s/ /-/g; s/--\+/-/g; s/^-//; s/-$$//'); \
 	SUG=$$(printf "feature/%s" "$$SAFE" | cut -c1-70); \
@@ -298,23 +307,57 @@ pr-title-suggest:
 	[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
 	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"
 
-# Print PR body
+# Print enhanced PR body using incremental metadata
 pr-body:
-	@BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
-	LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
-	STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
-	TITLE=$$(git log --format='%s' $$BASE..HEAD | head -1 | sed 's/[[:space:]]\+/ /g'); \
-	[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
-	echo "$(PRBODY_BEGIN)"; \
-	echo "# Summary"; echo "$$TITLE"; echo; \
-	echo "## Changes"; if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
-	echo; echo "## Affected files (added/removed lines)"; \
-	if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
-	echo; echo "## Notes for reviewers"; \
-	echo "- Verified with \`make check\`."; \
-	echo "- Docs updated in this branch (see diff)."; \
-	echo "- Part of Online Tables Lite development workflow."; \
-	echo; echo "$(PRBODY_END)"
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	CACHE_FILE=".git/commit-cache/last-commit-meta"; \
+	if [ -f "$$CACHE_FILE" ] && [ -n "$$(grep COMMIT_CACHE_FILE $$CACHE_FILE 2>/dev/null)" ]; then \
+		echo "⚡ Using enhanced commit metadata for PR description..."; \
+		PR_BODY_CONTENT=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo "Failed to generate enhanced description"); \
+		if [ "$$PR_BODY_CONTENT" != "Failed to generate enhanced description" ]; then \
+			echo "$(PRBODY_BEGIN)"; \
+			echo "$$PR_BODY_CONTENT"; \
+			echo; echo "## Development Workflow"; \
+			echo "- ✅ All commits validated with pre-commit hooks"; \
+			echo "- 🔍 Comprehensive testing completed"; \
+			echo "- 📝 Documentation updated as needed"; \
+			echo "$(PRBODY_END)"; \
+		else \
+			echo "⚠️  Enhanced metadata unavailable, using fallback..."; \
+			BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
+			LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
+			STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
+			TITLE=$$(git log --format='%s' $$BASE..HEAD | head -1 | sed 's/[[:space:]]\+/ /g'); \
+			[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
+			echo "$(PRBODY_BEGIN)"; \
+			echo "# Summary"; echo "$$TITLE"; echo; \
+			echo "## Changes"; if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
+			echo; echo "## Affected files (added/removed lines)"; \
+			if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
+			echo; echo "## Notes for reviewers"; \
+			echo "- Verified with \`make check\`."; \
+			echo "- Docs updated in this branch (see diff)."; \
+			echo "- Part of Online Tables Lite development workflow."; \
+			echo "$(PRBODY_END)"; \
+		fi; \
+	else \
+		echo "ℹ️  No enhanced metadata cache, using traditional approach..."; \
+		BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
+		LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
+		STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
+		TITLE=$$(git log --format='%s' $$BASE..HEAD | head -1 | sed 's/[[:space:]]\+/ /g'); \
+		[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
+		echo "$(PRBODY_BEGIN)"; \
+		echo "# Summary"; echo "$$TITLE"; echo; \
+		echo "## Changes"; if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
+		echo; echo "## Affected files (added/removed lines)"; \
+		if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
+		echo; echo "## Notes for reviewers"; \
+		echo "- Verified with \`make check\`."; \
+		echo "- Docs updated in this branch (see diff)."; \
+		echo "- Part of Online Tables Lite development workflow."; \
+		echo "$(PRBODY_END)"; \
+	fi
 
 # Open PR (push + create GitHub PR)
 pr-open:

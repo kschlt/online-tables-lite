@@ -59,31 +59,90 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 5. Cache commit metadata for ship workflow efficiency
-echo "💾 Caching commit metadata for workflow optimization..."
+# 5. Enhanced commit metadata collection for incremental PR building
+echo "💾 Caching enhanced commit metadata..."
 CACHE_DIR=".git/commit-cache"
-mkdir -p "$CACHE_DIR"
+BRANCH_CACHE_DIR="$CACHE_DIR/branches"
+mkdir -p "$CACHE_DIR" "$BRANCH_CACHE_DIR"
 
-# Calculate base and diff info once
+# Calculate base and branch info
 BASE=$(git merge-base origin/main HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+COMMIT_HASH=$(git rev-parse HEAD)
+COMMIT_MSG=$(git log -1 --pretty=format:'%s')
+COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')
+COMMIT_TIME=$(date +%s)
 
-# Cache the expensive git operations with proper escaping
+# Analyze current commit changes (staged files for this specific commit)
+STAGED_FILES=$(git diff --cached --name-only | tr '\n' ' ' || true)
+STAGED_STATS=$(git diff --cached --numstat | awk '{printf "%s:+%s/-%s ", $3, $1, $2}' || true)
+
+# Categorize changes by type and scope
+API_FILES=$(echo "$STAGED_FILES" | grep -E "(apps/api|\.py$)" | wc -l | tr -d ' ')
+WEB_FILES=$(echo "$STAGED_FILES" | grep -E "(apps/web|\.tsx?$|\.js$)" | wc -l | tr -d ' ')
+DOC_FILES=$(echo "$STAGED_FILES" | grep -E "\.md$|README" | wc -l | tr -d ' ')
+CONFIG_FILES=$(echo "$STAGED_FILES" | grep -E "(\.json$|\.toml$|\.yml$|\.yaml$|Makefile|\.sh$)" | wc -l | tr -d ' ')
+STYLE_FILES=$(echo "$STAGED_FILES" | grep -E "(\.css$|\.scss$)" | wc -l | tr -d ' ')
+
+# Determine commit scope and impact
+COMMIT_SCOPE="general"
+if [ "$API_FILES" -gt 0 ] && [ "$WEB_FILES" -gt 0 ]; then
+    COMMIT_SCOPE="fullstack"
+elif [ "$API_FILES" -gt 0 ]; then
+    COMMIT_SCOPE="api"
+elif [ "$WEB_FILES" -gt 0 ]; then
+    COMMIT_SCOPE="web"
+elif [ "$DOC_FILES" -gt 0 ]; then
+    COMMIT_SCOPE="docs"
+elif [ "$CONFIG_FILES" -gt 0 ]; then
+    COMMIT_SCOPE="config"
+fi
+
+# Extract commit type from conventional commit message
+COMMIT_TYPE=$(echo "$COMMIT_MSG" | sed -E 's/^([a-z]+)(\(.+\))?:.*/\1/' || echo "unknown")
+
+# Store per-commit metadata
+COMMIT_CACHE_FILE="$BRANCH_CACHE_DIR/${BRANCH//\//_}_commits.jsonl"
+COMMIT_METADATA=$(cat << EOF
+{
+  "hash": "$COMMIT_HASH",
+  "message": "$(echo "$COMMIT_MSG" | sed 's/"/\\"/g')",
+  "type": "$COMMIT_TYPE",
+  "scope": "$COMMIT_SCOPE",
+  "author": "$(echo "$COMMIT_AUTHOR" | sed 's/"/\\"/g')",
+  "timestamp": $COMMIT_TIME,
+  "files": {
+    "staged": "$(echo "$STAGED_FILES" | sed 's/"/\\"/g' | tr ' ' ',')",
+    "stats": "$(echo "$STAGED_STATS" | sed 's/"/\\"/g')",
+    "api_files": $API_FILES,
+    "web_files": $WEB_FILES,
+    "doc_files": $DOC_FILES,
+    "config_files": $CONFIG_FILES,
+    "style_files": $STYLE_FILES
+  }
+}
+EOF
+)
+echo "$COMMIT_METADATA" >> "$COMMIT_CACHE_FILE"
+
+# Calculate branch-level aggregated data for ship workflow
 CH_CODE_VAL=$(git diff --name-only $BASE...HEAD -- 'apps/**' 'supabase/**' 'scripts/**' ':!**/*.md' 2>/dev/null | tr '\n' ' ' || true)
 CH_DOCS_VAL=$(git diff --name-only $BASE...HEAD -- '**/*.md' 2>/dev/null | tr '\n' ' ' || true)
 LOG_VAL=$(git log --pretty=format:'* %s (%h)' $BASE..HEAD 2>/dev/null | tr '\n' '|' || echo "No commits found")
 STATS_VAL=$(git diff --numstat $BASE..HEAD 2>/dev/null | awk '{printf "- %s (+%s/-%s)\n", $3, $1, $2}' | tr '\n' '|' || echo "No changes")
 CHANGELOG_VAL=$(git-cliff --unreleased --strip header 2>/dev/null | tr '\n' '|' || echo "No unreleased changes detected")
 
+# Store traditional cache for ship workflow compatibility
 cat > "$CACHE_DIR/last-commit-meta" << EOF
 BASE="$BASE"
 BRANCH="$BRANCH"
-COMMIT_TIME=$(date +%s)
+COMMIT_TIME=$COMMIT_TIME
 CH_CODE="$CH_CODE_VAL"
 CH_DOCS="$CH_DOCS_VAL"
 LOG="$LOG_VAL"
 STATS="$STATS_VAL"
 CHANGELOG_ENTRY="$CHANGELOG_VAL"
+COMMIT_CACHE_FILE="$COMMIT_CACHE_FILE"
 EOF
 
 echo "✅ Pre-commit checks passed! Metadata cached for efficient ship workflow."
