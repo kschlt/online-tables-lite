@@ -24,38 +24,19 @@ generate_rescue_promptlet() {
     local suggested_branch="$1"
     local has_changes="$2"
     
-    echo "{"
-    echo '  "task": {'
-    echo '    "type": "main_branch_rescue",'
-    echo '    "instructions": ['
-    echo '      "Commits on main branch are blocked by policy",'
-    echo '      "Create a compliant feature branch for your changes",'
+    # Build rescue instructions based on situation
+    local rescue_instructions
     if [ "$has_changes" = "true" ]; then
-        echo '      "1. Run: git reset --soft HEAD~1  # Undo the blocked commit",'
-        echo '      "2. Run: make branch-new NAME='$suggested_branch'",'
-        echo '      "3. Your changes are now safely staged on the new branch",'
-        echo '      "4. Run: git commit  # Re-commit on the feature branch"'
+        rescue_instructions="1. Run: git reset --soft HEAD~1  # Undo the blocked commit|2. Run: make branch-new NAME=$suggested_branch|3. Your changes are now safely staged on the new branch|4. Run: git commit  # Re-commit on the feature branch"
     else
-        echo '      "1. Run: make branch-new NAME='$suggested_branch'",'
-        echo '      "2. Start working on your feature in the new branch"'
+        rescue_instructions="1. Run: make branch-new NAME=$suggested_branch|2. Start working on your feature in the new branch"
     fi
-    echo '    ],'
-    echo '    "context": {'
-    printf '      "current_branch": "main",\n'
-    printf '      "suggested_branch": "%s",\n' "$suggested_branch"
-    printf '      "has_uncommitted_changes": %s,\n' "$has_changes"
-    echo '      "policy": {'
-    echo '        "rule": "No direct commits to main branch allowed",'
-    echo '        "reason": "Maintains clean history and enforces feature branch workflow",'
-    echo '        "alternatives": ["Create feat/ or fix/ branch via make branch-new"]'
-    echo '      },'
-    echo '      "recovery": {'
-    echo '        "safe": "All work is preserved during rescue process",'
-    echo '        "automated": "Use make branch-new to create compliant branch"'
-    echo '      }'
-    echo '    }'
-    echo '  }'
-    echo "}"
+    
+    # Use promptlet library for single source of truth
+    ./scripts/git/promptlet-reader.sh main_branch_rescue \
+        suggested_branch="$suggested_branch" \
+        has_changes="$has_changes" \
+        rescue_instructions="$rescue_instructions"
 }
 
 # Function to suggest branch name based on recent changes

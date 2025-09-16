@@ -49,13 +49,13 @@ fi
 echo "📝 Staging auto-fixes..."
 git add -A
 
-# 4. Validate promptlet system compliance (multi-stage)
+# 4. Validate promptlet system compliance (comprehensive)
 echo "🤖 Validating promptlet system compliance..."
-./scripts/git/validate-promptlet-system.sh
+./scripts/git/validate-promptlet-compliance.sh
 if [ $? -ne 0 ]; then
-    echo "❌ Promptlet system validation failed!"
-    echo "💡 Please fix violations above to ensure single source of truth compliance."
-    echo "💡 All agent tasks must use promptlet library."
+    echo "❌ Comprehensive promptlet validation failed!"
+    echo "💡 Please fix violations above to ensure complete compliance."
+    echo "💡 Check configuration in scripts/git/promptlet-sources.json"
     exit 1
 fi
 

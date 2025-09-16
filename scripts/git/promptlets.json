@@ -169,5 +169,24 @@
         "changelog_entry": "${changelog_entry}"
       }
     }
+  },
+  "main_branch_rescue": {
+    "task": {
+      "type": "main_branch_rescue",
+      "instructions": [
+        "Commits on main branch are blocked by policy",
+        "Create a compliant feature branch for your changes",
+        "${rescue_instructions}"
+      ],
+      "context": {
+        "suggested_branch": "${suggested_branch}",
+        "has_changes": "${has_changes}",
+        "policy": {
+          "reason": "Main branch is protected to maintain stability",
+          "solution": "All development must happen on feature branches",
+          "branch_naming": "Use feat/ or fix/ prefixes"
+        }
+      }
+    }
   }
 }
