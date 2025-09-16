@@ -261,8 +261,6 @@ ship:
 	echo "$(PRBODY_BEGIN)"; \
 	PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
 	if [ -n "$$PR_PROMPTLET" ]; then \
-		echo "🤖 **Agent Task**: Generate PR description from commit metadata"; \
-		echo; \
 		echo "$$PR_PROMPTLET"; \
 		echo; \
 		echo "---"; \
@@ -316,8 +314,6 @@ pr-body:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	CACHE_FILE=".git/commit-cache/last-commit-meta"; \
 	if [ -f "$$CACHE_FILE" ] && [ -n "$$(grep COMMIT_CACHE_FILE $$CACHE_FILE 2>/dev/null)" ]; then \
-		echo "🤖 **Agent Task**: Generate PR description from commit metadata"; \
-		echo; \
 		PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
 		if [ -n "$$PR_PROMPTLET" ]; then \
 			echo "$$PR_PROMPTLET"; \
