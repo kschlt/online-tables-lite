@@ -70,9 +70,9 @@ if command -v git-cliff >/dev/null 2>&1 && [ -f "cliff.toml" ]; then
             echo "✅ CHANGELOG.md updated with new entries"
             git add CHANGELOG.md
             
-            # Amend the last commit to include changelog updates
-            git commit --amend --no-edit --no-verify
-            echo "✅ CHANGELOG.md changes amended to last commit"
+            # Create a separate commit for changelog updates instead of amending
+            git commit -m "docs: update CHANGELOG.md with latest changes" --no-verify
+            echo "✅ CHANGELOG.md changes committed separately"
             CHANGELOG_UPDATED=true
         else
             echo "ℹ️  CHANGELOG.md already up to date"
