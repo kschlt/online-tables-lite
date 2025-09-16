@@ -354,12 +354,58 @@ branch-suggest:
 	echo "  ❌ Only minor wording differences"; \
 	echo "$(BRANCH_END)"
 
-# Rename branch
+# Rename branch (PR-safe)
 branch-rename:
-	@NEW=$${NAME:-}; [[ -n "$$NEW" ]] || { echo "Usage: make branch-rename NAME=feature/good-name"; exit 2; }; \
+	@NEW=$${NAME:-}; \
+	if [ -z "$$NEW" ]; then \
+		echo "Usage: make branch-rename NAME=feat/good-name"; \
+		echo "💡 Get naming suggestion: ./scripts/git/validate-branch-name.sh \$$(git rev-parse --abbrev-ref HEAD) suggest"; \
+		exit 2; \
+	fi; \
 	CUR=$$(git rev-parse --abbrev-ref HEAD); \
-	git branch -m "$$NEW"; \
-	echo "🔁 Renamed branch: $$CUR → $$NEW"
+	if [ "$$CUR" = "main" ] || [ "$$CUR" = "production" ]; then \
+		echo "❌ Cannot rename protected branch: $$CUR"; \
+		exit 1; \
+	fi; \
+	echo "🔍 Validating new branch name: $$NEW"; \
+	if ! ./scripts/git/validate-branch-name.sh "$$NEW" validate >/dev/null 2>&1; then \
+		echo "❌ New branch name '$$NEW' violates naming policy"; \
+		./scripts/git/validate-branch-name.sh "$$NEW" promptlet; \
+		exit 1; \
+	fi; \
+	echo "✅ New branch name is compliant"; \
+	echo "🔍 Checking for existing PR..."; \
+	if command -v gh >/dev/null 2>&1; then \
+		PR_INFO=$$(gh pr list --head "$$CUR" --json number,title 2>/dev/null || echo "[]"); \
+		PR_NUMBER=$$(echo "$$PR_INFO" | jq -r '.[0].number // empty' 2>/dev/null || echo ""); \
+		if [ -n "$$PR_NUMBER" ]; then \
+			echo "🔄 Found existing PR #$$PR_NUMBER - will update automatically"; \
+			echo "📝 Renaming local branch..."; \
+			git branch -m "$$NEW"; \
+			echo "📤 Pushing new branch name to remote..."; \
+			git push origin -u "$$NEW"; \
+			echo "🗑️  Deleting old remote branch..."; \
+			git push origin --delete "$$CUR" 2>/dev/null || echo "⚠️  Could not delete old remote branch (may not exist)"; \
+			echo "✅ PR #$$PR_NUMBER automatically updated to track new branch name"; \
+			echo "🔗 PR will now show changes from: $$NEW"; \
+		else \
+			echo "ℹ️  No existing PR found - performing simple rename"; \
+			git branch -m "$$NEW"; \
+			if git rev-parse --verify "origin/$$CUR" >/dev/null 2>&1; then \
+				echo "📤 Updating remote branch..."; \
+				git push origin -u "$$NEW"; \
+				git push origin --delete "$$CUR"; \
+			fi; \
+		fi; \
+	else \
+		echo "ℹ️  GitHub CLI not available - performing local rename only"; \
+		git branch -m "$$NEW"; \
+		echo "⚠️  Manual steps required if branch was pushed:"; \
+		echo "   1. git push origin -u $$NEW"; \
+		echo "   2. git push origin --delete $$CUR"; \
+		echo "   3. Update any existing PR to track new branch"; \
+	fi; \
+	echo "🔁 Branch renamed: $$CUR → $$NEW"
 
 # Create new feature branch with automated checks
 branch-new:
@@ -367,6 +413,31 @@ branch-new:
 	@CURRENT_BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	if [ "$$CURRENT_BRANCH" != "main" ]; then \
 		echo "⚠️  Currently on: $$CURRENT_BRANCH"; \
+		if ! git diff --quiet || ! git diff --cached --quiet; then \
+			echo "⚠️  You have uncommitted changes"; \
+			echo "{"; \
+			echo '  "task": {'; \
+			echo '    "type": "uncommitted_changes_handling",'; \
+			echo '    "instructions": ['; \
+			echo '      "Uncommitted changes block branch creation",'; \
+			if ! git diff --cached --quiet; then \
+				echo '      "Changes are staged - ready for commit",'; \
+				echo '      "Execute: make commit, then retry make branch-new"'; \
+			else \
+				echo '      "Changes are unstaged - stash before proceeding",'; \
+				echo '      "Execute: git stash && make branch-new && git stash pop"'; \
+			fi; \
+			echo '    ],'; \
+			echo '    "context": {'; \
+			echo '      "current_branch": "'$$CURRENT_BRANCH'",'; \
+			echo '      "has_staged_changes": '$$(if ! git diff --cached --quiet; then echo "true"; else echo "false"; fi)','; \
+			echo '      "has_unstaged_changes": '$$(if ! git diff --quiet; then echo "true"; else echo "false"; fi)','; \
+			echo '      "decision": "'$$(if ! git diff --cached --quiet; then echo "commit_first"; else echo "stash_first"; fi)'"'; \
+			echo '    }'; \
+			echo '  }'; \
+			echo "}"; \
+			exit 1; \
+		fi; \
 		echo "🔄 Switching to main..."; \
 		git checkout main; \
 	fi; \
@@ -422,30 +493,44 @@ branch-new:
 			echo '  "task": {'; \
 			echo '    "type": "branch_name_generation",'; \
 			echo '    "instructions": ['; \
-			echo '      "Generate descriptive branch name based on planned work",'; \
-			echo '      "Use format: feature/descriptive-name (kebab-case)",'; \
-			echo '      "Examples: feature/user-dashboard, feature/api-authentication",'; \
+			echo '      "Generate compliant branch name based on planned work",'; \
+			echo '      "REQUIRED: Use feat/ or fix/ prefix only (no feature/)",'; \
+			echo '      "Format: feat/kebab-case or fix/kebab-case (≤48 chars)",'; \
 			echo '      "Execute: make branch-new NAME=generated-branch-name"'; \
 			echo '    ],'; \
 			echo '    "context": {'; \
-			echo '      "format": "feature/descriptive-name",'; \
+			echo '      "required_prefixes": ["feat/", "fix/"],'; \
+			echo '      "format": "kebab-case (lowercase, hyphens only)",'; \
+			echo '      "max_length": 48,'; \
 			echo '      "current_branch": "main",'; \
 			echo '      "main_status": "up to date",'; \
 			echo '      "open_prs": '$$PR_COUNT','; \
-			echo '      "examples": ["feature/user-authentication", "feature/table-export", "feature/ui-improvements"]'; \
+			echo '      "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export", "fix/api-timeout"],'; \
+			echo '      "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",'; \
+			echo '      "policy": "Only feat/ and fix/ prefixes allowed by naming policy"'; \
 			echo '    }'; \
 			echo '  }'; \
 			echo "}"; \
 		else \
-			echo "🌿 Creating branch: $$BRANCH_NAME"; \
-			git checkout -b "$$BRANCH_NAME"; \
-			echo "✅ Branch created and switched to: $$BRANCH_NAME"; \
-			echo; \
-			echo "🚀 Ready to start development!"; \
-			echo "📝 Next steps:"; \
-			echo "  - Start coding your feature"; \
-			echo "  - When ready to commit: User says 'commit' → you run 'make commit'"; \
-			echo "  - When ready to push: User says 'push' → you run 'make ship'"; \
+			echo "🔍 Validating branch name: $$BRANCH_NAME"; \
+			if ./scripts/git/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \
+				echo "✅ Branch name is compliant"; \
+				echo "🌿 Creating branch: $$BRANCH_NAME"; \
+				git checkout -b "$$BRANCH_NAME"; \
+				echo "✅ Branch created and switched to: $$BRANCH_NAME"; \
+				echo; \
+				echo "🚀 Ready to start development!"; \
+				echo "📝 Next steps:"; \
+				echo "  - Start coding your feature"; \
+				echo "  - When ready to commit: User says 'commit' → you run 'make commit'"; \
+				echo "  - When ready to push: User says 'push' → you run 'make ship'"; \
+			else \
+				echo "❌ Branch name '$$BRANCH_NAME' violates naming policy"; \
+				echo "💡 Getting compliance guidance..."; \
+				echo; \
+				./scripts/git/validate-branch-name.sh "$$BRANCH_NAME" promptlet; \
+				exit 1; \
+			fi; \
 		fi; \
 	fi
 
