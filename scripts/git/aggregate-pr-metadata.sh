@@ -30,8 +30,8 @@ aggregate_branch_metadata() {
         return 1
     fi
     
-    # Initialize counters and arrays
-    local total_commits=$(wc -l < "$commit_cache_file")
+    # Initialize counters and arrays  
+    local total_commits=$(grep -c '^{' "$commit_cache_file")
     local feat_count=0
     local fix_count=0
     local docs_count=0
@@ -48,52 +48,75 @@ aggregate_branch_metadata() {
     local key_changes=""
     local scope_analysis=""
     
-    # Process each commit
-    while IFS= read -r commit_json; do
-        if [ -n "$commit_json" ]; then
-            # Extract commit data using jq if available, otherwise use sed
-            if command -v jq >/dev/null 2>&1; then
-                local hash=$(echo "$commit_json" | jq -r '.hash' | cut -c1-8)
-                local message=$(echo "$commit_json" | jq -r '.message')
-                local type=$(echo "$commit_json" | jq -r '.type')
-                local scope=$(echo "$commit_json" | jq -r '.scope')
-                local api_files=$(echo "$commit_json" | jq -r '.files.api_files')
-                local web_files=$(echo "$commit_json" | jq -r '.files.web_files')
-                local doc_files=$(echo "$commit_json" | jq -r '.files.doc_files')
-                local config_files=$(echo "$commit_json" | jq -r '.files.config_files')
-                local style_files=$(echo "$commit_json" | jq -r '.files.style_files')
-            else
-                # Fallback to sed parsing
-                local hash=$(echo "$commit_json" | sed -n 's/.*"hash": *"\([^"]*\)".*/\1/p' | cut -c1-8)
-                local message=$(echo "$commit_json" | sed -n 's/.*"message": *"\([^"]*\)".*/\1/p')
-                local type=$(echo "$commit_json" | sed -n 's/.*"type": *"\([^"]*\)".*/\1/p')
-                local scope=$(echo "$commit_json" | sed -n 's/.*"scope": *"\([^"]*\)".*/\1/p')
-                local api_files=$(echo "$commit_json" | sed -n 's/.*"api_files": *\([0-9]*\).*/\1/p')
-                local web_files=$(echo "$commit_json" | sed -n 's/.*"web_files": *\([0-9]*\).*/\1/p')
-                local doc_files=$(echo "$commit_json" | sed -n 's/.*"doc_files": *\([0-9]*\).*/\1/p')
-                local config_files=$(echo "$commit_json" | sed -n 's/.*"config_files": *\([0-9]*\).*/\1/p')
-                local style_files=$(echo "$commit_json" | sed -n 's/.*"style_files": *\([0-9]*\).*/\1/p')
-            fi
+    # Process each JSON object (handle multi-line JSON)
+    local json_buffer=""
+    local brace_count=0
+    local in_object=false
+    
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^[[:space:]]*\{ ]]; then
+            # Start of new JSON object
+            json_buffer="$line"
+            brace_count=1
+            in_object=true
+        elif [ "$in_object" = true ]; then
+            # Continue building JSON object
+            json_buffer="$json_buffer"$'\n'"$line"
             
-            # Count commit types
-            case "$type" in
-                "feat") ((feat_count++)) ;;
-                "fix") ((fix_count++)) ;;
-                "docs") ((docs_count++)) ;;
-                "chore"|"ci"|"build") ((config_count++)) ;;
-                *) ((other_count++)) ;;
-            esac
+            # Count braces to detect end of object
+            local line_open_braces=$(echo "$line" | tr -cd '{' | wc -c)
+            local line_close_braces=$(echo "$line" | tr -cd '}' | wc -c)
+            brace_count=$((brace_count + line_open_braces - line_close_braces))
             
-            # Accumulate file changes
-            api_total=$((api_total + ${api_files:-0}))
-            web_total=$((web_total + ${web_files:-0}))
-            doc_total=$((doc_total + ${doc_files:-0}))
-            config_total=$((config_total + ${config_files:-0}))
-            style_total=$((style_total + ${style_files:-0}))
-            
-            # Build commit summaries
-            if [ -n "$message" ] && [ "$message" != "null" ]; then
-                commit_summaries="${commit_summaries}* ${message} (${hash})\n"
+            if [ $brace_count -eq 0 ]; then
+                # Complete JSON object - process it
+                local commit_json="$json_buffer"
+                in_object=false
+                
+                # Extract commit data using jq if available, otherwise use sed
+                if command -v jq >/dev/null 2>&1; then
+                    local hash=$(echo "$commit_json" | jq -r '.hash' | cut -c1-8)
+                    local message=$(echo "$commit_json" | jq -r '.message')
+                    local type=$(echo "$commit_json" | jq -r '.type')
+                    local scope=$(echo "$commit_json" | jq -r '.scope')
+                    local api_files=$(echo "$commit_json" | jq -r '.files.api_files')
+                    local web_files=$(echo "$commit_json" | jq -r '.files.web_files')
+                    local doc_files=$(echo "$commit_json" | jq -r '.files.doc_files')
+                    local config_files=$(echo "$commit_json" | jq -r '.files.config_files')
+                    local style_files=$(echo "$commit_json" | jq -r '.files.style_files')
+                else
+                    # Fallback to sed parsing (works with multi-line)
+                    local hash=$(echo "$commit_json" | sed -n 's/.*"hash": *"\([^"]*\)".*/\1/p' | cut -c1-8)
+                    local message=$(echo "$commit_json" | sed -n 's/.*"message": *"\([^"]*\)".*/\1/p')
+                    local type=$(echo "$commit_json" | sed -n 's/.*"type": *"\([^"]*\)".*/\1/p')
+                    local scope=$(echo "$commit_json" | sed -n 's/.*"scope": *"\([^"]*\)".*/\1/p')
+                    local api_files=$(echo "$commit_json" | sed -n 's/.*"api_files": *\([0-9]*\).*/\1/p')
+                    local web_files=$(echo "$commit_json" | sed -n 's/.*"web_files": *\([0-9]*\).*/\1/p')
+                    local doc_files=$(echo "$commit_json" | sed -n 's/.*"doc_files": *\([0-9]*\).*/\1/p')
+                    local config_files=$(echo "$commit_json" | sed -n 's/.*"config_files": *\([0-9]*\).*/\1/p')
+                    local style_files=$(echo "$commit_json" | sed -n 's/.*"style_files": *\([0-9]*\).*/\1/p')
+                fi
+                
+                # Count commit types
+                case "$type" in
+                    "feat") ((feat_count++)) ;;
+                    "fix") ((fix_count++)) ;;
+                    "docs") ((docs_count++)) ;;
+                    "chore"|"ci"|"build") ((config_count++)) ;;
+                    *) ((other_count++)) ;;
+                esac
+                
+                # Accumulate file changes
+                api_total=$((api_total + ${api_files:-0}))
+                web_total=$((web_total + ${web_files:-0}))
+                doc_total=$((doc_total + ${doc_files:-0}))
+                config_total=$((config_total + ${config_files:-0}))
+                style_total=$((style_total + ${style_files:-0}))
+                
+                # Build commit summaries
+                if [ -n "$message" ] && [ "$message" != "null" ]; then
+                    commit_summaries="${commit_summaries}* ${message} (${hash})\n"
+                fi
             fi
         fi
     done < "$commit_cache_file"
@@ -165,8 +188,8 @@ aggregate_branch_metadata() {
     "style": $style_total
   },
   "content": {
-    "commit_list": "$(echo -e "$commit_summaries" | sed 's/"/\\"/g')",
-    "key_changes": "$(echo -e "$key_changes" | sed 's/"/\\"/g')"
+    "commit_list": "$(printf '%s' "$commit_summaries" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr '\n' '|')",
+    "key_changes": "$(printf '%s' "$key_changes" | sed 's/"/\\"/g' | sed 's/\\/\\\\/g' | tr '\n' '|')"
   }
 }
 EOF
