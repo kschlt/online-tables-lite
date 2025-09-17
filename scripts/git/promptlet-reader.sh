@@ -4,7 +4,7 @@
 # Reads promptlets from JSON library and performs variable substitution
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROMPTLETS_FILE="$SCRIPT_DIR/promptlets.json"
+PROMPTLETS_FILE="$SCRIPT_DIR/../data/promptlets.json"
 
 # Colors for output
 RED='\033[0;31m'

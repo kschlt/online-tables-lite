@@ -58,7 +58,7 @@
     "promptlet_existence": {
       "description": "All promptlet references must exist in library",
       "applies_to": ["promptlet_references"],
-      "library_file": "scripts/git/promptlets.json"
+      "library_file": "scripts/data/promptlets.json"
     },
     "no_duplicate_definitions": {
       "description": "Promptlets should only be defined in the library",

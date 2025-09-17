@@ -186,62 +186,9 @@ TITLE_END    := ### END PR TITLE
 BRANCH_BEGIN := ### BEGIN BRANCH SUGGESTION
 BRANCH_END   := ### END BRANCH SUGGESTION
 
-# Main ship command - generates docs promptlet and PR materials
+# Generate documentation update promptlet (for agent processing)
 ship:
-	@echo "🚀 Preparing ship workflow - quality guaranteed by pre-commit hook"
-	@CACHE_FILE=".git/commit-cache/last-commit-meta"; \
-	if [ -f "$$CACHE_FILE" ]; then \
-		echo "⚡ Using cached git-cliff metadata from pre-commit hook"; \
-		. "$$CACHE_FILE"; \
-		CHANGELOG_ENTRY=$$(echo "$$CHANGELOG_ENTRY" | tr '|' '\n'); \
-	else \
-		echo "🔍 No commit cache found - generating fresh git-cliff data..."; \
-		BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
-		BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-		CHANGELOG_ENTRY=$$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected"); \
-	fi; \
-	./scripts/git/promptlet-reader.sh documentation_update \
-		diff_base="$$BASE" \
-		branch="$$BRANCH" \
-		changelog_content="$$(echo "$$CHANGELOG_ENTRY" | tr '\n' ' ' | sed 's/"/\\"/g')"; \
-	echo; \
-	SUBJ=$$(git log --format='%s' $$BASE..HEAD | head -1); \
-	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
-	TITLE=$$(printf "%s" "$$SUBJ" | sed 's/[[:space:]]\+/ /g'); \
-	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"; echo; \
-	echo "$(PRBODY_BEGIN)"; \
-	PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
-	if [ -n "$$PR_PROMPTLET" ]; then \
-		echo "$$PR_PROMPTLET"; \
-		echo; \
-		echo "---"; \
-		echo; \
-		echo "**Fallback Description** (using git-cliff):"; \
-		PR_FALLBACK=$$(git-cliff --unreleased --strip header 2>/dev/null || echo "Basic PR from $$BRANCH"); \
-		echo "$$PR_FALLBACK"; \
-	else \
-		echo "# Summary"; echo "$$TITLE"; echo; \
-		echo "## Changes"; \
-		if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
-		echo; echo "## Affected files (added/removed lines)"; \
-		if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
-		echo; echo "## Notes for reviewers"; \
-		echo "- Verified with \`make check\`."; \
-		echo "- Docs updated in this branch (see diff)."; \
-		echo "- Part of Online Tables Lite development workflow."; \
-	fi; \
-	echo; echo "$(PRBODY_END)"; echo; \
-	SAFE=$$(printf "%s" "$$TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]+/-/g; s/ /-/g; s/--\+/-/g; s/^-//; s/-$$//'); \
-	SUG=$$(printf "feature/%s" "$$SAFE" | cut -c1-70); \
-	if [[ "$$BRANCH" != "$$SUG" ]]; then \
-		echo "$(BRANCH_BEGIN)"; \
-		echo "Current branch: $$BRANCH"; \
-		echo "Suggested name: $$SUG"; \
-		echo "To rename: make branch-rename NAME=$$SUG"; \
-		echo "$(BRANCH_END)"; echo; \
-	fi; \
-	echo "🤖 Agent: Execute JSON task above, then run: make docs-commit"; \
-	echo "🤖 Agent: Generate PR with: make pr-body → process promptlet → make pr-open BODY=\"result\""
+	@./scripts/workflows/docs.sh
 
 # Commit doc edits (only if there are any)
 docs-commit:
@@ -263,8 +210,7 @@ pr-title-suggest:
 
 # Generate PR description promptlet (for agent processing)
 pr-body:
-	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-	./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet
+	@./scripts/workflows/pr.sh
 
 # Open PR (push + create GitHub PR)
 # Usage: make pr-open BODY="your markdown description"
