@@ -353,13 +353,14 @@ pr-open:
 	if command -v gh >/dev/null 2>&1; then \
 		echo "📝 Creating PR → $(PR_BASE)"; \
 		if [[ "$${DRAFT:-false}" == "true" ]]; then DFLAG="--draft"; else DFLAG=""; fi; \
-		if gh pr view $$BRANCH >/dev/null 2>&1; then \
-			echo "📝 Updating existing PR..."; \
-			gh pr edit $$BRANCH --title "$$TITLE" --body "$$BODY"; \
-			echo "✅ PR updated: $$(gh pr view $$BRANCH --json url -q .url)"; \
+		if gh pr view "$$BRANCH" --json number >/dev/null 2>&1; then \
+			echo "📝 Updating existing PR for branch: $$BRANCH"; \
+			gh pr edit "$$BRANCH" --title "$$TITLE" --body "$$BODY"; \
+			PR_URL=$$(gh pr view "$$BRANCH" --json url -q .url); \
+			echo "✅ PR updated: $$PR_URL"; \
 		else \
-			echo "📝 Creating new PR..."; \
-			gh pr create --base $(PR_BASE) --head $$BRANCH --title "$$TITLE" --body "$$BODY" $$DFLAG; \
+			echo "📝 Creating new PR for branch: $$BRANCH"; \
+			gh pr create --base $(PR_BASE) --head "$$BRANCH" --title "$$TITLE" --body "$$BODY" $$DFLAG; \
 		fi; \
 	else \
 		echo "ℹ️  GitHub CLI (gh) not found. Install with: brew install gh"; \
