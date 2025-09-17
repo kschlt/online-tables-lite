@@ -195,25 +195,24 @@ aggregate_branch_metadata() {
 EOF
 }
 
-# Function to generate PR description promptlet for agent
+# Function to generate AI-enhanced PR description using git-cliff as foundation
 generate_pr_description_promptlet() {
-    local branch="$1" 
-    local metadata_json="$2"
+    local branch="$1"
     
-    # Extract key data for promptlet
-    local total_commits=$(echo "$metadata_json" | jq -r '.summary.total_commits' 2>/dev/null || echo "1")
-    local feat_count=$(echo "$metadata_json" | jq -r '.commits.feat' 2>/dev/null || echo "0")
-    local fix_count=$(echo "$metadata_json" | jq -r '.commits.fix' 2>/dev/null || echo "0")
-    local pr_type=$(echo "$metadata_json" | jq -r '.summary.pr_type' 2>/dev/null || echo "mixed")
-    local primary_scope=$(echo "$metadata_json" | jq -r '.summary.primary_scope' 2>/dev/null || echo "general")
-    local commit_list=$(echo "$metadata_json" | jq -r '.content.commit_list' 2>/dev/null | sed 's/\\n/, /g' || echo "No commits found")
-    local key_changes=$(echo "$metadata_json" | jq -r '.content.key_changes' 2>/dev/null | sed 's/\\n/, /g' || echo "No changes found")
+    # Use git-cliff as the solid data foundation
+    local changelog_content
+    changelog_content=$(git-cliff --unreleased --strip header 2>/dev/null)
     
-    # Use promptlet library for single source of truth
+    if [ $? -ne 0 ] || [ -z "$changelog_content" ]; then
+        echo "No changelog content generated for branch: $branch" >&2
+        return 1
+    fi
+    
+    # Pass git-cliff data to AI promptlet for enriched reasoning and formatting
     ./scripts/git/promptlet-reader.sh pr_description \
         branch_name="$branch" \
         base_branch="main" \
-        commit_data="Total: $total_commits (feat: $feat_count, fix: $fix_count) | Type: $pr_type | Scope: $primary_scope | Commits: $commit_list | Changes: $key_changes"
+        changelog_content="$(echo "$changelog_content" | sed 's/"/\\"/g' | tr '\n' '|')"
 }
 # Function to generate basic PR description (fallback)
 generate_basic_pr_description() {
@@ -276,13 +275,7 @@ main() {
             fi
             ;;
         "promptlet")
-            local metadata=$(aggregate_branch_metadata "$branch")
-            if [ $? -eq 0 ]; then
-                generate_pr_description_promptlet "$branch" "$metadata"
-            else
-                print_color $RED "❌ Failed to aggregate metadata for branch: $branch"
-                exit 1
-            fi
+            generate_pr_description_promptlet "$branch"
             ;;
         "json")
             local metadata=$(aggregate_branch_metadata "$branch")

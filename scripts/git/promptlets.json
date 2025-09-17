@@ -53,16 +53,16 @@
     "task": {
       "type": "pr_description",
       "instructions": [
-        "Generate comprehensive PR description from cached commit metadata",
-        "Include summary of all changes across commits",
-        "Create test plan based on modified files and scope",
-        "Format as GitHub-ready markdown"
+        "Use the git-cliff generated changelog as the foundation for PR description",
+        "Transform changelog sections into PR summary and impact analysis",
+        "Generate intelligent test plan based on change categories",
+        "Add contextual information about branch and integration",
+        "Format as comprehensive GitHub-ready markdown PR description"
       ],
       "context": {
         "branch": "${branch_name}",
         "base_branch": "${base_branch}",
-        "commits": "${commit_data}",
-        "metadata_source": "incremental_cache"
+        "changelog": "${changelog_content}"
       }
     }
   },
@@ -156,17 +156,15 @@
     "task": {
       "type": "documentation_update",
       "instructions": [
-        "Identify impacted docs and update them to match current implementation",
-        "Update CLI usage, API changes, configuration changes in README.md",
-        "Update design system docs if UI components changed",
+        "Analyze git-cliff changelog to identify documentation impacts",
+        "Update CLI usage, API changes, configuration changes in README.md based on Added/Fixed sections",
+        "Update design system docs if UI component changes detected",
         "If nothing needs updating, reply exactly: NO-OP"
       ],
       "context": {
         "diff_base": "${diff_base}",
         "branch": "${branch}",
-        "changed_code_files": "${changed_code_files}",
-        "changed_docs_files": "${changed_docs_files}",
-        "changelog_entry": "${changelog_entry}"
+        "changelog_content": "${changelog_content}"
       }
     }
   },

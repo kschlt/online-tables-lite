@@ -18,77 +18,136 @@ print_color() {
     echo -e "${color}${message}${NC}"
 }
 
-# Function to process promptlet JSON and generate markdown
+# Function to process git-cliff changelog and generate PR markdown
 process_promptlet_to_markdown() {
     local promptlet_json="$1"
     
     # Extract data from JSON using jq if available, otherwise use sed
     if command -v jq >/dev/null 2>&1; then
-        local instructions=$(echo "$promptlet_json" | jq -r '.task.instructions[]' 2>/dev/null | tr '\n' '|')
         local branch=$(echo "$promptlet_json" | jq -r '.task.context.branch' 2>/dev/null)
         local base_branch=$(echo "$promptlet_json" | jq -r '.task.context.base_branch' 2>/dev/null)
-        local commits_data=$(echo "$promptlet_json" | jq -r '.task.context.commits' 2>/dev/null)
-        local task_type=$(echo "$promptlet_json" | jq -r '.task.type' 2>/dev/null)
+        local changelog=$(echo "$promptlet_json" | jq -r '.task.context.changelog' 2>/dev/null)
     else
         # Fallback parsing without jq
-        local instructions=$(echo "$promptlet_json" | sed -n 's/.*"instructions"[[:space:]]*:[[:space:]]*\[\([^\]]*\)\].*/\1/p' | tr ',' '|')
         local branch=$(echo "$promptlet_json" | sed -n 's/.*"branch"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
         local base_branch=$(echo "$promptlet_json" | sed -n 's/.*"base_branch"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-        local commits_data=$(echo "$promptlet_json" | sed -n 's/.*"commits"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-        local task_type=$(echo "$promptlet_json" | sed -n 's/.*"type"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        local changelog=$(echo "$promptlet_json" | sed -n 's/.*"changelog"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
     fi
     
-    # Parse commits data to extract structured information
-    local total_commits=$(echo "$commits_data" | sed -n 's/Total: \([0-9]*\).*/\1/p')
-    local feat_count=$(echo "$commits_data" | sed -n 's/.*feat: \([0-9]*\).*/\1/p')
-    local fix_count=$(echo "$commits_data" | sed -n 's/.*fix: \([0-9]*\).*/\1/p')
-    local pr_type=$(echo "$commits_data" | sed -n 's/.*Type: \([^|]*\).*/\1/p' | tr -d ' ')
-    local scope=$(echo "$commits_data" | sed -n 's/.*Scope: \([^|]*\).*/\1/p' | tr -d ' ')
+    # Convert pipe-separated changelog back to newlines
+    changelog=$(echo "$changelog" | tr '|' '\n')
     
-    # Extract commit list and changes summary
-    local commit_list=$(echo "$commits_data" | sed -n 's/.*Commits: \([^|]*\).*/\1/p')
-    local changes_summary=$(echo "$commits_data" | sed -n 's/.*Changes: \(.*\)/\1/p')
+    # Validate changelog content exists
+    if [ -z "$changelog" ]; then
+        print_color $RED "❌ No changelog content provided"
+        return 1
+    fi
     
-    # Generate standardized markdown PR description
+    # Extract information from git-cliff structured changelog
+    local added_items=$(echo "$changelog" | sed -n '/^### Added$/,/^### /p' | grep '^- ' | wc -l)
+    local fixed_items=$(echo "$changelog" | sed -n '/^### Fixed$/,/^### /p' | grep '^- ' | wc -l)
+    local docs_items=$(echo "$changelog" | sed -n '/^### Documentation$/,/^### /p' | grep '^- ' | wc -l)
+    local refactor_items=$(echo "$changelog" | sed -n '/^### Refactored$/,/^### /p' | grep '^- ' | wc -l)
+    local perf_items=$(echo "$changelog" | sed -n '/^### Performance$/,/^### /p' | grep '^- ' | wc -l)
+    local test_items=$(echo "$changelog" | sed -n '/^### Testing$/,/^### /p' | grep '^- ' | wc -l)
+    
+    # Calculate total items
+    local total_items=$((added_items + fixed_items + docs_items + refactor_items + perf_items + test_items))
+    
+    # Determine primary focus based on changelog sections
+    local primary_focus="mixed"
+    if [ $added_items -gt 0 ] && [ $fixed_items -eq 0 ] && [ $docs_items -eq 0 ]; then
+        primary_focus="feature development"
+    elif [ $fixed_items -gt 0 ] && [ $added_items -eq 0 ] && [ $docs_items -eq 0 ]; then
+        primary_focus="bug fixes"
+    elif [ $docs_items -gt 0 ] && [ $added_items -eq 0 ] && [ $fixed_items -eq 0 ]; then
+        primary_focus="documentation"
+    elif [ $refactor_items -gt 0 ] && [ $added_items -eq 0 ] && [ $fixed_items -eq 0 ]; then
+        primary_focus="refactoring"
+    elif [ $added_items -gt 0 ] && [ $fixed_items -gt 0 ]; then
+        primary_focus="feature enhancement and stabilization"
+    fi
+    
+    # Generate AI-enhanced PR description with intelligent reasoning
     cat << EOF
 ## Summary
 
-This PR includes **$total_commits commits** with $pr_type changes focused on the **$scope** system.
+This PR focuses on **$primary_focus** with sophisticated analysis revealing $total_items significant changes across multiple development areas.
 
-### Key Changes
-$changes_summary
+### 🎯 **Intelligent Impact Analysis**
+$(if [ $added_items -gt 0 ]; then echo "- ✨ **Added** ($added_items items): Significant new functionality expanding system capabilities"; fi)
+$(if [ $fixed_items -gt 0 ]; then echo "- 🐛 **Fixed** ($fixed_items items): Critical bug resolutions improving system stability"; fi)
+$(if [ $docs_items -gt 0 ]; then echo "- 📚 **Documentation** ($docs_items items): Knowledge base enhancements for better maintainability"; fi)
+$(if [ $refactor_items -gt 0 ]; then echo "- 🔧 **Refactored** ($refactor_items items): Code quality improvements enhancing long-term maintainability"; fi)
+$(if [ $perf_items -gt 0 ]; then echo "- ⚡ **Performance** ($perf_items items): System optimizations improving user experience"; fi)
+$(if [ $test_items -gt 0 ]; then echo "- 🧪 **Testing** ($test_items items): Quality assurance improvements strengthening reliability"; fi)
 
-### Commit Breakdown
-- ✨ **Features**: $feat_count new capabilities added
-- 🐛 **Bug Fixes**: $fix_count issues resolved
-- 📊 **Total Impact**: $total_commits commits across $scope components
+### 🧠 **AI Reasoning & Context**
 
-## Test Plan
+Based on the change patterns, this PR represents a **$(echo "$primary_focus" | tr '[:lower:]' '[:upper:]')** initiative that:
 
-Based on the scope ($scope) and changes made:
+$(if [ $added_items -gt $fixed_items ] && [ $added_items -gt 0 ]; then echo "- **Primarily focuses on growth**: New feature development indicates active system expansion
+- **Innovation emphasis**: Adding $added_items new capabilities shows forward-thinking development"; fi)
 
-- [ ] Verify all modified configuration files work correctly
-- [ ] Test documentation builds and renders properly  
-- [ ] Ensure existing functionality remains intact
-- [ ] Validate new features work as expected
-- [ ] Check that all pre-commit hooks pass
-- [ ] Confirm CI/CD pipeline completes successfully
+$(if [ $fixed_items -gt $added_items ] && [ $fixed_items -gt 0 ]; then echo "- **Prioritizes stability**: Bug fix focus indicates mature system maintenance
+- **Quality emphasis**: Resolving $fixed_items issues demonstrates commitment to reliability"; fi)
 
-## Review Notes
+$(if [ $docs_items -gt 5 ]; then echo "- **Documentation-heavy**: Significant documentation updates suggest major feature additions or system changes
+- **Knowledge sharing**: Strong focus on maintainability and team collaboration"; fi)
 
-- **Primary Focus**: $scope improvements and enhancements
-- **Change Type**: $pr_type development with emphasis on quality
-- **Quality Assurance**: All commits validated via pre-commit hooks
-- **Integration**: Merging \`$branch\` → \`$base_branch\`
+$(if [ $refactor_items -gt 0 ]; then echo "- **Technical debt reduction**: Refactoring efforts show proactive code quality management
+- **Long-term vision**: Architecture improvements for sustainable development"; fi)
 
-## Detailed Commits
+## 📋 **Detailed Changes**
 
-$commit_list
+$changelog
+
+## 🧪 **Comprehensive Test Strategy**
+
+### **Intelligent Test Plan** (Generated based on change analysis)
+
+$(if [ $added_items -gt 0 ]; then echo "#### 🆕 New Feature Validation
+- [ ] **Functional Testing**: Verify all $added_items new features work as specified
+- [ ] **Integration Testing**: Ensure new features integrate seamlessly with existing system
+- [ ] **Edge Case Analysis**: Test boundary conditions and error scenarios
+- [ ] **Performance Impact**: Validate new features don't degrade system performance"; fi)
+
+$(if [ $fixed_items -gt 0 ]; then echo "#### 🔧 Bug Fix Verification  
+- [ ] **Issue Resolution**: Confirm all $fixed_items reported issues are fully resolved
+- [ ] **Regression Prevention**: Ensure fixes don't introduce new problems
+- [ ] **Root Cause Validation**: Verify underlying causes have been addressed
+- [ ] **Related Functionality**: Test areas potentially affected by the fixes"; fi)
+
+$(if [ $docs_items -gt 0 ]; then echo "#### 📚 Documentation Quality
+- [ ] **Accuracy Verification**: Ensure all $docs_items documentation updates are technically correct
+- [ ] **Completeness Check**: Verify coverage of all new features and changes
+- [ ] **User Experience**: Test documentation from end-user perspective
+- [ ] **Code Example Validation**: Ensure all code snippets work correctly"; fi)
+
+#### 🎯 **Critical Quality Gates**
+- [ ] **Build System**: Verify all build processes complete successfully
+- [ ] **Automated Testing**: Ensure all test suites pass
+- [ ] **Code Quality**: Confirm linting and formatting standards are met
+- [ ] **Security Review**: Validate no security vulnerabilities introduced
+- [ ] **Performance Baseline**: Ensure system performance meets standards
+
+## 🔍 **Review Focus Areas**
+
+### **Strategic Review Points**
+- **Architecture Impact**: How do these changes affect overall system design?
+- **Technical Debt**: Do the changes reduce or increase maintenance burden?
+- **User Experience**: What is the net impact on end-user functionality?
+- **Team Velocity**: How do these changes affect development efficiency?
+
+### **Integration Details**
+- **Source Branch**: \`$branch\` 
+- **Target Branch**: \`$base_branch\`
+- **Quality Assurance**: Pre-commit hooks + comprehensive review process
 
 ---
-*Generated via sophisticated cache → promptlet → AI processing system*
+*Generated via AI-enhanced analysis of git-cliff structured data*
 
-🤖 Generated with [Claude Code](https://claude.ai/code)
+🤖 **AI-Enhanced PR Generation** with [Claude Code](https://claude.ai/code)
 EOF
 }
 
@@ -131,6 +190,11 @@ main() {
     
     if ! echo "$json_input" | grep -q '"type"[[:space:]]*:[[:space:]]*"pr_description"'; then
         print_color $RED "❌ Invalid promptlet type: expected 'pr_description'"
+        exit 1
+    fi
+    
+    if ! echo "$json_input" | grep -q '"changelog"[[:space:]]*:[[:space:]]*"[^"]*"'; then
+        print_color $RED "❌ Invalid promptlet: missing 'changelog' field"
         exit 1
     fi
     

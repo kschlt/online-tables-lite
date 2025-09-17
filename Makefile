@@ -191,32 +191,19 @@ ship:
 	@echo "🚀 Preparing ship workflow - quality guaranteed by pre-commit hook"
 	@CACHE_FILE=".git/commit-cache/last-commit-meta"; \
 	if [ -f "$$CACHE_FILE" ]; then \
-		echo "⚡ Using cached commit metadata from pre-commit hook"; \
+		echo "⚡ Using cached git-cliff metadata from pre-commit hook"; \
 		. "$$CACHE_FILE"; \
-		CH_CODE=$$(echo "$$CH_CODE" | tr ' ' '\n' | grep -v '^$$'); \
-		CH_DOCS=$$(echo "$$CH_DOCS" | tr ' ' '\n' | grep -v '^$$'); \
-		LOG=$$(echo "$$LOG" | tr '|' '\n'); \
-		STATS=$$(echo "$$STATS" | tr '|' '\n'); \
 		CHANGELOG_ENTRY=$$(echo "$$CHANGELOG_ENTRY" | tr '|' '\n'); \
 	else \
-		echo "🔍 No commit cache found - calculating git diff..."; \
+		echo "🔍 No commit cache found - generating fresh git-cliff data..."; \
 		BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
 		BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-		CH_CODE=$$(git diff --name-only $$BASE...HEAD -- $(CODE_HINTS) \
-			$(foreach p,$(EXCLUDE_GLOBS),:!$(p)) \
-			$(foreach p,$(DOC_PATHS),:!$(p)) || true); \
-		CH_DOCS=$$(git diff --name-only $$BASE...HEAD -- $(DOC_PATHS) \
-			$(foreach p,$(EXCLUDE_GLOBS),:!$(p)) || true); \
-		LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
-		STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
 		CHANGELOG_ENTRY=$$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected"); \
 	fi; \
 	./scripts/git/promptlet-reader.sh documentation_update \
 		diff_base="$$BASE" \
 		branch="$$BRANCH" \
-		changed_code_files="$$CH_CODE" \
-		changed_docs_files="$$CH_DOCS" \
-		changelog_entry="$$(echo "$$CHANGELOG_ENTRY" | tr '\n' ' ' | sed 's/"/\\"/g')"; \
+		changelog_content="$$(echo "$$CHANGELOG_ENTRY" | tr '\n' ' ' | sed 's/"/\\"/g')"; \
 	echo; \
 	SUBJ=$$(git log --format='%s' $$BASE..HEAD | head -1); \
 	[[ -n "$$SUBJ" ]] || SUBJ="Update: miscellaneous changes"; \
@@ -278,7 +265,7 @@ pr-body:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	CACHE_FILE=".git/commit-cache/last-commit-meta"; \
 	if [ -f "$$CACHE_FILE" ] && [ -n "$$(grep COMMIT_CACHE_FILE $$CACHE_FILE 2>/dev/null)" ]; then \
-		echo "⚡ Using sophisticated cache → promptlet → AI PR generation..." >&2; \
+		echo "⚡ Using git-cliff → AI promptlet → enhanced PR generation..." >&2; \
 		PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
 		if [ -n "$$PR_PROMPTLET" ]; then \
 			echo "$$PR_PROMPTLET" | ./scripts/git/ai-pr-processor.sh stdin; \

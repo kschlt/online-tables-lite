@@ -111,48 +111,16 @@ fi
 # Extract commit type from conventional commit message
 COMMIT_TYPE=$(echo "$COMMIT_MSG" | sed -E 's/^([a-z]+)(\(.+\))?:.*/\1/' || echo "unknown")
 
-# Store per-commit metadata
-COMMIT_CACHE_FILE="$BRANCH_CACHE_DIR/${BRANCH//\//_}_commits.jsonl"
-COMMIT_METADATA=$(cat << EOF
-{
-  "hash": "$COMMIT_HASH",
-  "message": "$(echo "$COMMIT_MSG" | sed 's/"/\\"/g')",
-  "type": "$COMMIT_TYPE",
-  "scope": "$COMMIT_SCOPE",
-  "author": "$(echo "$COMMIT_AUTHOR" | sed 's/"/\\"/g')",
-  "timestamp": $COMMIT_TIME,
-  "files": {
-    "staged": "$(echo "$STAGED_FILES" | sed 's/"/\\"/g' | tr ' ' ',')",
-    "stats": "$(echo "$STAGED_STATS" | sed 's/"/\\"/g')",
-    "api_files": $API_FILES,
-    "web_files": $WEB_FILES,
-    "doc_files": $DOC_FILES,
-    "config_files": $CONFIG_FILES,
-    "style_files": $STYLE_FILES
-  }
-}
-EOF
-)
-echo "$COMMIT_METADATA" >> "$COMMIT_CACHE_FILE"
+# Individual commit caching removed - git-cliff handles all commit analysis
 
-# Calculate branch-level aggregated data for ship workflow
-CH_CODE_VAL=$(git diff --name-only $BASE...HEAD -- 'apps/**' 'supabase/**' 'scripts/**' ':!**/*.md' 2>/dev/null | tr '\n' ' ' || true)
-CH_DOCS_VAL=$(git diff --name-only $BASE...HEAD -- '**/*.md' 2>/dev/null | tr '\n' ' ' || true)
-LOG_VAL=$(git log --pretty=format:'* %s (%h)' $BASE..HEAD 2>/dev/null | tr '\n' '|' || echo "No commits found")
-STATS_VAL=$(git diff --numstat $BASE..HEAD 2>/dev/null | awk '{printf "- %s (+%s/-%s)\n", $3, $1, $2}' | tr '\n' '|' || echo "No changes")
+# Store git-cliff based cache for ship workflow
 CHANGELOG_VAL=$(git-cliff --unreleased --strip header 2>/dev/null | tr '\n' '|' || echo "No unreleased changes detected")
 
-# Store traditional cache for ship workflow compatibility
 cat > "$CACHE_DIR/last-commit-meta" << EOF
 BASE="$BASE"
 BRANCH="$BRANCH"
 COMMIT_TIME=$COMMIT_TIME
-CH_CODE="$CH_CODE_VAL"
-CH_DOCS="$CH_DOCS_VAL"
-LOG="$LOG_VAL"
-STATS="$STATS_VAL"
 CHANGELOG_ENTRY="$CHANGELOG_VAL"
-COMMIT_CACHE_FILE="$COMMIT_CACHE_FILE"
 EOF
 
 echo "✅ Pre-commit checks passed! Metadata cached for efficient ship workflow."
