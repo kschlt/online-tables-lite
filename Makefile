@@ -271,9 +271,11 @@ ship:
 
 # Commit doc edits (only if there are any)
 docs-commit:
-	@git add $(DOC_PATHS) >/dev/null 2>&1 || true; \
-	if git diff --cached --quiet -- $(DOC_PATHS) 2>/dev/null; then \
-		echo "✅ No doc changes to commit."; \
+	@echo "🔍 Checking for documentation updates (excluding CHANGELOG.md)..."; \
+	DOC_PATHS_NO_CHANGELOG=$$(echo "$(DOC_PATHS)" | tr ' ' '\n' | grep -v CHANGELOG.md | tr '\n' ' '); \
+	git add $$DOC_PATHS_NO_CHANGELOG >/dev/null 2>&1 || true; \
+	if git diff --cached --quiet -- $$DOC_PATHS_NO_CHANGELOG 2>/dev/null; then \
+		echo "✅ No doc changes to commit (CHANGELOG.md handled by pre-push hook)."; \
 	else \
 		git commit -m "docs: sync documentation with latest changes"; \
 		echo "✅ Documentation changes committed."; \
@@ -296,36 +298,12 @@ pr-body:
 	@$(AGENT_WORKFLOWS)/pr-workflow.sh pr_body
 
 
-# Complete automation pipeline and prepare PR (agent decision point)
-pr-prepare:
-	@echo "🚀 Starting complete automation pipeline..."; \
-	echo "📋 Step 1/5: Documentation generation"; \
-	$(MAKE) ship; \
-	echo "📋 Step 2/5: Documentation commit"; \
-	$(MAKE) docs-commit; \
-	echo "📋 Step 3/5: Branch validation and push"; \
+# Start PR creation workflow (entry point)
+pr-workflow:
+	@echo "🚀 Starting PR creation workflow..."; \
 	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	echo "🌿 Current branch: $$BRANCH"; \
-	if [ "$$BRANCH" = "main" ] || [ "$$BRANCH" = "production" ]; then \
-		echo "❌ Cannot push from protected branch: $$BRANCH"; \
-		echo "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"; \
-		exit 1; \
-	fi; \
-	if ! $(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH" validate >/dev/null 2>&1; then \
-		echo "⚠️  Branch name '$$BRANCH' violates naming policy"; \
-		echo "💡 Get compliant name: $(AGENT_UTILS)/validate-branch-name.sh $$BRANCH suggest"; \
-		echo "💡 Rename branch: make branch-rename NAME=\$$($(AGENT_UTILS)/validate-branch-name.sh $$BRANCH suggest)"; \
-		echo "⚠️  Proceeding anyway, but consider fixing branch name..."; \
-	fi; \
-	echo "✅ Branch validation completed: $$BRANCH"; \
-	echo "📤 Pushing $$BRANCH to $(REMOTE)..."; \
-	git push -u $(REMOTE) $$BRANCH; \
-	echo "📋 Step 4/5: PR description generation"; \
-	$(MAKE) pr-body; \
-	echo "📋 Step 5/5: All automation complete"; \
-	echo "✅ Automation pipeline completed successfully"; \
-	echo "🤖 Next: Agent processes the PR description promptlet and calls:"; \
-	echo "    make pr-open TITLE=\"processed-title\" BODY=\"processed-markdown\""
+	$(AGENT_WORKFLOWS)/pr-workflow.sh validate_changes --branch $$BRANCH --workflow-origin pr-workflow
 
 # Create GitHub PR with provided title and body (ping-pong final step)
 # Usage: make pr-open TITLE="PR Title" BODY="PR markdown description"

@@ -44,14 +44,16 @@ print_trace() {
 validate_changes() {
     local branch=""
     local base_branch="main"
-    
+    local workflow_origin=""
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --branch) branch="$2"; shift 2 ;;
             --base) base_branch="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
-                echo "Usage: validate_changes [--branch BRANCH] [--base BASE]"
+                echo "Usage: validate_changes [--branch BRANCH] [--base BASE] [--workflow-origin ORIGIN]"
                 echo "Validates branch changes before PR creation"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
@@ -139,29 +141,34 @@ validate_changes() {
     if [ "$has_uncommitted" = true ]; then
         validation_status="warning"
         issues_detected="${issues_detected}- Uncommitted changes detected\\n"
+        # If uncommitted changes and workflow started from pr-workflow, fall back to commit workflow
+        if [ "$workflow_origin" = "pr-workflow" ]; then
+            next_step="make commit --return-to=docs-workflow --workflow-origin=$workflow_origin"
+        fi
     fi
-    
+
     if [ "$conflicts_exist" = true ]; then
         validation_status="conflicts"
         issues_detected="${issues_detected}- Merge conflicts with $base_branch branch\\n"
         next_step="./scripts/git/resolve-conflicts.sh --branch $branch --base $base_branch"
     fi
-    
+
     if [ "$commits_ahead" -eq 0 ]; then
         validation_status="no_changes"
         issues_detected="${issues_detected}- No commits ahead of $base_branch branch\\n"
         next_step="NO-OP"
     fi
-    
-    if [ "$validation_status" = "passed" ]; then
-        next_step="./scripts/agent/workflows/pr-workflow.sh pr_body --branch $branch"
-    elif [ "$validation_status" = "warning" ]; then
-        next_step="./scripts/agent/workflows/pr-workflow.sh pr_body --branch $branch"
+
+    # If validation passed or just warnings, start documentation workflow (auto-chain)
+    if [ "$validation_status" = "passed" ] || ([ "$validation_status" = "warning" ] && [ "$workflow_origin" != "pr-workflow" ]); then
+        print_color $GREEN "✅ Auto-chaining to documentation workflow..."
+        # Auto-execute documentation workflow instead of returning promptlet
+        exec ./scripts/agent/workflows/docs-workflow.sh generate_docs "$branch" main --workflow-origin "$workflow_origin"
     fi
     
     print_trace "RESULTS" "Validation status: $validation_status"
     
-    # Output validation promptlet
+    # Output validation promptlet (only for error cases)
     $PROMPTLET_READER change_validation \
         branch="$branch" \
         base_branch="$base_branch" \
@@ -169,6 +176,7 @@ validate_changes() {
         commits_ahead="$commits_ahead" \
         has_uncommitted="$has_uncommitted" \
         conflicts_exist="$conflicts_exist" \
+        workflow_origin="$workflow_origin" \
         issues_detected="$(echo -e "$issues_detected" | sed 's/"/\\"/g' | tr '\n' '|')" \
         next_step="$next_step"
     
@@ -235,6 +243,51 @@ pr_body() {
         next_step="./scripts/agent/workflows/pr-workflow.sh create_pr --branch $branch"
     
     print_trace "OUTPUT" "Generated PR description promptlet"
+}
+
+# Step 2.5: Push branch and trigger pre-push hook
+push_branch() {
+    local branch=""
+    local workflow_origin=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --branch) branch="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
+            -h|--help)
+                echo "Usage: push_branch [--branch BRANCH] [--workflow-origin ORIGIN]"
+                echo "Pushes branch to origin and continues workflow"
+                return 0 ;;
+            *) echo "Unknown option: $1" >&2; return 1 ;;
+        esac
+    done
+
+    # Auto-detect branch if not provided
+    if [ -z "$branch" ]; then
+        branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    fi
+
+    if [ -z "$branch" ]; then
+        print_color $RED "❌ Error: Could not determine branch name"
+        return 1
+    fi
+
+    print_trace "PUSH_BRANCH" "Pushing branch: $branch"
+
+    # Push branch to origin (pre-push hook will execute)
+    print_color $BLUE "📤 Pushing $branch to origin..."
+
+    if git push -u origin "$branch"; then
+        print_color $GREEN "✅ Branch pushed successfully"
+
+        # Auto-chain to pr_body (hook already ran during push)
+        print_color $GREEN "✅ Auto-chaining to PR description generation..."
+        exec ./scripts/agent/workflows/pr-workflow.sh pr_body --branch "$branch" --workflow-origin "$workflow_origin"
+    else
+        print_color $RED "❌ Failed to push branch"
+        return 1
+    fi
 }
 
 # Step 3: Create GitHub PR
@@ -393,12 +446,14 @@ main() {
     
     case "$function_name" in
         validate_changes) validate_changes "$@" ;;
+        push_branch) push_branch "$@" ;;
         pr_body) pr_body "$@" ;;
         create_pr) create_pr "$@" ;;
         finalize_pr) finalize_pr "$@" ;;
         -h|--help|help)
             echo "PR Workflow Functions:"
-            echo "  validate_changes [--branch BRANCH] [--base BASE] - Validate branch changes"
+            echo "  validate_changes [--branch BRANCH] [--base BASE] [--workflow-origin ORIGIN] - Validate branch changes"
+            echo "  push_branch [--branch BRANCH] [--workflow-origin ORIGIN] - Push branch to origin"
             echo "  pr_body [--branch BRANCH] - Generate PR description"
             echo "  create_pr [--branch BRANCH] [--title TITLE] [--body BODY] - Create GitHub PR"
             echo "  finalize_pr [--branch BRANCH] [--pr-url URL] - Post-creation tasks"

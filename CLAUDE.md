@@ -28,7 +28,7 @@
 ### When to Push
 **User triggers**: "push", "create PR", "open PR", "make PR"
 1. Print "🤖 Push & PR to Main workflow triggered. Starting execution..."
-2. `make pr-prepare` - Automated pipeline with agent chain
+2. `make pr-workflow` - Automated pipeline with agent chain
 
 ## Forbidden
   - Additional terminals

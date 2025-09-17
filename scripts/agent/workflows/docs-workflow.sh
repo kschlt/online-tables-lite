@@ -42,6 +42,15 @@ print_trace() {
 generate_docs() {
     local branch="${1:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
     local base_ref="${2:-main}"
+    local workflow_origin="${3:-unknown}"
+
+    # Parse --workflow-origin if passed as argument
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
+            *) shift ;;
+        esac
+    done
     
     if [ -z "$branch" ]; then
         print_color $RED "❌ Error: Could not determine branch name"
@@ -77,8 +86,9 @@ generate_docs() {
     $PROMPTLET_READER documentation_update \
         diff_base="$base" \
         branch="$branch" \
+        workflow_origin="$workflow_origin" \
         changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
-        next_step="./scripts/agent/workflows/docs-workflow.sh apply_docs"
+        next_step="./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin $workflow_origin"
     
     print_trace "OUTPUT" "Generated documentation update promptlet"
 }
@@ -86,13 +96,15 @@ generate_docs() {
 # Step 2: Apply documentation changes (placeholder for agent-driven updates)
 apply_docs() {
     local files=""
-    
+    local workflow_origin=""
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --files) files="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
-                echo "Usage: apply_docs [--files FILES]"
+                echo "Usage: apply_docs [--files FILES] [--workflow-origin ORIGIN]"
                 echo "Validates applied documentation changes"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
@@ -110,16 +122,23 @@ apply_docs() {
             print_color $BLUE "  📝 $file"
         done
         
-        # Generate commit promptlet
-        $PROMPTLET_READER documentation_commit \
-            modified_files="$(echo "$modified_docs" | tr '\n' '|')" \
-            next_step="./scripts/agent/workflows/docs-workflow.sh commit_docs"
+        # Auto-chain to commit_docs since this is pure automation
+        print_color $GREEN "✅ Auto-chaining to commit documentation changes..."
+        exec ./scripts/agent/workflows/docs-workflow.sh commit_docs --workflow-origin "$workflow_origin"
     else
         print_color $YELLOW "⚠️  No documentation changes detected"
-        
-        # Generate no-op promptlet
-        $PROMPTLET_READER documentation_no_changes \
-            next_step="WORKFLOW_COMPLETE"
+
+        # If part of PR workflow, continue to push step
+        if [ "$workflow_origin" = "pr-workflow" ]; then
+            print_color $GREEN "✅ Auto-chaining to push step..."
+            BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            exec ./scripts/agent/workflows/pr-workflow.sh push_branch --branch "$BRANCH" --workflow-origin "$workflow_origin"
+        else
+            # Generate no-op promptlet for standalone docs workflow
+            $PROMPTLET_READER documentation_no_changes \
+                workflow_origin="$workflow_origin" \
+                next_step="WORKFLOW_COMPLETE"
+        fi
     fi
     
     print_trace "OUTPUT" "Generated documentation validation promptlet"
@@ -128,13 +147,15 @@ apply_docs() {
 # Step 3: Commit documentation changes
 commit_docs() {
     local message=""
-    
+    local workflow_origin=""
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --message) message="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
-                echo "Usage: commit_docs [--message MESSAGE]"
+                echo "Usage: commit_docs [--message MESSAGE] [--workflow-origin ORIGIN]"
                 echo "Commits documentation changes"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
@@ -164,11 +185,20 @@ commit_docs() {
     # Commit changes
     if git commit -m "$commit_message"; then
         print_color $GREEN "✅ Documentation changes committed successfully"
-        
-        $PROMPTLET_READER workflow_complete \
-            status="success" \
-            commit_message="$commit_message" \
-            next_step="WORKFLOW_COMPLETE"
+
+        # If part of PR workflow, continue to push step
+        if [ "$workflow_origin" = "pr-workflow" ]; then
+            print_color $GREEN "✅ Auto-chaining to push step..."
+            BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            exec ./scripts/agent/workflows/pr-workflow.sh push_branch --branch "$BRANCH" --workflow-origin "$workflow_origin"
+        else
+            # Generate completion promptlet for standalone docs workflow
+            $PROMPTLET_READER workflow_complete \
+                status="success" \
+                workflow_origin="$workflow_origin" \
+                commit_message="$commit_message" \
+                next_step="WORKFLOW_COMPLETE"
+        fi
     else
         print_color $RED "❌ Failed to commit documentation changes"
         
