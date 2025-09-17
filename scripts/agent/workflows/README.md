@@ -37,8 +37,6 @@ make pr-workflow
 #### Recent Fixes:
 - Fixed false conflict detection for fast-forward merges
 - Added existing PR detection and update logic
-- Implemented universal workflow-origin parameter support
-- Enhanced error handling with actionable guidance
 
 ---
 
