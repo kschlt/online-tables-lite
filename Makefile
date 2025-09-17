@@ -278,22 +278,28 @@ pr-body:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	CACHE_FILE=".git/commit-cache/last-commit-meta"; \
 	if [ -f "$$CACHE_FILE" ] && [ -n "$$(grep COMMIT_CACHE_FILE $$CACHE_FILE 2>/dev/null)" ]; then \
-		echo "⚡ Using enhanced metadata cache for rich PR description..."; \
-		BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
-		LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
-		STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
-		TITLE=$$(git log --format='%s' $$BASE..HEAD | head -1 | sed 's/[[:space:]]\+/ /g'); \
-		[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
-		echo "# Summary"; echo "$$TITLE"; echo; \
-		echo "## Changes"; if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
-		echo; echo "## Affected files (added/removed lines)"; \
-		if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
-		echo; echo "## Notes for reviewers"; \
-		echo "- Verified with \`make check\`."; \
-		echo "- Docs updated in this branch (see diff)."; \
-		echo "- Part of Online Tables Lite development workflow."; \
+		echo "⚡ Using sophisticated cache → promptlet → AI PR generation..." >&2; \
+		PR_PROMPTLET=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet 2>/dev/null || echo ""); \
+		if [ -n "$$PR_PROMPTLET" ]; then \
+			echo "$$PR_PROMPTLET" | ./scripts/git/ai-pr-processor.sh stdin; \
+		else \
+			echo "⚠️  Promptlet generation failed, using enhanced fallback..." >&2; \
+			BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
+			LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
+			STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
+			TITLE=$$(git log --format='%s' $$BASE..HEAD | head -1 | sed 's/[[:space:]]\+/ /g'); \
+			[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
+			echo "# Summary"; echo "$$TITLE"; echo; \
+			echo "## Changes"; if [[ -n "$$LOG" ]]; then echo "$$LOG"; else echo "_(commits not found)_"; fi; \
+			echo; echo "## Affected files (added/removed lines)"; \
+			if [[ -n "$$STATS" ]]; then echo "$$STATS"; else echo "_(no diff)_"; fi; \
+			echo; echo "## Notes for reviewers"; \
+			echo "- Verified with \`make check\`."; \
+			echo "- Docs updated in this branch (see diff)."; \
+			echo "- Part of Online Tables Lite development workflow."; \
+		fi; \
 	else \
-		echo "ℹ️  No enhanced metadata cache, using traditional approach..."; \
+		echo "ℹ️  No enhanced metadata cache, using traditional approach..." >&2; \
 		BASE=$$(git merge-base $(BASE_REF) HEAD || git rev-list --max-parents=0 HEAD | tail -n1); \
 		LOG=$$(git log --pretty=format:'* %s (%h)' $$BASE..HEAD); \
 		STATS=$$(git diff --numstat $$BASE..HEAD | awk '{printf "- %s (+%s/-%s)\n", $$3, $$1, $$2}'); \
