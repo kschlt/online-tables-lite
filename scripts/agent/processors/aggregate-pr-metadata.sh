@@ -25,9 +25,9 @@ print_color() {
 generate_pr_description_promptlet() {
     local branch="$1"
     
-    # Use git-cliff as the solid data foundation
+    # Use git-cliff as the solid data foundation - only current branch changes
     local changelog_content
-    changelog_content=$(git-cliff --unreleased --strip header 2>/dev/null)
+    changelog_content=$(git-cliff main..HEAD --strip header 2>/dev/null)
     
     if [ $? -ne 0 ] || [ -z "$changelog_content" ]; then
         echo "No changelog content generated for branch: $branch" >&2
