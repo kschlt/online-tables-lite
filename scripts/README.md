@@ -1,35 +1,68 @@
 # 📜 Scripts Directory
 
-This directory contains all executable scripts organized by purpose. This follows modern project organization best practices for maintainability and clarity.
+This directory contains all executable scripts organized by purpose with clear separation between automation and agent interaction.
 
 ## 📁 Directory Structure
 
 ```
 scripts/
 ├── README.md              # This file
+├── agent/                 # Agent interaction & workflow scripts
+│   ├── promptlets/        # Core promptlet system
+│   │   ├── promptlet-reader.sh    # Promptlet library reader with variable substitution
+│   │   └── promptlets.json        # Single source of truth promptlet library
+│   ├── workflows/         # Complete workflow chains (ping-pong pattern)
+│   │   ├── docs-workflow.sh       # Documentation workflow functions
+│   │   └── pr-workflow.sh         # PR creation workflow functions
+│   ├── processors/        # Data processing for agents
+│   │   ├── aggregate-pr-metadata.sh   # PR metadata aggregation
+│   │   └── ai-pr-processor.sh         # AI PR processing
+│   ├── utils/             # Utilities FOR agents
+│   │   ├── protect-main-branch.sh     # Main branch protection with promptlets
+│   │   └── validate-branch-name.sh    # Branch naming validation with promptlets
+│   └── system/            # System maintenance
+│       ├── promptlet-sources.json         # Promptlet compliance configuration
+│       ├── promptlet-template.json        # Template structure for validation
+│       ├── validate-promptlet-compliance.sh   # 4-stage promptlet validation
+│       ├── validate-promptlet-patterns.sh     # Pattern validation
+│       └── validate-promptlet-system.sh       # System validation
 ├── dev/                   # Development environment scripts
 │   ├── setup-dev.sh       # Development environment setup
 │   └── start-dev.sh       # Development server startup
-├── git/                   # Git workflow scripts
-│   ├── aggregate-pr-metadata.sh      # PR description generation from commit cache
-│   ├── cleanup-before-merge.sh       # Pre-merge cleanup
-│   ├── protect-main-branch.sh        # Main branch protection guardrails
-│   ├── promptlet-reader.sh           # Promptlet library reader with variable substitution
-│   ├── promptlet-sources.json        # Configuration for promptlet compliance monitoring
-│   ├── promptlet-template.json       # Template structure for promptlet validation
-│   ├── promptlets.json               # Single source of truth promptlet library
-│   ├── validate-branch-name.sh       # Branch naming policy enforcement
-│   ├── validate-promptlet-compliance.sh  # Comprehensive 4-stage promptlet validation
-│   ├── validate-promptlet-patterns.sh    # Legacy promptlet pattern validation
-│   ├── validate-promptlet-system.sh      # Basic promptlet system validation
-│   └── verify-clean-commit.sh        # Commit verification
-├── deploy/                # Deployment scripts
-│   └── (future deployment scripts)
-└── utils/                 # Utility scripts
-    └── (general utility scripts)
+└── git/                   # Pure git automation (no agent interaction)
+    ├── cleanup-before-merge.sh    # Pre-merge cleanup
+    └── verify-clean-commit.sh     # Commit verification
 ```
 
 ## 🚀 Usage
+
+### Agent Workflows (Ping-Pong Pattern)
+
+**Entry Points (via Makefile):**
+```bash
+# Validate changes before PR creation
+make pr-validate
+
+# Generate PR description 
+make pr-body
+
+# Generate documentation update
+make ship
+```
+
+**Direct Workflow Functions:**
+```bash
+# PR workflow chain
+./scripts/agent/workflows/pr-workflow.sh validate_changes
+./scripts/agent/workflows/pr-workflow.sh pr_body
+./scripts/agent/workflows/pr-workflow.sh create_pr
+./scripts/agent/workflows/pr-workflow.sh finalize_pr
+
+# Documentation workflow chain  
+./scripts/agent/workflows/docs-workflow.sh generate_docs
+./scripts/agent/workflows/docs-workflow.sh apply_docs
+./scripts/agent/workflows/docs-workflow.sh commit_docs
+```
 
 ### Development Scripts
 ```bash
@@ -40,65 +73,79 @@ scripts/
 ./scripts/dev/start-dev.sh
 ```
 
-### Git Workflow Scripts
+### Git Automation Scripts
 ```bash
-# Branch naming validation (enforces feat/fix prefixes)
-./scripts/git/validate-branch-name.sh [branch-name] [suggest|promptlet]
-
-# Main branch protection (prevents accidental commits to main)
-./scripts/git/protect-main-branch.sh
-
-# PR description generation from commit metadata
-./scripts/git/aggregate-pr-metadata.sh [branch] [metadata|description|promptlet|json]
-
-# Clean up before merging (used by Husky pre-commit hook)
+# Pre-merge cleanup
 ./scripts/git/cleanup-before-merge.sh
 
-# Verify clean commit (used by Husky pre-commit hook)
+# Commit verification
 ./scripts/git/verify-clean-commit.sh
 ```
 
-**Note**: Most scripts are automatically executed by Husky git hooks (`.husky/pre-commit` and `.husky/pre-push`) as part of the modern git workflow. Manual execution is available for testing or special cases.
+## 🔄 Ping-Pong Architecture
 
-### Promptlet Compliance System
-This project implements a comprehensive **single source of truth** promptlet system that eliminates duplication and ensures consistency across all agent tasks:
+The agent workflows follow a **ping-pong pattern** for clean separation of concerns:
 
-```bash
-# Comprehensive 4-stage validation (enforced by pre-commit hook)
-./scripts/git/validate-promptlet-compliance.sh
+1. **Agent** calls make command (entry point)
+2. **Automation** runs script, generates promptlet, **STOPS**
+3. **Agent** processes promptlet, makes decisions  
+4. **Agent** calls next step, cycle continues
 
-# Access promptlets with variable substitution
-./scripts/git/promptlet-reader.sh [promptlet_name] [key=value...]
-
-# Basic system validation
-./scripts/git/validate-promptlet-system.sh
+```
+Agent → make pr-validate → promptlet → STOP → Agent → next_step
 ```
 
-**Architecture Components**:
-- **`promptlets.json`**: Single source of truth library containing all agent task definitions
-- **`promptlet-template.json`**: Template structure rules for validation
-- **`promptlet-sources.json`**: Configuration defining monitored files and patterns
-- **`promptlet-reader.sh`**: Core reader function with Python-based variable substitution
-- **`validate-promptlet-compliance.sh`**: 4-stage comprehensive validation system
+**Key Principles:**
+- Each script stops at promptlet generation
+- Agent controls the flow and decisions
+- Single clear next_step in every promptlet
+- No auto-executing chains
 
-**Key Benefits**:
-- ✅ **Zero Duplication**: All promptlets defined once, referenced everywhere
-- ✅ **Type Safety**: Template validation ensures structural consistency
-- ✅ **Automatic Enforcement**: Pre-commit hooks prevent non-compliant code
-- ✅ **Variable Substitution**: Dynamic content injection (`${variable}` → actual values)
-- ✅ **Agent-Ready**: JSON tasks consumable by AI agents without modification
+## 🔧 Path Constants
 
-### Modern Git Hooks Integration
-The git workflow scripts integrate seamlessly with Husky-managed git hooks:
-- **`.husky/pre-commit`**: 
-  - Branch validation (`validate-branch-name.sh`, `protect-main-branch.sh`)
-  - Quality checks (`cleanup-before-merge.sh`, `verify-clean-commit.sh`)
-  - **Promptlet compliance** (`validate-promptlet-compliance.sh`) - 4-stage validation
-  - Metadata collection for incremental PR building (`aggregate-pr-metadata.sh`)
-- **`.husky/pre-push`**: Handles changelog automation and documentation workflows
-- **Automatic execution**: No manual intervention needed for quality checks
+All scripts use path constants for maintainability:
+
+**Makefile Constants:**
+```makefile
+AGENT_BASE := ./scripts/agent
+AGENT_WORKFLOWS := $(AGENT_BASE)/workflows
+AGENT_PROMPTLETS := $(AGENT_BASE)/promptlets
+```
+
+**Shell Script Constants:**
+```bash
+AGENT_BASE="./scripts/agent"
+PROMPTLET_READER="$AGENT_BASE/promptlets/promptlet-reader.sh"
+```
+
+**Benefits:**
+- Single point of maintenance
+- Easy directory reorganization
+- Reduced hardcoded paths
+- Clear dependencies
+
+## 🤖 Promptlet System
+
+**Core Components:**
+- **`promptlets.json`**: Single source of truth for all agent tasks
+- **`promptlet-reader.sh`**: Core reader with variable substitution
+- **System validation**: Comprehensive compliance checking
+
+**Usage:**
+```bash
+# Access promptlets with variable substitution
+./scripts/agent/promptlets/promptlet-reader.sh [promptlet_name] [key=value...]
+
+# System validation (enforced by pre-commit hook)
+./scripts/agent/system/validate-promptlet-compliance.sh
+```
+
+## 🔗 Git Hooks Integration
+
+**Automatic Execution via Husky:**
+- **`.husky/pre-commit`**: Quality checks, validation, metadata collection
+- **`.husky/pre-push`**: Changelog automation, documentation workflows
 - **Team consistency**: Hooks install automatically via `npm install`
-- **Enhanced PR workflow**: Commit metadata accumulates automatically for rich PR descriptions
 
 ## 🎯 Benefits
 
