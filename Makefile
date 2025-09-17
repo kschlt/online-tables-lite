@@ -240,7 +240,8 @@ ship:
 		echo "To rename: make branch-rename NAME=$$SUG"; \
 		echo "$(BRANCH_END)"; echo; \
 	fi; \
-	echo "🤖 Agent: Execute JSON task above, then run: make docs-commit pr-open"
+	echo "🤖 Agent: Execute JSON task above, then run: make docs-commit"; \
+	echo "🤖 Agent: Generate PR with: make pr-body → process promptlet → make pr-open BODY=\"result\""
 
 # Commit doc edits (only if there are any)
 docs-commit:
@@ -266,14 +267,15 @@ pr-body:
 	./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" promptlet
 
 # Open PR (push + create GitHub PR)
+# Usage: make pr-open BODY="your markdown description"
 pr-open:
 	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	TITLE=$${TITLE:-$$(git log -1 --pretty='%s' | sed 's/[[:space:]]\+/ /g')}; \
-	BODY_RAW=$$(make -s pr-body); \
-	if echo "$$BODY_RAW" | grep -q "### BEGIN PR BODY"; then \
-		BODY=$$(echo "$$BODY_RAW" | sed -n '/### BEGIN PR BODY/,/### END PR BODY/p' | sed '1d; $$d'); \
-	else \
-		BODY="$$BODY_RAW"; \
+	if [ -z "$$BODY" ]; then \
+		echo "❌ Error: BODY parameter required"; \
+		echo "Usage: make pr-open BODY=\"your markdown description\""; \
+		echo "Workflow: 1) make pr-body → get promptlet 2) process promptlet 3) make pr-open BODY=\"result\""; \
+		exit 1; \
 	fi; \
 	echo "🚀 Pushing $$BRANCH to $(REMOTE)..."; \
 	git push -u $(REMOTE) $$BRANCH >/dev/null 2>&1 || git push -u $(REMOTE) $$BRANCH; \
@@ -485,7 +487,7 @@ help:
 	@echo ""
 	@echo "🤖 Ship Workflow - Agent Commands:"
 	@echo "  make docs-commit     - Commit documentation updates"
-	@echo "  make pr-open         - Push branch + create GitHub PR"
+	@echo "  make pr-open BODY=\"description\" - Push branch + create GitHub PR"
 	@echo ""
 	@echo "🔄 Git Hooks (Automatic):"
 	@echo "  pre-commit          - Auto-runs: cleanup → fix → verify"

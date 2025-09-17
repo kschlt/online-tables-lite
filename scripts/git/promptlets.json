@@ -57,13 +57,15 @@
         "Transform changelog sections into PR summary and impact analysis",
         "Generate intelligent test plan based on change categories",
         "Add contextual information about branch and integration",
-        "Format as comprehensive GitHub-ready markdown PR description"
+        "Format as comprehensive GitHub-ready markdown PR description",
+        "After generating description, execute: make pr-open BODY=\"generated_description\""
       ],
       "context": {
         "branch": "${branch_name}",
         "base_branch": "${base_branch}",
         "changelog": "${changelog_content}"
-      }
+      },
+      "next_step": "make pr-open BODY=\"generated_description\""
     }
   },
   "conventional_commit_generation": {
