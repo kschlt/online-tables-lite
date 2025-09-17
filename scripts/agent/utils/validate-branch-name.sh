@@ -98,7 +98,7 @@ generate_naming_promptlet() {
     local validation_errors="$3"
     
     # Use promptlet library for single source of truth
-    ./scripts/git/promptlet-reader.sh branch_name_compliance \
+    ./scripts/agent/promptlets/promptlet-reader.sh branch_name_compliance \
         current_branch="$current_branch" \
         suggested_name="$suggested_name" \
         validation_errors="$(echo "$validation_errors" | tr '\n' '; ')"

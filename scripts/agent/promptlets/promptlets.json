@@ -62,7 +62,7 @@
         "base_branch": "${base_branch}",
         "changelog": "${changelog_content}"
       },
-      "next_step": "make pr-open BODY=\"generated_description\""
+      "next_step": "./scripts/agent/workflows/pr-workflow.sh create_pr --branch ${branch_name}"
     }
   },
   "conventional_commit_generation": {
@@ -148,7 +148,7 @@
         "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",
         "policy": "Only feat/ and fix/ prefixes allowed by naming policy"
       },
-      "next_step": "make branch-new NAME=generated-branch-name"
+      "next_step": "make branch-new NAME=${generated_branch_name}"
     }
   },
   "documentation_update": {
@@ -164,7 +164,114 @@
         "diff_base": "${diff_base}",
         "branch": "${branch}",
         "changelog_content": "${changelog_content}"
-      }
+      },
+      "next_step": "./scripts/agent/workflows/docs-workflow.sh apply_docs"
+    }
+  },
+  "change_validation": {
+    "task": {
+      "type": "change_validation",
+      "instructions": [
+        "Review validation results for branch changes",
+        "Analyze any issues or conflicts detected",
+        "Decide whether to proceed with PR creation or address issues first"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "base_branch": "${base_branch}",
+        "validation_status": "${validation_status}",
+        "commits_ahead": "${commits_ahead}",
+        "has_uncommitted": "${has_uncommitted}",
+        "conflicts_exist": "${conflicts_exist}",
+        "issues_detected": "${issues_detected}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "pr_finalization": {
+    "task": {
+      "type": "pr_finalization",
+      "instructions": [
+        "PR has been created successfully",
+        "Review PR URL and proceed with finalization tasks",
+        "Verify all post-creation tasks completed successfully"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "pr_url": "${pr_url}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "pr_completion": {
+    "task": {
+      "type": "pr_completion",
+      "instructions": [
+        "Review PR finalization results",
+        "Verify all post-creation tasks completed successfully",
+        "Proceed with next actions if any are required"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "pr_url": "${pr_url}",
+        "completion_status": "${completion_status}",
+        "ci_status": "${ci_status}",
+        "ci_checks_passing": "${ci_checks_passing}",
+        "deployment_needed": "${deployment_needed}",
+        "deployment_reason": "${deployment_reason}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "documentation_commit": {
+    "task": {
+      "type": "documentation_commit",
+      "instructions": [
+        "Documentation changes have been applied",
+        "Review modified files and commit changes"
+      ],
+      "context": {
+        "modified_files": "${modified_files}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "documentation_no_changes": {
+    "task": {
+      "type": "documentation_no_changes",
+      "instructions": [
+        "No documentation changes were detected",
+        "Documentation workflow complete"
+      ],
+      "context": {},
+      "next_step": "${next_step}"
+    }
+  },
+  "workflow_complete": {
+    "task": {
+      "type": "workflow_complete",
+      "instructions": [
+        "Workflow has completed successfully",
+        "All tasks have been finished"
+      ],
+      "context": {
+        "status": "${status}",
+        "commit_message": "${commit_message}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "workflow_error": {
+    "task": {
+      "type": "workflow_error",
+      "instructions": [
+        "Workflow encountered an error",
+        "Manual intervention required"
+      ],
+      "context": {
+        "error": "${error}"
+      },
+      "next_step": "${next_step}"
     }
   },
   "main_branch_rescue": {

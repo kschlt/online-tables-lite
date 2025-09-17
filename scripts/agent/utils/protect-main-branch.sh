@@ -33,7 +33,7 @@ generate_rescue_promptlet() {
     fi
     
     # Use promptlet library for single source of truth
-    ./scripts/git/promptlet-reader.sh main_branch_rescue \
+    ./scripts/agent/promptlets/promptlet-reader.sh main_branch_rescue \
         suggested_branch="$suggested_branch" \
         has_changes="$has_changes" \
         rescue_instructions="$rescue_instructions"

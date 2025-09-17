@@ -35,7 +35,7 @@ generate_pr_description_promptlet() {
     fi
     
     # Pass git-cliff data to AI promptlet for enriched reasoning and formatting
-    ./scripts/git/promptlet-reader.sh pr_description \
+    ./scripts/agent/promptlets/promptlet-reader.sh pr_description \
         branch_name="$branch" \
         base_branch="main" \
         changelog_content="$(echo "$changelog_content" | sed 's/"/\\"/g' | tr '\n' '|')"

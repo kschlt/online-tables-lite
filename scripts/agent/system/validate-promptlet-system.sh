@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_FILE="$SCRIPT_DIR/promptlet-template.json"
-PROMPTLETS_FILE="$SCRIPT_DIR/../data/promptlets.json"
+PROMPTLETS_FILE="$SCRIPT_DIR/../promptlets/promptlets.json"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Colors for output

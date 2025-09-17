@@ -157,7 +157,7 @@ commit:
 	COMMIT_TYPES=$$(grep -E '^\s*\{\s*message\s*=\s*"\^[a-z]+' cliff.toml 2>/dev/null | sed -E 's/.*"\^([a-z]+).*/\1/' | tr '\n' '|' | sed 's/|$$//' || echo "feat|fix|docs|refactor|chore|test|ci|build|perf"); \
 	CLIFF_CONFIG_STATUS=$$(if [ -f "cliff.toml" ]; then echo "✅ Using cliff.toml configuration"; else echo "⚠️ cliff.toml not found, using defaults"; fi); \
 	SAMPLE_ANALYSIS=$$(git-cliff --unreleased --context 2>/dev/null | jq -r '.commits[0].message // "No recent commits"' 2>/dev/null || echo "No context available"); \
-	./scripts/git/promptlet-reader.sh conventional_commit_generation \
+	./scripts/agent/promptlets/promptlet-reader.sh conventional_commit_generation \
 		staged_files="$$STAGED" \
 		suggested_version="$$PREVIEW" \
 		diff_summary="$$DIFF_SUMMARY" \
@@ -188,7 +188,7 @@ BRANCH_END   := ### END BRANCH SUGGESTION
 
 # Generate documentation update promptlet (for agent processing)
 ship:
-	@./scripts/workflows/docs.sh
+	@./scripts/agent/workflows/docs-workflow.sh generate_docs
 
 # Commit doc edits (only if there are any)
 docs-commit:
@@ -208,9 +208,13 @@ pr-title-suggest:
 	[[ -n "$$TITLE" ]] || TITLE="Update: miscellaneous changes"; \
 	echo "$(TITLE_BEGIN)"; echo "$$TITLE"; echo "$(TITLE_END)"
 
+# Validate changes before PR creation
+pr-validate:
+	@./scripts/agent/workflows/pr-workflow.sh validate_changes
+
 # Generate PR description promptlet (for agent processing)
 pr-body:
-	@./scripts/workflows/pr.sh
+	@./scripts/agent/workflows/pr-workflow.sh pr_body
 
 # Open PR (push + create GitHub PR)
 # Usage: make pr-open BODY="your markdown description"
@@ -253,7 +257,7 @@ branch-suggest:
 	echo "Current: $$BRANCH"; echo "Suggested: $$SUG"; \
 	echo "To rename: make branch-rename NAME=$$SUG"; \
 	echo; \
-	./scripts/git/promptlet-reader.sh branch_evaluation \
+	./scripts/agent/promptlets/promptlet-reader.sh branch_evaluation \
 		current_branch="$$BRANCH" \
 		suggested_name="$$SUG" \
 		changes_context="Recent commits and file changes"; \
@@ -262,14 +266,14 @@ branch-suggest:
 # Validate promptlet system (multi-stage compliance)
 validate-promptlets:
 	@echo "🤖 Validating promptlet system compliance..."
-	@./scripts/git/validate-promptlet-system.sh --force
+	@./scripts/agent/system/validate-promptlet-system.sh --force
 
 # Rename branch (PR-safe)
 branch-rename:
 	@NEW=$${NAME:-}; \
 	if [ -z "$$NEW" ]; then \
 		echo "Usage: make branch-rename NAME=feat/good-name"; \
-		echo "💡 Get naming suggestion: ./scripts/git/validate-branch-name.sh \$$(git rev-parse --abbrev-ref HEAD) suggest"; \
+		echo "💡 Get naming suggestion: ./scripts/agent/utils/validate-branch-name.sh \$$(git rev-parse --abbrev-ref HEAD) suggest"; \
 		exit 2; \
 	fi; \
 	CUR=$$(git rev-parse --abbrev-ref HEAD); \
@@ -278,9 +282,9 @@ branch-rename:
 		exit 1; \
 	fi; \
 	echo "🔍 Validating new branch name: $$NEW"; \
-	if ! ./scripts/git/validate-branch-name.sh "$$NEW" validate >/dev/null 2>&1; then \
+	if ! ./scripts/agent/utils/validate-branch-name.sh "$$NEW" validate >/dev/null 2>&1; then \
 		echo "❌ New branch name '$$NEW' violates naming policy"; \
-		./scripts/git/validate-branch-name.sh "$$NEW" promptlet; \
+		./scripts/agent/utils/validate-branch-name.sh "$$NEW" promptlet; \
 		exit 1; \
 	fi; \
 	echo "✅ New branch name is compliant"; \
@@ -326,7 +330,7 @@ branch-new:
 		if ! git diff --quiet || ! git diff --cached --quiet; then \
 			echo "⚠️  You have uncommitted changes"; \
 			ACTION_INSTRUCTION=$$(if ! git diff --cached --quiet; then echo "Changes are staged - ready for commit. Execute: make commit, then retry make branch-new"; else echo "Changes are unstaged - stash before proceeding. Execute: git stash && make branch-new && git stash pop"; fi); \
-			./scripts/git/promptlet-reader.sh uncommitted_changes_handling \
+			./scripts/agent/promptlets/promptlet-reader.sh uncommitted_changes_handling \
 				current_branch="$$CURRENT_BRANCH" \
 				has_staged_changes="$$(if ! git diff --cached --quiet; then echo "true"; else echo "false"; fi)" \
 				has_unstaged_changes="$$(if ! git diff --quiet; then echo "true"; else echo "false"; fi)" \
@@ -356,7 +360,7 @@ branch-new:
 			echo "⚠️  Found $$PR_COUNT open PR(s):"; \
 			echo "$$OPEN_PRS" | jq -r '.[] | "  #\(.number): \(.title) (\(.headRefName))"' 2>/dev/null || echo "  Could not parse PR details"; \
 			echo; \
-			./scripts/git/promptlet-reader.sh branch_creation_with_open_prs \
+			./scripts/agent/promptlets/promptlet-reader.sh branch_creation_with_open_prs \
 				open_prs="$$OPEN_PRS" \
 				pr_count="$$PR_COUNT"; \
 		else \
@@ -370,11 +374,11 @@ branch-new:
 		BRANCH_NAME=$${NAME:-}; \
 		if [ -z "$$BRANCH_NAME" ]; then \
 			echo; \
-			./scripts/git/promptlet-reader.sh branch_name_generation \
+			./scripts/agent/promptlets/promptlet-reader.sh branch_name_generation \
 				open_prs="$$PR_COUNT"; \
 		else \
 			echo "🔍 Validating branch name: $$BRANCH_NAME"; \
-			if ./scripts/git/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \
+			if ./scripts/agent/utils/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \
 				echo "✅ Branch name is compliant"; \
 				echo "🌿 Creating branch: $$BRANCH_NAME"; \
 				git checkout -b "$$BRANCH_NAME"; \
@@ -389,7 +393,7 @@ branch-new:
 				echo "❌ Branch name '$$BRANCH_NAME' violates naming policy"; \
 				echo "💡 Getting compliance guidance..."; \
 				echo; \
-				./scripts/git/validate-branch-name.sh "$$BRANCH_NAME" promptlet; \
+				./scripts/agent/utils/validate-branch-name.sh "$$BRANCH_NAME" promptlet; \
 				exit 1; \
 			fi; \
 		fi; \
