@@ -138,25 +138,88 @@ fix:
 	cd apps/api && source venv/bin/activate && ruff check --fix . && ruff format .
 	@echo "✅ All fixes applied!"
 
+# ---------- Staging workflow (intelligent file staging with agent decision) ----------
+
+# Intelligent staging with agent decision-making for file selection
+stage:
+	@echo "🔍 Analyzing changes for staging..."
+	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
+	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
+	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
+	TOTAL_CHANGES=$$((STAGED + UNSTAGED + UNTRACKED)); \
+	if [ "$$TOTAL_CHANGES" -eq 0 ]; then \
+		echo "ℹ️  No changes found. Working tree is clean."; \
+		exit 0; \
+	fi; \
+	echo "📊 Change Summary:"; \
+	echo "  📝 Staged: $$STAGED files"; \
+	echo "  ✏️  Modified: $$UNSTAGED files"; \
+	echo "  🆕 Untracked: $$UNTRACKED files"; \
+	echo; \
+	if [ "$$UNSTAGED" -gt 0 ] || [ "$$UNTRACKED" -gt 0 ]; then \
+		echo "📋 Modified files:"; \
+		git diff --name-only | head -10 | sed 's/^/  - /' || true; \
+		if [ "$$UNTRACKED" -gt 0 ]; then \
+			echo "📋 Untracked files:"; \
+			git ls-files --others --exclude-standard | head -10 | sed 's/^/  - /' || true; \
+		fi; \
+		echo; \
+		RELEVANT_PATTERNS="\.md$$|\.json$$|\.js$$|\.ts$$|\.tsx$$|\.py$$|\.sh$$|Makefile$$|\.toml$$|\.yaml$$|\.yml$$|\.env"; \
+		RELEVANT_FILES=$$(git diff --name-only && git ls-files --others --exclude-standard | grep -E "$$RELEVANT_PATTERNS" || true); \
+		IGNORE_PATTERNS="node_modules|\.next|dist|build|venv|\.git|\.agent|package-lock\.json|\.log$$|\.tmp$$"; \
+		FILTERED_FILES=$$(echo "$$RELEVANT_FILES" | grep -vE "$$IGNORE_PATTERNS" || true); \
+		if [ -n "$$FILTERED_FILES" ]; then \
+			echo "🎯 Relevant files detected for staging:"; \
+			echo "$$FILTERED_FILES" | sed 's/^/  + /' | head -15; \
+			if [ "$${AUTO_STAGE:-false}" = "true" ]; then \
+				echo "⚡ AUTO_STAGE=true: Staging relevant files automatically..."; \
+				echo "$$FILTERED_FILES" | xargs git add; \
+				echo "✅ Relevant files staged automatically"; \
+			else \
+				$(AGENT_PROMPTLETS)/promptlet-reader.sh file_staging_decision \
+					total_changes="$$TOTAL_CHANGES" \
+					staged_count="$$STAGED" \
+					modified_count="$$UNSTAGED" \
+					untracked_count="$$UNTRACKED" \
+					relevant_files="$$(echo "$$FILTERED_FILES" | tr '\n' '|' | sed 's/|$$//')" \
+					auto_stage_command="make stage AUTO_STAGE=true" \
+					manual_stage_help="git add <specific-files>"; \
+			fi; \
+		else \
+			echo "⚠️  No obviously relevant files detected for automatic staging"; \
+			echo "💡 Use: git add <specific-files> for manual staging"; \
+			$(AGENT_PROMPTLETS)/promptlet-reader.sh manual_staging_required \
+				total_changes="$$TOTAL_CHANGES" \
+				modified_files="$$(git diff --name-only | tr '\n' '|' | sed 's/|$$//')" \
+				untracked_files="$$(git ls-files --others --exclude-standard | tr '\n' '|' | sed 's/|$$//')" \
+				staging_help="Use git add to stage specific files, then run make commit"; \
+		fi; \
+	else \
+		echo "✅ All changes are already staged ($$STAGED files)"; \
+		echo "💡 Ready for commit: make commit"; \
+	fi
+
 # ---------- Commit workflow (conventional commits with git-cliff) ----------
 
 # Generate conventional commit message using git-cliff configuration and agent assistance
 # Shows branch context to prevent accidental commits on wrong branch
 commit:
 	@echo "🌿 Current branch: $$(git rev-parse --abbrev-ref HEAD)"
-	@echo "🔍 Checking for changes..."
+	@echo "🔍 Checking for staged changes..."
 	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
 	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
 	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
-	TOTAL_CHANGES=$$((STAGED + UNSTAGED + UNTRACKED)); \
-	if [ "$$TOTAL_CHANGES" -eq 0 ]; then \
-		echo "ℹ️  No changes found. Working tree is clean - skipping commit."; \
-		exit 0; \
-	fi; \
 	if [ "$$STAGED" -eq 0 ]; then \
-		echo "📁 Staging $$((UNSTAGED + UNTRACKED)) file(s)..."; \
-		git add -A; \
-		echo "✅ Files staged. Generating commit message..."; \
+		if [ "$$((UNSTAGED + UNTRACKED))" -eq 0 ]; then \
+			echo "ℹ️  No changes found. Working tree is clean - skipping commit."; \
+			exit 0; \
+		else \
+			echo "❌ No files staged for commit."; \
+			echo "💡 Use 'make stage' to intelligently stage files, or:"; \
+			echo "   git add <specific-files>  # Stage specific files"; \
+			echo "   make stage AUTO_STAGE=true  # Auto-stage relevant files"; \
+			exit 1; \
+		fi; \
 	else \
 		echo "📝 Found $$STAGED staged file(s). Generating commit message..."; \
 	fi; \

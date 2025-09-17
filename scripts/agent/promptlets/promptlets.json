@@ -292,5 +292,44 @@
         }
       }
     }
+  },
+  "file_staging_decision": {
+    "task": {
+      "type": "file_staging_decision",
+      "instructions": [
+        "Review detected relevant files for staging",
+        "Decide whether to auto-stage relevant files or stage manually",
+        "Execute appropriate staging command based on decision"
+      ],
+      "context": {
+        "total_changes": "${total_changes}",
+        "staged_count": "${staged_count}",
+        "modified_count": "${modified_count}",
+        "untracked_count": "${untracked_count}",
+        "relevant_files": "${relevant_files}",
+        "staging_options": {
+          "auto_stage": "Execute: ${auto_stage_command}",
+          "manual_stage": "Use: ${manual_stage_help}"
+        }
+      },
+      "next_step": "Execute chosen staging command, then make commit"
+    }
+  },
+  "manual_staging_required": {
+    "task": {
+      "type": "manual_staging_required",
+      "instructions": [
+        "No automatically stageable files detected",
+        "Manual file selection required for staging",
+        "Review files and stage specific ones manually"
+      ],
+      "context": {
+        "total_changes": "${total_changes}",
+        "modified_files": "${modified_files}",
+        "untracked_files": "${untracked_files}",
+        "staging_help": "${staging_help}"
+      },
+      "next_step": "Review files, use git add <files> for specific staging, then make commit"
+    }
   }
 }
