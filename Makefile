@@ -141,7 +141,9 @@ fix:
 # ---------- Commit workflow (conventional commits with git-cliff) ----------
 
 # Generate conventional commit message using git-cliff configuration and agent assistance
+# Shows branch context to prevent accidental commits on wrong branch
 commit:
+	@echo "🌿 Current branch: $$(git rev-parse --abbrev-ref HEAD)"
 	@echo "🔍 Checking for changes..."
 	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
 	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
@@ -194,7 +196,16 @@ BRANCH_BEGIN := ### BEGIN BRANCH SUGGESTION
 BRANCH_END   := ### END BRANCH SUGGESTION
 
 # Generate documentation update promptlet (for agent processing)
+# Always shows current branch context to prevent confusion
 ship:
+	@echo "🔍 Validating current branch before ship workflow..."; \
+	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" = "main" ] || [ "$$BRANCH" = "production" ]; then \
+		echo "❌ Cannot ship from protected branch: $$BRANCH"; \
+		echo "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"; \
+		exit 1; \
+	fi; \
+	echo "✅ Branch validation passed: $$BRANCH"; \
 	@$(AGENT_WORKFLOWS)/docs-workflow.sh generate_docs
 
 # Commit doc edits (only if there are any)
@@ -226,7 +237,20 @@ pr-body:
 # Open PR (push + create GitHub PR)
 # Usage: make pr-open BODY="your markdown description"
 pr-open:
-	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	@echo "🔍 Validating branch before PR creation..."; \
+	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	if [ "$$BRANCH" = "main" ] || [ "$$BRANCH" = "production" ]; then \
+		echo "❌ Cannot create PR from protected branch: $$BRANCH"; \
+		echo "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"; \
+		exit 1; \
+	fi; \
+	if ! $(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH" validate >/dev/null 2>&1; then \
+		echo "❌ Branch name '$$BRANCH' violates naming policy - consider renaming before PR"; \
+		echo "💡 Get compliant name: $(AGENT_UTILS)/validate-branch-name.sh $$BRANCH suggest"; \
+		echo "💡 Rename branch: make branch-rename NAME=\$$($(AGENT_UTILS)/validate-branch-name.sh $$BRANCH suggest)"; \
+		echo "⚠️  Proceeding anyway, but consider fixing branch name..."; \
+	fi; \
+	echo "✅ Branch validation completed: $$BRANCH"; \
 	TITLE=$${TITLE:-$$(git log -1 --pretty='%s' | sed 's/[[:space:]]\+/ /g')}; \
 	if [ -z "$$BODY" ]; then \
 		echo "❌ Error: BODY parameter required"; \

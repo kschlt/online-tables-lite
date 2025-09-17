@@ -68,6 +68,38 @@ validate_changes() {
         return 1
     fi
     
+    # Branch name validation and context display
+    print_color $BLUE "🌿 Current branch: $branch"
+    if [ "$branch" = "main" ] || [ "$branch" = "production" ]; then
+        print_color $RED "❌ Cannot create PR from protected branch: $branch"
+        
+        $PROMPTLET_READER branch_protection_error \
+            current_branch="$branch" \
+            next_step="make branch-new NAME=feat/your-feature"
+        return 1
+    fi
+    
+    # Validate branch naming compliance
+    if ! $AGENT_BASE/utils/validate-branch-name.sh "$branch" validate >/dev/null 2>&1; then
+        print_color $YELLOW "⚠️  Branch name '$branch' violates naming policy"
+        local suggested_name=$($AGENT_BASE/utils/validate-branch-name.sh "$branch" suggest)
+        print_color $BLUE "💡 Suggested compliant name: $suggested_name"
+        print_color $BLUE "💡 Rename with: make branch-rename NAME=$suggested_name"
+        echo
+    fi
+    
+    # Validate work context vs branch name
+    if ! $AGENT_BASE/utils/validate-work-context.sh "$branch" validate "$base_branch" >/dev/null 2>&1; then
+        print_color $YELLOW "🎯 Work context analysis:"
+        $AGENT_BASE/utils/validate-work-context.sh "$branch" validate "$base_branch" || true
+        local suggested_work_name=$($AGENT_BASE/utils/validate-work-context.sh "$branch" suggest "$base_branch")
+        print_color $BLUE "💡 Work-based suggestion: $suggested_work_name"
+        print_color $BLUE "💡 Rename with: make branch-rename NAME=$suggested_work_name"
+        echo
+    else
+        print_color $GREEN "✅ Branch name matches work being done"
+    fi
+    
     print_trace "VALIDATE" "Starting validation for branch: $branch"
     
     # Check if branch exists
