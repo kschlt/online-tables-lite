@@ -205,7 +205,7 @@ ship:
 		echo "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"; \
 		exit 1; \
 	fi; \
-	echo "✅ Branch validation passed: $$BRANCH"; \
+	echo "✅ Branch validation passed: $$BRANCH"
 	@$(AGENT_WORKFLOWS)/docs-workflow.sh generate_docs
 
 # Commit doc edits (only if there are any)
