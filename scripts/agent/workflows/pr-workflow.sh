@@ -25,25 +25,7 @@ DOCS_WORKFLOW="$AGENT_BASE/workflows/docs-workflow.sh"
 # Source cache utilities
 . "$CACHE_UTIL"
 
-# Function to source docs workflow functions without executing main
-source_docs_functions() {
-    # Source docs-workflow.sh functions by redefining main to prevent execution
-    local original_main=$(declare -f main 2>/dev/null || echo "")
-
-    # Temporarily disable main function
-    main() { :; }
-
-    # Source the docs workflow file to import functions
-    . "$DOCS_WORKFLOW"
-
-    # Restore original main if it existed
-    if [ -n "$original_main" ]; then
-        eval "$original_main"
-    fi
-}
-
-# Source docs workflow functions
-source_docs_functions
+# Note: Removed source_docs_functions to prevent recursion during sourcing
 
 # Colors for output and traceability
 RED='\033[0;31m'
