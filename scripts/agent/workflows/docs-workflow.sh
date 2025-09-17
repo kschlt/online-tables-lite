@@ -14,6 +14,10 @@
 
 set -e
 
+# Path constants
+AGENT_BASE="./scripts/agent"
+PROMPTLET_READER="$AGENT_BASE/promptlets/promptlet-reader.sh"
+
 # Colors for output and traceability
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -70,7 +74,7 @@ generate_docs() {
     print_color $GREEN "✅ Retrieved changelog data for documentation analysis"
     
     # Generate documentation update promptlet
-    ./scripts/agent/promptlets/promptlet-reader.sh documentation_update \
+    $PROMPTLET_READER documentation_update \
         diff_base="$base" \
         branch="$branch" \
         changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
@@ -107,14 +111,14 @@ apply_docs() {
         done
         
         # Generate commit promptlet
-        ./scripts/agent/promptlets/promptlet-reader.sh documentation_commit \
+        $PROMPTLET_READER documentation_commit \
             modified_files="$(echo "$modified_docs" | tr '\n' '|')" \
             next_step="./scripts/agent/workflows/docs-workflow.sh commit_docs"
     else
         print_color $YELLOW "⚠️  No documentation changes detected"
         
         # Generate no-op promptlet
-        ./scripts/agent/promptlets/promptlet-reader.sh documentation_no_changes \
+        $PROMPTLET_READER documentation_no_changes \
             next_step="WORKFLOW_COMPLETE"
     fi
     
@@ -143,7 +147,7 @@ commit_docs() {
     if git diff --quiet HEAD; then
         print_color $YELLOW "⚠️  No changes to commit"
         
-        ./scripts/agent/promptlets/promptlet-reader.sh workflow_complete \
+        $PROMPTLET_READER workflow_complete \
             status="no_changes" \
             next_step="WORKFLOW_COMPLETE"
         
@@ -161,14 +165,14 @@ commit_docs() {
     if git commit -m "$commit_message"; then
         print_color $GREEN "✅ Documentation changes committed successfully"
         
-        ./scripts/agent/promptlets/promptlet-reader.sh workflow_complete \
+        $PROMPTLET_READER workflow_complete \
             status="success" \
             commit_message="$commit_message" \
             next_step="WORKFLOW_COMPLETE"
     else
         print_color $RED "❌ Failed to commit documentation changes"
         
-        ./scripts/agent/promptlets/promptlet-reader.sh workflow_error \
+        $PROMPTLET_READER workflow_error \
             error="commit_failed" \
             next_step="MANUAL_INTERVENTION_REQUIRED"
     fi

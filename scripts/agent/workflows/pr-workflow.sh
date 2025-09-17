@@ -16,6 +16,10 @@
 
 set -e
 
+# Path constants
+AGENT_BASE="./scripts/agent"
+PROMPTLET_READER="$AGENT_BASE/promptlets/promptlet-reader.sh"
+
 # Colors for output and traceability
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -126,7 +130,7 @@ validate_changes() {
     print_trace "RESULTS" "Validation status: $validation_status"
     
     # Output validation promptlet
-    ./scripts/agent/promptlets/promptlet-reader.sh change_validation \
+    $PROMPTLET_READER change_validation \
         branch="$branch" \
         base_branch="$base_branch" \
         validation_status="$validation_status" \
@@ -191,7 +195,7 @@ pr_body() {
     print_color $GREEN "✅ Retrieved changelog data for PR description"
     
     # Generate PR description promptlet
-    ./scripts/agent/promptlets/promptlet-reader.sh pr_description \
+    $PROMPTLET_READER pr_description \
         branch_name="$branch" \
         base_branch="main" \
         diff_base="$base" \
@@ -251,7 +255,7 @@ create_pr() {
         print_color $GREEN "✅ PR created successfully: $pr_url"
         
         # Generate finalization promptlet
-        ./scripts/agent/promptlets/promptlet-reader.sh pr_finalization \
+        $PROMPTLET_READER pr_finalization \
             branch="$branch" \
             pr_url="$pr_url" \
             next_step="./scripts/agent/workflows/pr-workflow.sh finalize_pr --branch $branch --pr-url $pr_url"
@@ -337,7 +341,7 @@ finalize_pr() {
     print_trace "RESULTS" "Finalization status: $completion_status"
     
     # Output finalization promptlet
-    ./scripts/agent/promptlets/promptlet-reader.sh pr_completion \
+    $PROMPTLET_READER pr_completion \
         branch="$branch" \
         pr_url="$pr_url" \
         completion_status="$completion_status" \
