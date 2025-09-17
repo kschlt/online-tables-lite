@@ -25,17 +25,12 @@
 1. `make stage` - Intelligent file staging (follow JSON task for decisions)
 2. `make commit` - Generate conventional commit message (follow JSON task)
 3. Execute: `git commit -m "generated-conventional-message"`
-4. If pre-commit hook fails: fix problems and retry
-
 **Conventional Commit Format**:
 - Use format: `type(scope): description`
 - Types: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `ci`, `build`, `perf`
-- Examples:
-  - `feat(ui): add user dashboard`
-  - `fix(api): resolve authentication issue`
-  - `docs: update README with setup instructions`
 - Breaking changes: add `!` after type (e.g., `feat!: breaking change`)
 - Let git-cliff preview guide the appropriate commit type
+4. If pre-commit hook fails: fix problems and retry
 
 ### When to Push
 **User triggers**: "push", "create PR", "open PR", "make PR"
