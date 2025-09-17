@@ -22,26 +22,16 @@
 **User triggers**: "commit", "commit changes", "save changes"
 1. Print "🤖 Commit workflow has been triggered. Starting execution..."
 2. `make stage` - Intelligent file staging (follow JSON task for decisions)
-3. `make commit` - Generate conventional commit message (follow JSON task)
-4. Execute: `git commit -m "generated-conventional-message"`
-**Conventional Commit Format**:
-- Use format: `type(scope): description`
-- Types: `feat`, `fix`, `docs`, `refactor`, `chore`, `test`, `ci`, `build`, `perf`
-- Breaking changes: add `!` after type (e.g., `feat!: breaking change`)
-- Let git-cliff preview guide the appropriate commit type
-5. If pre-commit hook fails: fix problems and retry
+3. `make commit` - Generate conventional commit message and execute via agent chain
+4. If pre-commit hook fails: fix problems and retry
 
 ### When to Push
 **User triggers**: "push", "create PR", "open PR", "make PR"
-1. Print "🤖 Push & PR to Main workflow triggert. Starting execution..."
-2. `make pr-prepare` - Complete automation pipeline
-3. Process the generated promptlet into PR title and body
-4. `make pr-open TITLE="title" BODY="markdown"` - Create GitHub PR
-5. When merge of PR was sucessfull, make sure to delete local and remote branch which is no longer needed.
-
+1. Print "🤖 Push & PR to Main workflow triggered. Starting execution..."
+2. `make pr-prepare` - Automated pipeline with agent chain
 
 ## Forbidden
-- Additional terminals
-- Raw package commands  
-- Direct commits to main/production
-- Commiting without trigger by user
+  - Additional terminals
+  - Raw package commands
+  - Direct commits to main/production
+  - Committing without trigger by user

@@ -74,7 +74,7 @@
         "Generate conventional commit message: type(scope): description (<72 chars)",
         "Ensure format matches cliff.toml commit_parsers configuration",
         "Validate with: echo \"message\" | git-cliff --unreleased --context",
-        "Execute: git commit -m \"generated-message\""
+        "Execute next step with your generated message"
       ],
       "context": {
         "staged_files": "${staged_files}",
@@ -93,7 +93,36 @@
         ],
         "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)",
         "validation": "Use git-cliff --context to validate message format"
-      }
+      },
+      "next_step": "./scripts/agent/workflows/commit-workflow.sh execute_commit --message \"YOUR_GENERATED_MESSAGE\""
+    }
+  },
+  "commit_complete": {
+    "task": {
+      "type": "commit_complete",
+      "instructions": [
+        "Commit executed successfully",
+        "Workflow complete - ready for next development cycle"
+      ],
+      "context": {
+        "message": "${message}",
+        "status": "${status}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "commit_error": {
+    "task": {
+      "type": "commit_error",
+      "instructions": [
+        "Commit execution failed",
+        "Review error and retry or fix issues manually"
+      ],
+      "context": {
+        "message": "${message}",
+        "error": "${error}"
+      },
+      "next_step": "${next_step}"
     }
   },
   "uncommitted_changes_handling": {
