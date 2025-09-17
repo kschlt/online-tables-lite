@@ -6,7 +6,9 @@
 set -e
 
 # Cache file location
-readonly CACHE_FILE=".git/commit-cache/last-commit-meta"
+if [ -z "$CACHE_FILE" ]; then
+    readonly CACHE_FILE=".git/commit-cache/last-commit-meta"
+fi
 
 # Global variables to store cached data
 CACHE_LOADED=false
