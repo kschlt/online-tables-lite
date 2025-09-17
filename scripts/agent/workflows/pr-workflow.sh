@@ -189,15 +189,23 @@ validate_changes() {
         next_step="NO-OP"
     fi
 
-    # If validation passed or just warnings, start documentation workflow (auto-chain)
+    # If validation passed or just warnings, generate promptlet to continue workflow
     if [ "$validation_status" = "passed" ] || ([ "$validation_status" = "warning" ] && [ "$workflow_origin" != "pr-workflow" ]); then
-        print_color $GREEN "✅ Auto-chaining to documentation workflow..."
-        # Call documentation workflow and continue based on its result
-        ./scripts/agent/workflows/docs-workflow.sh generate_docs "$branch" main --workflow-origin "$workflow_origin"
+        print_color $GREEN "✅ Validation passed - continuing to documentation step..."
 
-        # After docs workflow, continue to push step
-        print_color $GREEN "✅ Auto-chaining to push step..."
-        ./scripts/agent/workflows/pr-workflow.sh push_branch --branch "$branch" --workflow-origin "$workflow_origin"
+        # Generate promptlet to continue with docs workflow
+        $PROMPTLET_READER change_validation \
+            branch="$branch" \
+            base_branch="$base_branch" \
+            validation_status="$validation_status" \
+            commits_ahead="$commits_ahead" \
+            has_uncommitted="$has_uncommitted" \
+            conflicts_exist="false" \
+            workflow_origin="$workflow_origin" \
+            issues_detected="" \
+            next_step="./scripts/agent/workflows/docs-workflow.sh generate_docs $branch main --workflow-origin $workflow_origin"
+
+        print_trace "OUTPUT" "Generated validation success promptlet with next_step: docs workflow"
         return 0
     fi
     
@@ -321,9 +329,24 @@ push_branch() {
     if git push -u origin "$branch"; then
         print_color $GREEN "✅ Branch pushed successfully"
 
-        # Auto-chain to pr_body (hook already ran during push)
-        print_color $GREEN "✅ Auto-chaining to PR description generation..."
-        ./scripts/agent/workflows/pr-workflow.sh pr_body --branch "$branch" --workflow-origin "$workflow_origin"
+        # Generate promptlet to continue with PR body generation
+        print_color $GREEN "✅ Branch pushed - ready for PR description generation..."
+
+        # Check if push hook generated task instruction
+        if git log -1 --format=%B | grep -q '"task".*"pr_creation_workflow"'; then
+            # Pre-push hook already generated task - extract next step
+            local next_step=$(git log -1 --format=%B | grep -o '"next_step": "[^"]*"' | cut -d'"' -f4)
+            if [ -n "$next_step" ]; then
+                print_color $GREEN "✅ Pre-push hook provided next step: $next_step"
+                exec $next_step
+            fi
+        fi
+
+        # Fallback: generate standard promptlet
+        $PROMPTLET_READER task \
+            type="pr_creation_workflow" \
+            context="branch_pushed" \
+            next_step="./scripts/agent/workflows/pr-workflow.sh pr_body --branch $branch --workflow-origin $workflow_origin"
     else
         print_color $RED "❌ Failed to push branch"
         return 1
