@@ -120,13 +120,20 @@ validate_changes() {
     # Check for merge conflicts with base branch
     local base_commit=$(git merge-base "$base_branch" "$branch" 2>/dev/null)
     local conflicts_exist=false
-    
+
     if [ -n "$base_commit" ]; then
-        if git merge-tree "$base_commit" "$base_branch" "$branch" | grep -q "<<<<<<< "; then
-            print_color $YELLOW "⚠️  Potential merge conflicts detected"
-            conflicts_exist=true
+        # Check if this is a fast-forward merge (no conflicts possible)
+        local base_head=$(git rev-parse "$base_branch" 2>/dev/null)
+        if [ "$base_commit" = "$base_head" ]; then
+            print_color $GREEN "✅ Fast-forward merge - no conflicts possible"
         else
-            print_color $GREEN "✅ No merge conflicts detected"
+            # Only check for conflicts if base has moved ahead
+            if git merge-tree "$base_commit" "$base_branch" "$branch" | grep -q "<<<<<<< "; then
+                print_color $YELLOW "⚠️  Merge conflicts detected"
+                conflicts_exist=true
+            else
+                print_color $GREEN "✅ No merge conflicts detected"
+            fi
         fi
     fi
     
@@ -150,7 +157,7 @@ validate_changes() {
     if [ "$conflicts_exist" = true ]; then
         validation_status="conflicts"
         issues_detected="${issues_detected}- Merge conflicts with $base_branch branch\\n"
-        next_step="./scripts/git/resolve-conflicts.sh --branch $branch --base $base_branch"
+        next_step="git rebase $base_branch  # Resolve conflicts manually, then continue with: make pr-workflow"
     fi
 
     if [ "$commits_ahead" -eq 0 ]; then
