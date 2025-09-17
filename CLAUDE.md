@@ -13,14 +13,14 @@
 ## Development Workflow
 
 ### Where the development work happens
-@echo "🤖 Development workflow triggert. Starting execution..."
+**Agent action**: Print "🤖 Development workflow triggert. Starting execution..."
 - Work only in feature branches (one active branch at a time)  
 - Use `make branch-new` - automated workflow with smart checks
 - No direct commits to main
 
 ### When to Commit
 **User triggers**: "commit", "commit changes", "save changes"
-@echo "🤖 Commit workflow has been triggered. Starting execution..."
+**Agent action**: Print "🤖 Commit workflow has been triggered. Starting execution..."
 **Enhanced Workflow with Intelligent Staging**:
 1. `make stage` - Intelligent file staging (follow JSON task for decisions)
 2. `make commit` - Generate conventional commit message (follow JSON task)
@@ -34,7 +34,7 @@
 
 ### When to Push
 **User triggers**: "push", "create PR", "open PR", "make PR"
-@echo "🤖 Push & PR to Main workflow triggert. Starting execution..."
+**Agent action**: Print "🤖 Push & PR to Main workflow triggert. Starting execution..."
 **Workflow Commands**:
 1. `make pr-prepare` - Complete automation pipeline
 2. Process the generated promptlet into PR title and body

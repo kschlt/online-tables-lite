@@ -215,9 +215,7 @@ commit:
 			exit 0; \
 		else \
 			echo "❌ No files staged for commit."; \
-			echo "💡 Use 'make stage' to intelligently stage files, or:"; \
-			echo "   git add <specific-files>  # Stage specific files"; \
-			echo "   make stage AUTO_STAGE=true  # Auto-stage relevant files"; \
+			echo "💡 Use 'make stage' to intelligently stage files"; \
 			exit 1; \
 		fi; \
 	else \
