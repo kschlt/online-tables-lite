@@ -58,7 +58,7 @@ env/
 .agent/
 .cursor/
 *.claude*
-CLAUDE.md
+
 # Backup files and temporary agent files
 *.backup
 *.bak

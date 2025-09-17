@@ -234,34 +234,63 @@ pr-validate:
 pr-body:
 	@$(AGENT_WORKFLOWS)/pr-workflow.sh pr_body
 
-# Open PR (push + create GitHub PR)
-# Usage: make pr-open BODY="your markdown description"
-pr-open:
-	@echo "🔍 Validating branch before PR creation..."; \
+
+# Complete automation pipeline and prepare PR (agent decision point)
+pr-prepare:
+	@echo "🚀 Starting complete automation pipeline..."; \
+	echo "📋 Step 1/5: Documentation generation"; \
+	$(MAKE) ship; \
+	echo "📋 Step 2/5: Documentation commit"; \
+	$(MAKE) docs-commit; \
+	echo "📋 Step 3/5: Branch validation and push"; \
 	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	echo "🌿 Current branch: $$BRANCH"; \
 	if [ "$$BRANCH" = "main" ] || [ "$$BRANCH" = "production" ]; then \
-		echo "❌ Cannot create PR from protected branch: $$BRANCH"; \
+		echo "❌ Cannot push from protected branch: $$BRANCH"; \
 		echo "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"; \
 		exit 1; \
 	fi; \
 	if ! $(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH" validate >/dev/null 2>&1; then \
-		echo "❌ Branch name '$$BRANCH' violates naming policy - consider renaming before PR"; \
+		echo "⚠️  Branch name '$$BRANCH' violates naming policy"; \
 		echo "💡 Get compliant name: $(AGENT_UTILS)/validate-branch-name.sh $$BRANCH suggest"; \
 		echo "💡 Rename branch: make branch-rename NAME=\$$($(AGENT_UTILS)/validate-branch-name.sh $$BRANCH suggest)"; \
 		echo "⚠️  Proceeding anyway, but consider fixing branch name..."; \
 	fi; \
 	echo "✅ Branch validation completed: $$BRANCH"; \
+	echo "📤 Pushing $$BRANCH to $(REMOTE)..."; \
+	git push -u $(REMOTE) $$BRANCH; \
+	echo "📋 Step 4/5: PR description generation"; \
+	$(MAKE) pr-body; \
+	echo "📋 Step 5/5: All automation complete"; \
+	echo "✅ Automation pipeline completed successfully"; \
+	echo "🤖 Next: Agent processes the PR description promptlet and calls:"; \
+	echo "    make pr-open TITLE=\"processed-title\" BODY=\"processed-markdown\""
+
+# Create GitHub PR with provided title and body (ping-pong final step)
+# Usage: make pr-open TITLE="PR Title" BODY="PR markdown description"
+pr-open:
+	@echo "🔍 Validating branch before PR creation..."; \
+	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	echo "🌿 Current branch: $$BRANCH"; \
+	if [ "$$BRANCH" = "main" ] || [ "$$BRANCH" = "production" ]; then \
+		echo "❌ Cannot create PR from protected branch: $$BRANCH"; \
+		echo "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"; \
+		exit 1; \
+	fi; \
+	echo "✅ Branch validation completed: $$BRANCH"; \
 	TITLE=$${TITLE:-$$(git log -1 --pretty='%s' | sed 's/[[:space:]]\+/ /g')}; \
 	if [ -z "$$BODY" ]; then \
 		echo "❌ Error: BODY parameter required"; \
-		echo "Usage: make pr-open BODY=\"your markdown description\""; \
-		echo "Workflow: 1) make pr-body → get promptlet 2) process promptlet 3) make pr-open BODY=\"result\""; \
+		echo "Usage: make pr-open TITLE=\"PR Title\" BODY=\"markdown description\""; \
+		echo "💡 Workflow:"; \
+		echo "  1. make pr-push    → push branch"; \
+		echo "  2. make pr-body    → get promptlet"; \
+		echo "  3. [agent processes promptlet into markdown]"; \
+		echo "  4. make pr-open TITLE=\"...\" BODY=\"...\" → create PR"; \
 		exit 1; \
 	fi; \
-	echo "🚀 Pushing $$BRANCH to $(REMOTE)..."; \
-	git push -u $(REMOTE) $$BRANCH >/dev/null 2>&1 || git push -u $(REMOTE) $$BRANCH; \
 	if command -v gh >/dev/null 2>&1; then \
-		echo "📝 Managing PR → $(PR_BASE)"; \
+		echo "📝 Creating PR → $(PR_BASE)"; \
 		if [[ "$${DRAFT:-false}" == "true" ]]; then DFLAG="--draft"; else DFLAG=""; fi; \
 		if gh pr view $$BRANCH >/dev/null 2>&1; then \
 			echo "📝 Updating existing PR..."; \
@@ -272,8 +301,10 @@ pr-open:
 			gh pr create --base $(PR_BASE) --head $$BRANCH --title "$$TITLE" --body "$$BODY" $$DFLAG; \
 		fi; \
 	else \
-		echo "ℹ️  GitHub CLI (gh) not found. Open a PR manually with this title:"; \
-		echo "$$TITLE"; \
+		echo "ℹ️  GitHub CLI (gh) not found. Install with: brew install gh"; \
+		echo "📝 Proposed PR Title: $$TITLE"; \
+		echo "📝 Proposed PR Body:"; \
+		echo "$$BODY"; \
 	fi
 
 # Suggest better branch name
