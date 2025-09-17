@@ -60,9 +60,10 @@
       "context": {
         "branch": "${branch_name}",
         "base_branch": "${base_branch}",
-        "changelog": "${changelog_content}"
+        "changelog": "${changelog_content}",
+        "workflow_origin": "${workflow_origin}"
       },
-      "next_step": "./scripts/agent/workflows/pr-workflow.sh create_pr --branch ${branch_name}"
+      "next_step": "./scripts/agent/workflows/pr-workflow.sh create_pr --branch ${branch_name} --workflow-origin ${workflow_origin}"
     }
   },
   "conventional_commit_generation": {
@@ -192,7 +193,8 @@
       "context": {
         "diff_base": "${diff_base}",
         "branch": "${branch}",
-        "changelog_content": "${changelog_content}"
+        "changelog_content": "${changelog_content}",
+        "workflow_origin": "${workflow_origin}"
       },
       "next_step": "./scripts/agent/workflows/docs-workflow.sh apply_docs"
     }
@@ -212,7 +214,8 @@
         "commits_ahead": "${commits_ahead}",
         "has_uncommitted": "${has_uncommitted}",
         "conflicts_exist": "${conflicts_exist}",
-        "issues_detected": "${issues_detected}"
+        "issues_detected": "${issues_detected}",
+        "workflow_origin": "${workflow_origin}"
       },
       "next_step": "${next_step}"
     }
@@ -227,7 +230,8 @@
       ],
       "context": {
         "branch": "${branch}",
-        "pr_url": "${pr_url}"
+        "pr_url": "${pr_url}",
+        "workflow_origin": "${workflow_origin}"
       },
       "next_step": "${next_step}"
     }
@@ -247,7 +251,8 @@
         "ci_status": "${ci_status}",
         "ci_checks_passing": "${ci_checks_passing}",
         "deployment_needed": "${deployment_needed}",
-        "deployment_reason": "${deployment_reason}"
+        "deployment_reason": "${deployment_reason}",
+        "workflow_origin": "${workflow_origin}"
       },
       "next_step": "${next_step}"
     }

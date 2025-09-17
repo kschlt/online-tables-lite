@@ -193,13 +193,15 @@ validate_changes() {
 # Step 2: Generate PR description using git-cliff data
 pr_body() {
     local branch=""
-    
+    local workflow_origin=""
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --branch) branch="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
-                echo "Usage: pr_body [--branch BRANCH]"
+                echo "Usage: pr_body [--branch BRANCH] [--workflow-origin ORIGIN]"
                 echo "Generates PR description using git-cliff data"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
@@ -247,7 +249,8 @@ pr_body() {
         base_branch="main" \
         diff_base="$base" \
         changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
-        next_step="./scripts/agent/workflows/pr-workflow.sh create_pr --branch $branch"
+        workflow_origin="$workflow_origin" \
+        next_step="./scripts/agent/workflows/pr-workflow.sh create_pr --branch $branch --workflow-origin $workflow_origin"
     
     print_trace "OUTPUT" "Generated PR description promptlet"
 }
@@ -302,15 +305,17 @@ create_pr() {
     local branch=""
     local title=""
     local body=""
-    
+    local workflow_origin=""
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --branch) branch="$2"; shift 2 ;;
             --title) title="$2"; shift 2 ;;
             --body) body="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
-                echo "Usage: create_pr [--branch BRANCH] [--title TITLE] [--body BODY]"
+                echo "Usage: create_pr [--branch BRANCH] [--title TITLE] [--body BODY] [--workflow-origin ORIGIN]"
                 echo "Creates GitHub PR with provided title and body"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
@@ -350,7 +355,8 @@ create_pr() {
         $PROMPTLET_READER pr_finalization \
             branch="$branch" \
             pr_url="$pr_url" \
-            next_step="./scripts/agent/workflows/pr-workflow.sh finalize_pr --branch $branch --pr-url $pr_url"
+            workflow_origin="$workflow_origin" \
+            next_step="./scripts/agent/workflows/pr-workflow.sh finalize_pr --branch $branch --pr-url $pr_url --workflow-origin $workflow_origin"
     else
         print_color $RED "❌ Failed to create PR"
         return 1
@@ -364,15 +370,17 @@ finalize_pr() {
     local branch=""
     local pr_url=""
     local deploy_env=""
-    
+    local workflow_origin=""
+
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --branch) branch="$2"; shift 2 ;;
             --pr-url) pr_url="$2"; shift 2 ;;
             --deploy) deploy_env="$2"; shift 2 ;;
+            --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
-                echo "Usage: finalize_pr [--branch BRANCH] [--pr-url PR_URL] [--deploy ENV]"
+                echo "Usage: finalize_pr [--branch BRANCH] [--pr-url PR_URL] [--deploy ENV] [--workflow-origin ORIGIN]"
                 echo "Performs post-PR creation finalization tasks"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
@@ -441,6 +449,7 @@ finalize_pr() {
         ci_checks_passing="$ci_checks_passing" \
         deployment_needed="$deployment_needed" \
         deployment_reason="$deployment_reason" \
+        workflow_origin="$workflow_origin" \
         next_step="$next_step"
     
     print_trace "OUTPUT" "Generated completion promptlet with next_step: $next_step"
@@ -461,9 +470,9 @@ main() {
             echo "PR Workflow Functions:"
             echo "  validate_changes [--branch BRANCH] [--base BASE] [--workflow-origin ORIGIN] - Validate branch changes"
             echo "  push_branch [--branch BRANCH] [--workflow-origin ORIGIN] - Push branch to origin"
-            echo "  pr_body [--branch BRANCH] - Generate PR description"
-            echo "  create_pr [--branch BRANCH] [--title TITLE] [--body BODY] - Create GitHub PR"
-            echo "  finalize_pr [--branch BRANCH] [--pr-url URL] - Post-creation tasks"
+            echo "  pr_body [--branch BRANCH] [--workflow-origin ORIGIN] - Generate PR description"
+            echo "  create_pr [--branch BRANCH] [--title TITLE] [--body BODY] [--workflow-origin ORIGIN] - Create GitHub PR"
+            echo "  finalize_pr [--branch BRANCH] [--pr-url URL] [--workflow-origin ORIGIN] - Post-creation tasks"
             ;;
         *)
             echo "Unknown function: $function_name" >&2
