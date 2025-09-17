@@ -157,15 +157,14 @@ apply_docs() {
 
         # Auto-chain to commit_docs since this is pure automation
         print_color $GREEN "✅ Auto-chaining to commit documentation changes..."
-        exec ./scripts/agent/workflows/docs-workflow.sh commit_docs --workflow-origin "$workflow_origin"
+        ./scripts/agent/workflows/docs-workflow.sh commit_docs --workflow-origin "$workflow_origin"
     else
         print_color $YELLOW "⚠️  No documentation changes detected"
 
         # Continue workflow chain based on origin
         if [ "$workflow_origin" = "pr-workflow" ]; then
-            print_color $GREEN "✅ Auto-chaining to push step..."
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            exec ./scripts/agent/workflows/pr-workflow.sh push_branch --branch "$BRANCH" --workflow-origin "$workflow_origin"
+            print_color $GREEN "✅ No docs changes - returning to PR workflow..."
+            return 0
         else
             # Generate no-op promptlet for standalone docs workflow
             $PROMPTLET_READER documentation_no_changes \
@@ -219,11 +218,10 @@ commit_docs() {
     if git commit -m "$commit_message"; then
         print_color $GREEN "✅ Documentation changes committed successfully"
 
-        # If part of PR workflow, continue to push step
+        # If part of PR workflow, return to let PR workflow continue
         if [ "$workflow_origin" = "pr-workflow" ]; then
-            print_color $GREEN "✅ Auto-chaining to push step..."
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            exec ./scripts/agent/workflows/pr-workflow.sh push_branch --branch "$BRANCH" --workflow-origin "$workflow_origin"
+            print_color $GREEN "✅ Docs committed - returning to PR workflow..."
+            return 0
         else
             # Generate completion promptlet for standalone docs workflow
             $PROMPTLET_READER workflow_complete \

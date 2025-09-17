@@ -192,8 +192,13 @@ validate_changes() {
     # If validation passed or just warnings, start documentation workflow (auto-chain)
     if [ "$validation_status" = "passed" ] || ([ "$validation_status" = "warning" ] && [ "$workflow_origin" != "pr-workflow" ]); then
         print_color $GREEN "✅ Auto-chaining to documentation workflow..."
-        # Auto-execute documentation workflow instead of returning promptlet
-        exec ./scripts/agent/workflows/docs-workflow.sh generate_docs "$branch" main --workflow-origin "$workflow_origin"
+        # Call documentation workflow and continue based on its result
+        ./scripts/agent/workflows/docs-workflow.sh generate_docs "$branch" main --workflow-origin "$workflow_origin"
+
+        # After docs workflow, continue to push step
+        print_color $GREEN "✅ Auto-chaining to push step..."
+        ./scripts/agent/workflows/pr-workflow.sh push_branch --branch "$branch" --workflow-origin "$workflow_origin"
+        return 0
     fi
     
     print_trace "RESULTS" "Validation status: $validation_status"
@@ -318,7 +323,7 @@ push_branch() {
 
         # Auto-chain to pr_body (hook already ran during push)
         print_color $GREEN "✅ Auto-chaining to PR description generation..."
-        exec ./scripts/agent/workflows/pr-workflow.sh pr_body --branch "$branch" --workflow-origin "$workflow_origin"
+        ./scripts/agent/workflows/pr-workflow.sh pr_body --branch "$branch" --workflow-origin "$workflow_origin"
     else
         print_color $RED "❌ Failed to push branch"
         return 1
