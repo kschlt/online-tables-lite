@@ -187,16 +187,19 @@
       "instructions": [
         "Analyze git-cliff changelog to identify documentation impacts",
         "Update CLI usage, API changes, configuration changes in README.md based on Added/Fixed sections",
+        "Update agent workflow docs in scripts/agent/ folder for workflow improvements",
         "Update design system docs if UI component changes detected",
+        "If you make changes, call apply_docs to validate and continue workflow",
         "If nothing needs updating, reply exactly: NO-OP"
       ],
       "context": {
         "diff_base": "${diff_base}",
         "branch": "${branch}",
         "changelog_content": "${changelog_content}",
-        "workflow_origin": "${workflow_origin}"
+        "workflow_origin": "${workflow_origin}",
+        "agent_docs_location": "scripts/agent/"
       },
-      "next_step": "./scripts/agent/workflows/docs-workflow.sh apply_docs"
+      "next_step": "./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin ${workflow_origin}"
     }
   },
   "change_validation": {

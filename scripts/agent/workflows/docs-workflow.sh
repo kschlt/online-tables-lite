@@ -93,7 +93,8 @@ generate_docs() {
     print_trace "OUTPUT" "Generated documentation update promptlet"
 }
 
-# Step 2: Apply documentation changes (placeholder for agent-driven updates)
+
+# Step 2: Apply documentation changes (handles both agent updates and NO-OP cases)
 apply_docs() {
     local files=""
     local workflow_origin=""
@@ -105,30 +106,30 @@ apply_docs() {
             --workflow-origin) workflow_origin="$2"; shift 2 ;;
             -h|--help)
                 echo "Usage: apply_docs [--files FILES] [--workflow-origin ORIGIN]"
-                echo "Validates applied documentation changes"
+                echo "Validates applied documentation changes and continues workflow"
                 return 0 ;;
             *) echo "Unknown option: $1" >&2; return 1 ;;
         esac
     done
-    
+
     print_trace "DOCS_APPLY" "Validating applied documentation changes"
-    
+
     # Check if there are any documentation files that were modified
     local modified_docs=$(git diff --name-only HEAD | grep -E '\.(md|rst|txt)$' || echo "")
-    
+
     if [ -n "$modified_docs" ]; then
         print_color $GREEN "✅ Documentation changes detected:"
         echo "$modified_docs" | while read -r file; do
             print_color $BLUE "  📝 $file"
         done
-        
+
         # Auto-chain to commit_docs since this is pure automation
         print_color $GREEN "✅ Auto-chaining to commit documentation changes..."
         exec ./scripts/agent/workflows/docs-workflow.sh commit_docs --workflow-origin "$workflow_origin"
     else
         print_color $YELLOW "⚠️  No documentation changes detected"
 
-        # If part of PR workflow, continue to push step
+        # Continue workflow chain based on origin
         if [ "$workflow_origin" = "pr-workflow" ]; then
             print_color $GREEN "✅ Auto-chaining to push step..."
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -140,8 +141,8 @@ apply_docs() {
                 next_step="WORKFLOW_COMPLETE"
         fi
     fi
-    
-    print_trace "OUTPUT" "Generated documentation validation promptlet"
+
+    print_trace "OUTPUT" "Documentation workflow step completed"
 }
 
 # Step 3: Commit documentation changes
@@ -222,7 +223,7 @@ main() {
         -h|--help|help)
             echo "Documentation Workflow Functions:"
             echo "  generate_docs [BRANCH] [BASE_REF] - Generate documentation update promptlet"
-            echo "  apply_docs [--files FILES] - Validate applied documentation changes"
+            echo "  apply_docs [--files FILES] - Validate applied documentation changes and continue workflow"
             echo "  commit_docs [--message MESSAGE] - Commit documentation changes"
             ;;
         *)
