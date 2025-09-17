@@ -333,24 +333,43 @@ create_pr() {
     fi
     
     print_trace "CREATE_PR" "Creating PR for branch: $branch"
-    
+
     # Push branch if not already pushed
     if ! git ls-remote --heads origin "$branch" | grep -q "$branch"; then
         print_color $BLUE "📤 Pushing branch to remote..."
         git push -u origin "$branch"
     fi
-    
-    # Create PR using gh CLI
+
+    # Check if PR already exists for this branch
+    local existing_pr=$(gh pr list --head "$branch" --json number,url --jq '.[0] | select(.number) | .url' 2>/dev/null || echo "")
     local pr_url=""
-    if [ -n "$title" ] && [ -n "$body" ]; then
-        pr_url=$(gh pr create --title "$title" --body "$body" 2>&1 | grep -o 'https://github.com/[^[:space:]]*' || echo "")
+
+    if [ -n "$existing_pr" ]; then
+        print_color $BLUE "🔄 Updating existing PR: $existing_pr"
+        local pr_number=$(echo "$existing_pr" | grep -o '[0-9]\+$')
+
+        # Update existing PR with new title and body if provided
+        if [ -n "$title" ] && [ -n "$body" ]; then
+            gh pr edit "$pr_number" --title "$title" --body "$body"
+            print_color $GREEN "✅ PR updated successfully: $existing_pr"
+        else
+            print_color $GREEN "✅ PR exists: $existing_pr"
+        fi
+        pr_url="$existing_pr"
     else
-        pr_url=$(gh pr create --fill 2>&1 | grep -o 'https://github.com/[^[:space:]]*' || echo "")
+        # Create new PR using gh CLI
+        if [ -n "$title" ] && [ -n "$body" ]; then
+            pr_url=$(gh pr create --title "$title" --body "$body" 2>&1 | grep -o 'https://github.com/[^[:space:]]*' || echo "")
+        else
+            pr_url=$(gh pr create --fill 2>&1 | grep -o 'https://github.com/[^[:space:]]*' || echo "")
+        fi
+
+        if [ -n "$pr_url" ]; then
+            print_color $GREEN "✅ PR created successfully: $pr_url"
+        fi
     fi
     
     if [ -n "$pr_url" ]; then
-        print_color $GREEN "✅ PR created successfully: $pr_url"
-        
         # Generate finalization promptlet
         $PROMPTLET_READER pr_finalization \
             branch="$branch" \
