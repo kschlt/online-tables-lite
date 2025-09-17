@@ -17,6 +17,31 @@ set -e
 # Path constants
 AGENT_BASE="./scripts/agent"
 PROMPTLET_READER="$AGENT_BASE/promptlets/promptlet-reader.sh"
+CACHE_UTIL="$AGENT_BASE/utils/workflow-cache.sh"
+PR_WORKFLOW="$AGENT_BASE/workflows/pr-workflow.sh"
+
+# Source cache utilities
+. "$CACHE_UTIL"
+
+# Function to source PR workflow functions without executing main
+source_pr_functions() {
+    # Source pr-workflow.sh functions by redefining main to prevent execution
+    local original_main=$(declare -f main 2>/dev/null || echo "")
+
+    # Temporarily disable main function
+    main() { :; }
+
+    # Source the PR workflow file to import functions
+    . "$PR_WORKFLOW"
+
+    # Restore original main if it existed
+    if [ -n "$original_main" ]; then
+        eval "$original_main"
+    fi
+}
+
+# Source PR workflow functions
+source_pr_functions
 
 # Colors for output and traceability
 RED='\033[0;31m'
@@ -58,38 +83,45 @@ generate_docs() {
     fi
     
     print_trace "DOCS_GEN" "Generating documentation update for branch: $branch"
-    
-    # Try to use cached git-cliff metadata first
-    local cache_file=".git/commit-cache/last-commit-meta"
+
+    # Use centralized cache management
     local changelog_entry=""
     local base=""
-    
-    if [ -f "$cache_file" ]; then
-        print_color $GREEN "⚡ Using cached git-cliff metadata from pre-commit hook"
-        . "$cache_file"
-        changelog_entry=$(echo "$CHANGELOG_ENTRY" | tr '|' '\n')
-        base="$BASE"
+
+    if has_valid_cache; then
+        print_color $GREEN "⚡ Using cached git-cliff metadata from centralized cache"
+        changelog_entry=$(get_cached_changelog)
+        base=$(get_cached_base)
     else
         print_color $YELLOW "🔍 No commit cache found - generating fresh git-cliff data..."
         base=$(git merge-base "$base_ref" HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
         changelog_entry=$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected")
     fi
-    
+
     if [ -z "$changelog_entry" ] || [ "$changelog_entry" = "No unreleased changes detected" ]; then
         print_color $RED "❌ No changelog content available for documentation analysis"
         return 1
     fi
-    
+
     print_color $GREEN "✅ Retrieved changelog data for documentation analysis"
-    
-    # Generate documentation update promptlet
+
+    # Quick check: if this is only branch naming changes, skip agent analysis
+    if echo "$changelog_entry" | grep -q "branch naming\|branch-naming\|branch validation\|workflow.*branch" &&
+       ! echo "$changelog_entry" | grep -qE "(Added.*API|Added.*component|Fixed.*UI|Added.*feature)" 2>/dev/null; then
+        print_color $BLUE "🎯 Branch naming/validation changes detected - likely no docs updates needed"
+
+        # Skip agent analysis and go directly to apply_docs with NO-OP expectation
+        exec ./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin "$workflow_origin"
+    fi
+
+    # Generate documentation update promptlet for complex changes
     $PROMPTLET_READER documentation_update \
         diff_base="$base" \
         branch="$branch" \
         workflow_origin="$workflow_origin" \
         changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
         next_step="./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin $workflow_origin"
-    
+
     print_trace "OUTPUT" "Generated documentation update promptlet"
 }
 

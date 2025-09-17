@@ -19,6 +19,31 @@ set -e
 # Path constants
 AGENT_BASE="./scripts/agent"
 PROMPTLET_READER="$AGENT_BASE/promptlets/promptlet-reader.sh"
+CACHE_UTIL="$AGENT_BASE/utils/workflow-cache.sh"
+DOCS_WORKFLOW="$AGENT_BASE/workflows/docs-workflow.sh"
+
+# Source cache utilities
+. "$CACHE_UTIL"
+
+# Function to source docs workflow functions without executing main
+source_docs_functions() {
+    # Source docs-workflow.sh functions by redefining main to prevent execution
+    local original_main=$(declare -f main 2>/dev/null || echo "")
+
+    # Temporarily disable main function
+    main() { :; }
+
+    # Source the docs workflow file to import functions
+    . "$DOCS_WORKFLOW"
+
+    # Restore original main if it existed
+    if [ -n "$original_main" ]; then
+        eval "$original_main"
+    fi
+}
+
+# Source docs workflow functions
+source_docs_functions
 
 # Colors for output and traceability
 RED='\033[0;31m'
@@ -60,21 +85,27 @@ validate_changes() {
         esac
     done
     
-    # Auto-detect branch if not provided
+    # Get branch status using combined operations
+    local branch_status=$(get_branch_status)
+    local detected_branch=$(echo "$branch_status" | cut -d'|' -f1)
+    local has_uncommitted=$(echo "$branch_status" | cut -d'|' -f2)
+    local branch_exists=$(echo "$branch_status" | cut -d'|' -f3)
+
+    # Use provided branch or detected branch
     if [ -z "$branch" ]; then
-        branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        branch="$detected_branch"
     fi
-    
+
     if [ -z "$branch" ]; then
         print_color $RED "❌ Error: Could not determine branch name"
         return 1
     fi
-    
+
     # Branch name validation and context display
     print_color $BLUE "🌿 Current branch: $branch"
     if [ "$branch" = "main" ] || [ "$branch" = "production" ]; then
         print_color $RED "❌ Cannot create PR from protected branch: $branch"
-        
+
         $PROMPTLET_READER branch_protection_error \
             current_branch="$branch" \
             next_step="make branch-new NAME=feat/your-feature"
@@ -103,38 +134,30 @@ validate_changes() {
     fi
     
     print_trace "VALIDATE" "Starting validation for branch: $branch"
-    
-    # Check if branch exists
-    if ! git rev-parse --verify "$branch" >/dev/null 2>&1; then
+
+    # Check if branch exists (already checked in branch_status, reuse result)
+    if [ "$branch_exists" != "true" ]; then
         print_color $RED "❌ Branch '$branch' does not exist"
         return 1
     fi
-    
-    # Check for uncommitted changes
-    local has_uncommitted=false
-    if ! git diff --quiet HEAD; then
-        print_color $YELLOW "⚠️  Uncommitted changes detected"
-        has_uncommitted=true
-    fi
-    
-    # Check for merge conflicts with base branch
-    local base_commit=$(git merge-base "$base_branch" "$branch" 2>/dev/null)
-    local conflicts_exist=false
 
-    if [ -n "$base_commit" ]; then
-        # Check if this is a fast-forward merge (no conflicts possible)
-        local base_head=$(git rev-parse "$base_branch" 2>/dev/null)
-        if [ "$base_commit" = "$base_head" ]; then
-            print_color $GREEN "✅ Fast-forward merge - no conflicts possible"
-        else
-            # Only check for conflicts if base has moved ahead
-            if git merge-tree "$base_commit" "$base_branch" "$branch" | grep -q "<<<<<<< "; then
-                print_color $YELLOW "⚠️  Merge conflicts detected"
-                conflicts_exist=true
-            else
-                print_color $GREEN "✅ No merge conflicts detected"
-            fi
-        fi
+    # Use branch status results (already checked uncommitted changes)
+    if [ "$has_uncommitted" = "true" ]; then
+        print_color $YELLOW "⚠️  Uncommitted changes detected"
+    fi
+
+    # Check for merge conflicts using combined operation
+    local conflict_status=$(check_merge_conflicts "$branch" "$base_branch")
+    local conflicts_exist=$(echo "$conflict_status" | cut -d'|' -f1)
+    local is_fast_forward=$(echo "$conflict_status" | cut -d'|' -f2)
+    local base_commit=$(echo "$conflict_status" | cut -d'|' -f3)
+
+    if [ "$is_fast_forward" = "true" ]; then
+        print_color $GREEN "✅ Fast-forward merge - no conflicts possible"
+    elif [ "$conflicts_exist" = "true" ]; then
+        print_color $YELLOW "⚠️  Merge conflicts detected"
+    else
+        print_color $GREEN "✅ No merge conflicts detected"
     fi
     
     # Count commits ahead of base
@@ -144,8 +167,8 @@ validate_changes() {
     local validation_status="passed"
     local issues_detected=""
     local next_step=""
-    
-    if [ "$has_uncommitted" = true ]; then
+
+    if [ "$has_uncommitted" = "true" ]; then
         validation_status="warning"
         issues_detected="${issues_detected}- Uncommitted changes detected\\n"
         # If uncommitted changes and workflow started from pr-workflow, fall back to commit workflow
@@ -154,7 +177,7 @@ validate_changes() {
         fi
     fi
 
-    if [ "$conflicts_exist" = true ]; then
+    if [ "$conflicts_exist" = "true" ]; then
         validation_status="conflicts"
         issues_detected="${issues_detected}- Merge conflicts with $base_branch branch\\n"
         next_step="git rebase $base_branch  # Resolve conflicts manually, then continue with: make pr-workflow"
@@ -208,39 +231,41 @@ pr_body() {
         esac
     done
     
-    # Auto-detect branch if not provided
+    # Auto-detect branch if not provided (use cache if available)
     if [ -z "$branch" ]; then
-        branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        if has_valid_cache; then
+            branch=$(get_cached_branch)
+        else
+            branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+        fi
     fi
-    
+
     if [ -z "$branch" ]; then
         print_color $RED "❌ Error: Could not determine branch name"
         return 1
     fi
-    
+
     print_trace "PR_BODY" "Generating PR description for branch: $branch"
-    
-    # Try to use cached git-cliff metadata first
-    local cache_file=".git/commit-cache/last-commit-meta"
+
+    # Use centralized cache management
     local changelog_entry=""
     local base=""
-    
-    if [ -f "$cache_file" ]; then
-        print_color $GREEN "⚡ Using cached git-cliff metadata from pre-commit hook"
-        . "$cache_file"
-        changelog_entry=$(echo "$CHANGELOG_ENTRY" | tr '|' '\n')
-        base="$BASE"
+
+    if has_valid_cache; then
+        print_color $GREEN "⚡ Using cached git-cliff metadata from centralized cache"
+        changelog_entry=$(get_cached_changelog)
+        base=$(get_cached_base)
     else
         print_color $YELLOW "🔍 No commit cache found - generating fresh git-cliff data..."
         base=$(git merge-base main HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
         changelog_entry=$(git-cliff --unreleased --strip header 2>/dev/null || echo "No unreleased changes detected")
     fi
-    
+
     if [ -z "$changelog_entry" ] || [ "$changelog_entry" = "No unreleased changes detected" ]; then
         print_color $RED "❌ No changelog content available for PR description"
         return 1
     fi
-    
+
     print_color $GREEN "✅ Retrieved changelog data for PR description"
     
     # Generate PR description promptlet

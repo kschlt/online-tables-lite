@@ -121,6 +121,26 @@ COMMIT_TYPE=$(echo "$COMMIT_MSG" | sed -E 's/^([a-z]+)(\(.+\))?:.*/\1/' || echo 
 # Store git-cliff based cache for ship workflow
 CHANGELOG_VAL=$(git-cliff --unreleased --strip header 2>/dev/null | tr '\n' '|' || echo "No unreleased changes detected")
 
+# Update CHANGELOG.md with latest changes (moved from pre-push hook)
+echo "📝 Auto-updating CHANGELOG.md with git-cliff..."
+if command -v git-cliff >/dev/null 2>&1 && [ -f "cliff.toml" ]; then
+    # Generate the updated changelog
+    if git-cliff --unreleased --prepend CHANGELOG.md 2>/dev/null; then
+        # Check if CHANGELOG.md was actually modified
+        if ! git diff --quiet CHANGELOG.md 2>/dev/null; then
+            echo "✅ CHANGELOG.md updated with new entries"
+            git add CHANGELOG.md
+            echo "✅ CHANGELOG.md staged for this commit"
+        else
+            echo "ℹ️  CHANGELOG.md already up to date"
+        fi
+    else
+        echo "⚠️  Could not update CHANGELOG.md with git-cliff"
+    fi
+else
+    echo "ℹ️  git-cliff not available or not configured, skipping changelog auto-update"
+fi
+
 cat > "$CACHE_DIR/last-commit-meta" << EOF
 BASE="$BASE"
 BRANCH="$BRANCH"
