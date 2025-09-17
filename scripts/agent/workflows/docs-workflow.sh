@@ -23,25 +23,7 @@ PR_WORKFLOW="$AGENT_BASE/workflows/pr-workflow.sh"
 # Source cache utilities
 . "$CACHE_UTIL"
 
-# Function to source PR workflow functions without executing main
-source_pr_functions() {
-    # Source pr-workflow.sh functions by redefining main to prevent execution
-    local original_main=$(declare -f main 2>/dev/null || echo "")
-
-    # Temporarily disable main function
-    main() { :; }
-
-    # Source the PR workflow file to import functions
-    . "$PR_WORKFLOW"
-
-    # Restore original main if it existed
-    if [ -n "$original_main" ]; then
-        eval "$original_main"
-    fi
-}
-
-# Source PR workflow functions
-source_pr_functions
+# Note: Removed source_pr_functions to prevent recursion during sourcing
 
 # Colors for output and traceability
 RED='\033[0;31m'
