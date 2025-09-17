@@ -5,9 +5,7 @@
       "instructions": [
         "Analyze current branch name clarity and descriptiveness",
         "Compare with suggested name based on actual changes",
-        "Decide whether to rename or keep current name",
-        "If renaming: execute 'make branch-rename NAME=${suggested_name}'",
-        "If keeping: continue with current workflow"
+        "Decide whether to rename or keep current name based on decision criteria"
       ],
       "context": {
         "current_branch": "${current_branch}",
@@ -25,7 +23,8 @@
           ]
         },
         "changes_context": "${changes_context}"
-      }
+      },
+      "next_step": "make branch-rename NAME=${suggested_name} (if renaming) or continue workflow (if keeping)"
     }
   },
   "branch_name_compliance": {
@@ -33,9 +32,7 @@
       "type": "branch_name_compliance",
       "instructions": [
         "Current branch name violates naming policy",
-        "Rename branch to comply with feat/ or fix/ standard",
-        "Use: make branch-rename NAME=${suggested_name}",
-        "Or create new compliant branch: make branch-new NAME=${suggested_name}"
+        "Rename branch to comply with feat/ or fix/ standard"
       ],
       "context": {
         "current_branch": "${current_branch}",
@@ -46,7 +43,8 @@
           "format": "kebab-case",
           "max_length": 70
         }
-      }
+      },
+      "next_step": "make branch-rename NAME=${suggested_name}"
     }
   },
   "pr_description": {
@@ -57,8 +55,7 @@
         "Transform changelog sections into PR summary and impact analysis",
         "Generate intelligent test plan based on change categories",
         "Add contextual information about branch and integration",
-        "Format as comprehensive GitHub-ready markdown PR description",
-        "After generating description, execute: make pr-open BODY=\"generated_description\""
+        "Format as comprehensive GitHub-ready markdown PR description"
       ],
       "context": {
         "branch": "${branch_name}",
@@ -138,8 +135,7 @@
       "instructions": [
         "Generate compliant branch name based on planned work",
         "REQUIRED: Use feat/ or fix/ prefix only (no feature/)",
-        "Format: feat/kebab-case or fix/kebab-case (≤48 chars)",
-        "Execute: make branch-new NAME=generated-branch-name"
+        "Format: feat/kebab-case or fix/kebab-case (≤48 chars)"
       ],
       "context": {
         "required_prefixes": ["feat/", "fix/"],
@@ -151,7 +147,8 @@
         "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export", "fix/api-timeout"],
         "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",
         "policy": "Only feat/ and fix/ prefixes allowed by naming policy"
-      }
+      },
+      "next_step": "make branch-new NAME=generated-branch-name"
     }
   },
   "documentation_update": {
