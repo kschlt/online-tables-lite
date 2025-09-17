@@ -216,8 +216,8 @@ ship:
 		echo; \
 		echo "---"; \
 		echo; \
-		echo "**Fallback Description** (if agent unavailable):"; \
-		PR_FALLBACK=$$(./scripts/git/aggregate-pr-metadata.sh "$$BRANCH" description 2>/dev/null || echo "Basic PR from $$BRANCH"); \
+		echo "**Fallback Description** (using git-cliff):"; \
+		PR_FALLBACK=$$(git-cliff --unreleased --strip header 2>/dev/null || echo "Basic PR from $$BRANCH"); \
 		echo "$$PR_FALLBACK"; \
 	else \
 		echo "# Summary"; echo "$$TITLE"; echo; \
