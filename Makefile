@@ -423,82 +423,55 @@ branch-rename:
 	fi; \
 	echo "🔁 Branch renamed: $$CUR → $$NEW"
 
-# Create new feature branch with automated checks
+# Create new feature branch with automated checks (2B streamlined version)
 branch-new:
-	@echo "🌿 Initializing new branch workflow..."
 	@CURRENT_BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	if [ "$$CURRENT_BRANCH" != "main" ]; then \
-		echo "⚠️  Currently on: $$CURRENT_BRANCH"; \
 		if ! git diff --quiet || ! git diff --cached --quiet; then \
-			echo "⚠️  You have uncommitted changes"; \
-			ACTION_INSTRUCTION=$$(if ! git diff --cached --quiet; then echo "Changes are staged - ready for commit. Execute: make commit, then retry make branch-new"; else echo "Changes are unstaged - stash before proceeding. Execute: git stash && make branch-new && git stash pop"; fi); \
-			$(AGENT_PROMPTLETS)/promptlet-reader.sh uncommitted_changes_handling \
-				current_branch="$$CURRENT_BRANCH" \
-				has_staged_changes="$$(if ! git diff --cached --quiet; then echo "true"; else echo "false"; fi)" \
-				has_unstaged_changes="$$(if ! git diff --quiet; then echo "true"; else echo "false"; fi)" \
-				decision="$$(if ! git diff --cached --quiet; then echo "commit_first"; else echo "stash_first"; fi)" \
-				action_instruction="$$ACTION_INSTRUCTION"; \
+			if ! git diff --cached --quiet; then \
+				echo "❌ STOP: Staged changes detected"; \
+				echo "Terminal: Commit changes first"; \
+				echo "USER ACTION REQUIRED: make commit"; \
+			else \
+				echo "❌ STOP: Unstaged changes detected"; \
+				echo "Terminal: Stash changes first"; \
+				echo "USER ACTION REQUIRED: git stash"; \
+			fi; \
 			exit 1; \
 		fi; \
-		echo "🔄 Switching to main..."; \
 		git checkout main; \
 	fi; \
-	echo "📡 Checking main branch status..."; \
 	git fetch origin main >/dev/null 2>&1; \
-	LOCAL_MAIN=$$(git rev-parse main); \
-	REMOTE_MAIN=$$(git rev-parse origin/main); \
-	if [ "$$LOCAL_MAIN" != "$$REMOTE_MAIN" ]; then \
-		echo "🔄 Updating main branch..."; \
+	if [ "$$(git rev-parse main)" != "$$(git rev-parse origin/main)" ]; then \
 		git pull origin main; \
-		echo "✅ Main branch updated"; \
-	else \
-		echo "✅ Main branch is up to date"; \
 	fi; \
-	echo "🔍 Checking for open PRs..."; \
 	if command -v gh >/dev/null 2>&1; then \
 		OPEN_PRS=$$(gh pr list --state open --json number,title,headRefName 2>/dev/null || echo "[]"); \
 		PR_COUNT=$$(echo "$$OPEN_PRS" | jq length 2>/dev/null || echo "0"); \
 		if [ "$$PR_COUNT" -gt 0 ]; then \
-			echo "⚠️  Found $$PR_COUNT open PR(s):"; \
+			echo "⚠️ STOP: Open PRs detected"; \
+			echo "Terminal: $$PR_COUNT open PRs found"; \
 			echo "$$OPEN_PRS" | jq -r '.[] | "  #\(.number): \(.title) (\(.headRefName))"' 2>/dev/null || echo "  Could not parse PR details"; \
-			echo; \
-			$(AGENT_PROMPTLETS)/promptlet-reader.sh branch_creation_with_open_prs \
-				open_prs="$$OPEN_PRS" \
-				pr_count="$$PR_COUNT"; \
-		else \
-			echo "✅ No open PRs found"; \
+			echo "USER CHOICE: Continue anyway? (Y/N)"; \
 		fi; \
-	else \
-		echo "ℹ️  GitHub CLI not found - skipping PR check"; \
-		echo "   Install with: brew install gh"; \
 	fi; \
-	if [ "$$PR_COUNT" -eq 0 ] || [ -z "$$PR_COUNT" ]; then \
-		BRANCH_NAME=$${NAME:-}; \
-		if [ -z "$$BRANCH_NAME" ]; then \
-			echo; \
-			$(AGENT_PROMPTLETS)/promptlet-reader.sh branch_name_generation \
-				open_prs="$$PR_COUNT"; \
-		else \
-			echo "🔍 Validating branch name: $$BRANCH_NAME"; \
-			if $(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \
-				echo "✅ Branch name is compliant"; \
-				echo "🌿 Creating branch: $$BRANCH_NAME"; \
-				git checkout -b "$$BRANCH_NAME"; \
-				echo "✅ Branch created and switched to: $$BRANCH_NAME"; \
-				echo; \
-				echo "🚀 Ready to start development!"; \
-				echo "📝 Next steps:"; \
-				echo "  - Start coding your feature"; \
-				echo "  - When ready to commit: User says 'commit' → you run 'make commit'"; \
-				echo "  - When ready to push: User says 'push' → you run 'make ship'"; \
+	BRANCH_NAME=$${NAME:-}; \
+	if [ -z "$$BRANCH_NAME" ]; then \
+		$(AGENT_PROMPTLETS)/promptlet-reader.sh branch_name_generation \
+			open_prs="$${PR_COUNT:-0}"; \
+	else \
+		if ! $(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \
+			AUTO_FIXED=$$($(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" auto-fix 2>/dev/null || echo ""); \
+			if [ -n "$$AUTO_FIXED" ] && $(AGENT_UTILS)/validate-branch-name.sh "$$AUTO_FIXED" validate >/dev/null 2>&1; then \
+				BRANCH_NAME="$$AUTO_FIXED"; \
+				echo "✅ Auto-fixed name: $$BRANCH_NAME"; \
 			else \
-				echo "❌ Branch name '$$BRANCH_NAME' violates naming policy"; \
-				echo "💡 Getting compliance guidance..."; \
-				echo; \
 				$(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" promptlet; \
 				exit 1; \
 			fi; \
 		fi; \
+		git checkout -b "$$BRANCH_NAME"; \
+		echo "✅ Branch created: $$BRANCH_NAME"; \
 	fi
 
 

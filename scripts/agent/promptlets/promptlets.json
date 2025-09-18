@@ -126,57 +126,23 @@
       "next_step": "${next_step}"
     }
   },
-  "uncommitted_changes_handling": {
-    "task": {
-      "type": "uncommitted_changes_handling", 
-      "instructions": [
-        "Uncommitted changes block branch creation",
-        "${action_instruction}"
-      ],
-      "context": {
-        "current_branch": "${current_branch}",
-        "has_staged_changes": "${has_staged_changes}",
-        "has_unstaged_changes": "${has_unstaged_changes}",
-        "decision": "${decision}"
-      }
-    }
-  },
-  "branch_creation_with_open_prs": {
-    "task": {
-      "type": "branch_creation_with_open_prs",
-      "instructions": [
-        "Review open PRs to avoid conflicts",
-        "Consider if new branch relates to existing PRs", 
-        "Proceed with branch creation if work is independent",
-        "Use: make branch-new NAME=feature/descriptive-name"
-      ],
-      "context": {
-        "open_prs": "${open_prs}",
-        "pr_count": "${pr_count}",
-        "recommendation": "Review PR list and ensure new work does not conflict",
-        "main_status": "up to date",
-        "next_action": "specify branch name or proceed with caution"
-      }
-    }
-  },
   "branch_name_generation": {
     "task": {
       "type": "branch_name_generation",
       "instructions": [
         "Generate compliant branch name based on planned work",
-        "REQUIRED: Use feat/ or fix/ prefix only (no feature/)",
-        "Format: feat/kebab-case or fix/kebab-case (≤48 chars)"
+        "Use feat/ for new features or fix/ for bug fixes only",
+        "Auto-generate descriptive kebab-case name (≤48 chars total)",
+        "Execute branch creation immediately after generating name"
       ],
       "context": {
         "required_prefixes": ["feat/", "fix/"],
         "format": "kebab-case (lowercase, hyphens only)",
         "max_length": 48,
-        "current_branch": "main",
-        "main_status": "up to date",
-        "open_prs": "${open_prs}",
+        "open_prs_count": "${open_prs}",
         "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export", "fix/api-timeout"],
-        "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",
-        "policy": "Only feat/ and fix/ prefixes allowed by naming policy"
+        "auto_fix_enabled": true,
+        "workflow_mode": "streamlined"
       },
       "next_step": "make branch-new NAME=${generated_branch_name}"
     }

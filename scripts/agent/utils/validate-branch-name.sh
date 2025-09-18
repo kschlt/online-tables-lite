@@ -27,22 +27,58 @@ print_color() {
 suggest_branch_name() {
     local input="$1"
     local suggested_type="$2"
-    
+
     # Remove existing prefix if present
     local clean_name=$(echo "$input" | sed -E 's/^(feature\/|feat\/|fix\/|bugfix\/|hotfix\/)//')
-    
+
     # Convert to lowercase and create kebab-case
     local kebab_name=$(echo "$clean_name" | tr '[:upper:]' '[:lower:]' | \
         sed -E 's/[àáâãäå]/a/g; s/[èéêë]/e/g; s/[ìíîï]/i/g; s/[òóôõö]/o/g; s/[ùúûü]/u/g; s/ç/c/g; s/ñ/n/g; s/ß/ss/g' | \
         sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')
-    
+
     # Truncate if needed (leave room for prefix)
     local max_suffix=$((MAX_LENGTH - ${#suggested_type} - 1))
     if [ ${#kebab_name} -gt $max_suffix ]; then
         kebab_name=$(echo "$kebab_name" | cut -c1-$max_suffix | sed 's/-$//')
     fi
-    
+
     echo "${suggested_type}/${kebab_name}"
+}
+
+# Function to attempt automatic fixing of common branch name issues
+auto_fix_branch_name() {
+    local input="$1"
+
+    # If it already has a valid prefix, just clean the suffix
+    if [[ "$input" =~ ^(feat|fix)\/ ]]; then
+        local prefix=$(echo "$input" | cut -d'/' -f1)
+        local suffix=$(echo "$input" | cut -d'/' -f2-)
+        local fixed_suffix=$(echo "$suffix" | tr '[:upper:]' '[:lower:]' | \
+            sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')
+        echo "${prefix}/${fixed_suffix}"
+        return 0
+    fi
+
+    # Intelligently determine prefix based on branch name content
+    local suggested_type="feat"  # default
+    local clean_input="$input"
+
+    # Remove common prefixes first
+    if [[ "$input" =~ ^feature\/ ]]; then
+        clean_input=$(echo "$input" | sed 's/^feature\///')
+    elif [[ "$input" =~ ^(fix|bugfix|hotfix)\/ ]]; then
+        suggested_type="fix"
+        clean_input=$(echo "$input" | sed -E 's/^(fix|bugfix|hotfix)\///')
+    fi
+
+    # Analyze the remaining name for fix-related keywords
+    local lowercase_name=$(echo "$clean_input" | tr '[:upper:]' '[:lower:]')
+    if [[ "$lowercase_name" =~ (bug|fix|error|issue|problem|patch|repair|correct|resolve) ]]; then
+        suggested_type="fix"
+    fi
+
+    # Apply the same cleaning as suggest_branch_name
+    suggest_branch_name "$clean_input" "$suggested_type"
 }
 
 # Function to validate branch name format
@@ -107,7 +143,7 @@ generate_naming_promptlet() {
 # Main validation function
 main() {
     local branch_name="${1:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null)}"
-    local mode="${2:-validate}"  # validate|suggest|promptlet
+    local mode="${2:-validate}"  # validate|suggest|promptlet|auto-fix
     
     if [ -z "$branch_name" ]; then
         print_color $RED "❌ Error: Could not determine branch name"
@@ -142,9 +178,13 @@ main() {
             local suggested_name=$(suggest_branch_name "$branch_name" "feat")
             generate_naming_promptlet "$branch_name" "$suggested_name" "$validation_errors"
             ;;
+        "auto-fix")
+            local fixed_name=$(auto_fix_branch_name "$branch_name")
+            echo "$fixed_name"
+            ;;
         *)
             print_color $RED "❌ Invalid mode: $mode"
-            echo "Usage: $0 [branch_name] [validate|suggest|promptlet]"
+            echo "Usage: $0 [branch_name] [validate|suggest|promptlet|auto-fix]"
             exit 1
             ;;
     esac

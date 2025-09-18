@@ -16,7 +16,7 @@
 - Work only in feature branches (one active branch at a time)
 - No direct commits to main
 1. Print "🤖 Development workflow triggert. Starting execution..."
-2. Use `make branch-new` - automated workflow with smart checks
+2. Use `make branch-new NAME=feat/descriptive-name` or `NAME=fix/bug-description` - automated workflow with validation and auto-fix
 
 ### When to Commit
 **User triggers**: "commit", "commit changes", "save changes"
