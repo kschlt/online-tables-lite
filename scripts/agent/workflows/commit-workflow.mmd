@@ -1,0 +1,83 @@
+graph TD
+    %% Entry Point
+    UserTrigger["👤 User: 'commit', 'save changes'"]
+    ClaudeExec["🤖 make commit"]
+
+    %% Makefile Validation
+    CheckStaged{Staged files exist?}
+    CheckUnstaged{Unstaged files exist?}
+    NoChanges["ℹ️ Working tree clean"]
+    NoStaged["❌ No files staged<br/>💡 Use 'make stage'"]
+
+    %% Context Collection & Promptlet
+    CollectContext["🔍 Collect commit context:<br/>• Staged files<br/>• git-cliff preview<br/>• Diff summary<br/>• Allowed types"]
+    GeneratePromptlet["📋 conventional_commit_generation promptlet"]
+
+    %% Claude Processing
+    ClaudeProcesses["🤖 Claude generates commit message"]
+    ClaudeExecutes["🤖 execute_commit --message 'type(scope): description'"]
+
+    %% Commit Execution
+    ExecuteCommit["🚀 commit-workflow.sh execute_commit"]
+    ValidateFormat{Message format valid?}
+    FormatWarning["⚠️ Format warning"]
+    CheckStagedAgain{Files still staged?}
+    CommitFailed["❌ No staged files"]
+
+    %% Pre-commit Hook
+    PreCommitHook["🔗 Pre-commit hooks:<br/>• Formatting (prettier, ruff)<br/>• Linting<br/>• Type checking"]
+    HookSuccess{Hooks passed?}
+
+    %% Outcomes
+    CommitSuccess["✅ Commit successful"]
+    HookFailed["❌ Pre-commit failed"]
+    WorkflowComplete["🎉 COMPLETE"]
+
+    %% Flow Connections
+    UserTrigger --> ClaudeExec
+    ClaudeExec --> CheckStaged
+
+    %% Staging Validation
+    CheckStaged -->|No| CheckUnstaged
+    CheckStaged -->|Yes| CollectContext
+    CheckUnstaged -->|No| NoChanges
+    CheckUnstaged -->|Yes| NoStaged
+
+    %% Message Generation
+    CollectContext --> GeneratePromptlet
+    GeneratePromptlet -.->|promptlet| ClaudeProcesses
+    ClaudeProcesses --> ClaudeExecutes
+    ClaudeExecutes --> ExecuteCommit
+
+    %% Commit Execution
+    ExecuteCommit --> ValidateFormat
+    ValidateFormat -->|Invalid| FormatWarning
+    ValidateFormat -->|Valid| CheckStagedAgain
+    FormatWarning --> CheckStagedAgain
+    CheckStagedAgain -->|No| CommitFailed
+    CheckStagedAgain -->|Yes| PreCommitHook
+
+    %% Pre-commit Flow
+    PreCommitHook --> HookSuccess
+    HookSuccess -->|Yes| CommitSuccess
+    HookSuccess -->|No| HookFailed
+
+    %% Completion
+    CommitSuccess --> WorkflowComplete
+
+    %% Styling
+    classDef entryPoint fill:#e1f5fe
+    classDef processStep fill:#e8f5e8
+    classDef decisionNode fill:#fff3e0
+    classDef errorNode fill:#ffcdd2
+    classDef successNode fill:#c8e6c9
+    classDef warningNode fill:#fff8e1
+    classDef claudeAction fill:#f3e5f5
+
+    class UserTrigger,ClaudeExec entryPoint
+    class CollectContext,ExecuteCommit,PreCommitHook,ClaudeExecutes processStep
+    class CheckStaged,CheckUnstaged,ValidateFormat,CheckStagedAgain,HookSuccess decisionNode
+    class NoChanges,NoStaged,CommitFailed,HookFailed errorNode
+    class CommitSuccess,WorkflowComplete successNode
+    class FormatWarning warningNode
+    class GeneratePromptlet,ClaudeProcesses claudeAction

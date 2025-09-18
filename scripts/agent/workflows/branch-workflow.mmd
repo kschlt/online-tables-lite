@@ -1,0 +1,120 @@
+graph TD
+    %% Entry Point
+    UserTrigger["👤 User: 'create branch', 'new branch'"]
+    ClaudeExec["🤖 make branch-new"]
+
+    %% Current Branch Check
+    CheckCurrentBranch{Current branch?}
+    OnMain["✅ On main"]
+    OnFeature["🔄 On feature branch"]
+
+    %% Uncommitted Changes
+    CheckUncommitted{Uncommitted changes?}
+    CheckStaged{Changes staged?}
+    StagedPromptlet["📋 uncommitted_changes_handling<br/>'commit first'"]
+    UnstagedPromptlet["📋 uncommitted_changes_handling<br/>'stash first'"]
+
+    %% Claude Actions for Changes
+    ClaudeCommits["🤖 make commit → retry branch-new"]
+    ClaudeStashes["🤖 git stash → branch-new → git stash pop"]
+
+    %% Main Branch Update
+    SwitchToMain["🔄 git checkout main"]
+    FetchMain["📡 git fetch origin main"]
+    CheckMainSync{Local == Remote?}
+    UpdateMain["🔄 git pull origin main"]
+    MainUpToDate["✅ Main up to date"]
+
+    %% Open PRs Check
+    CheckPRs{Open PRs exist?}
+    QueryGitHub["🔍 gh pr list --state open"]
+    NoPRs["✅ No open PRs"]
+    ShowOpenPRs["⚠️ Found X open PRs"]
+    OpenPRPromptlet["📋 branch_creation_with_open_prs<br/>coordination context"]
+    ClaudeCoordinates["🤖 Consider existing work"]
+
+    %% Branch Name Handling
+    CheckNameProvided{Name provided?}
+    ValidateName["🔍 validate-branch-name.sh"]
+    NameValid{Name valid?}
+
+    %% Name Generation & Fixing
+    GenerateNamePromptlet["📋 branch_name_generation<br/>request descriptive name"]
+    ClaudeGeneratesName["🤖 Provides: feat/feature-name"]
+    CompliancePromptlet["📋 compliance guidance<br/>name violates policy"]
+    ClaudeFixesName["🤖 Provides compliant name"]
+
+    %% Branch Creation
+    CreateBranch["🌿 git checkout -b BRANCH"]
+    BranchSuccess["✅ Branch created"]
+    ShowNextSteps["📝 Ready for development:<br/>• Code features<br/>• 'commit' → make commit<br/>• 'push' → make pr-workflow"]
+
+    %% Flow Connections
+    UserTrigger --> ClaudeExec
+    ClaudeExec --> CheckCurrentBranch
+
+    %% Branch Check
+    CheckCurrentBranch -->|main| CheckUncommitted
+    CheckCurrentBranch -->|feature| OnFeature
+    OnFeature --> CheckUncommitted
+
+    %% Uncommitted Changes Flow
+    CheckUncommitted -->|Yes| CheckStaged
+    CheckUncommitted -->|No| SwitchToMain
+    CheckStaged -->|Yes| StagedPromptlet
+    CheckStaged -->|No| UnstagedPromptlet
+
+    %% Claude Handles Changes
+    StagedPromptlet -.->|promptlet| ClaudeCommits
+    UnstagedPromptlet -.->|promptlet| ClaudeStashes
+    ClaudeCommits --> SwitchToMain
+    ClaudeStashes --> SwitchToMain
+
+    %% Main Update Flow
+    SwitchToMain --> FetchMain
+    FetchMain --> CheckMainSync
+    CheckMainSync -->|Different| UpdateMain
+    CheckMainSync -->|Same| MainUpToDate
+    UpdateMain --> CheckPRs
+    MainUpToDate --> CheckPRs
+
+    %% PR Check Flow
+    CheckPRs --> QueryGitHub
+    QueryGitHub -->|0| NoPRs
+    QueryGitHub -->|>0| ShowOpenPRs
+    ShowOpenPRs --> OpenPRPromptlet
+    OpenPRPromptlet -.->|promptlet| ClaudeCoordinates
+    ClaudeCoordinates --> CheckNameProvided
+    NoPRs --> CheckNameProvided
+
+    %% Name Validation Flow
+    CheckNameProvided -->|Yes| ValidateName
+    CheckNameProvided -->|No| GenerateNamePromptlet
+    GenerateNamePromptlet -.->|promptlet| ClaudeGeneratesName
+    ClaudeGeneratesName --> ValidateName
+    ValidateName --> NameValid
+    NameValid -->|Valid| CreateBranch
+    NameValid -->|Invalid| CompliancePromptlet
+    CompliancePromptlet -.->|promptlet| ClaudeFixesName
+    ClaudeFixesName --> ValidateName
+
+    %% Success Flow
+    CreateBranch --> BranchSuccess
+    BranchSuccess --> ShowNextSteps
+
+    %% Styling
+    classDef entryPoint fill:#e1f5fe
+    classDef processStep fill:#e8f5e8
+    classDef decisionNode fill:#fff3e0
+    classDef errorNode fill:#ffcdd2
+    classDef successNode fill:#c8e6c9
+    classDef warningNode fill:#fff8e1
+    classDef claudeAction fill:#f3e5f5
+
+    class UserTrigger,ClaudeExec entryPoint
+    class SwitchToMain,FetchMain,UpdateMain,QueryGitHub,ValidateName,CreateBranch,ClaudeCommits,ClaudeStashes,ClaudeCoordinates,ClaudeGeneratesName,ClaudeFixesName processStep
+    class CheckCurrentBranch,CheckUncommitted,CheckStaged,CheckMainSync,CheckPRs,CheckNameProvided,NameValid decisionNode
+    class CompliancePromptlet errorNode
+    class BranchSuccess,ShowNextSteps,MainUpToDate,NoPRs successNode
+    class OnFeature,ShowOpenPRs warningNode
+    class StagedPromptlet,UnstagedPromptlet,OpenPRPromptlet,GenerateNamePromptlet claudeAction

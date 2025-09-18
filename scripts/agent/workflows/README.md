@@ -1,12 +1,14 @@
-# Workflow Scripts Documentation
+# Agent Workflows
 
-This directory contains the core workflow orchestration scripts that power the agent-driven automation system.
+This directory contains the core workflow scripts and their visual documentation.
 
 ## 🔄 Workflow Scripts
 
-### PR Workflow (`pr-workflow.sh`)
+### 🚀 PR Workflow (`pr-workflow.sh`)
 
 Complete pull request creation pipeline with intelligent validation and automation.
+
+**📊 [View PR Workflow Diagram](./pr-workflow.mmd)**
 
 #### Usage:
 ```bash
@@ -40,7 +42,7 @@ make pr-workflow
 
 ---
 
-### Documentation Workflow (`docs-workflow.sh`)
+### 📚 Documentation Workflow (`docs-workflow.sh`)
 
 Automated documentation maintenance based on changelog analysis and workflow changes.
 
@@ -75,9 +77,11 @@ Automated documentation maintenance based on changelog analysis and workflow cha
 
 ---
 
-### Commit Workflow (`commit-workflow.sh`)
+### 📝 Commit Workflow (`commit-workflow.sh`)
 
 Conventional commit message generation with git-cliff integration.
+
+**📊 [View Commit Workflow Diagram](./commit-workflow.mmd)**
 
 #### Usage:
 ```bash
@@ -124,21 +128,41 @@ make commit         # → commit-workflow.sh (message generation)
 make stage          # → Intelligent staging with agent decisions
 ```
 
-## 📈 Workflow Architecture
+### 🌿 Branch Workflow (Makefile: `branch-new`)
 
-### Ping-Pong Pattern
+Intelligent branch creation with validation, naming compliance, and context analysis.
+
+**📊 [View Branch Workflow Diagram](./branch-workflow.mmd)**
+
+#### Key Features:
+- Uncommitted changes detection and handling
+- Branch naming convention enforcement
+- Open PR coordination
+- Main branch synchronization
+
+---
+
+## 📊 Visual Documentation
+
+All workflows include comprehensive Mermaid diagrams showing:
+- Complete decision trees and flow paths
+- Promptlet generation and Claude processing
+- Error handling and recovery mechanisms
+- Integration points between workflows
+
+## 🎯 Integration Patterns
+
+### Ping-Pong Architecture
 ```
-Workflow Script → Promptlet → Agent Analysis → Continue Workflow
+Makefile → Workflow Script → Promptlet → Claude → Next Step
 ```
 
-### Auto-chaining
-```
-validate_changes → docs-workflow → push_branch → create_pr → finalize_pr
-```
+### Workflow Chaining
+- `--workflow-origin` parameter tracks workflow source
+- Auto-chaining between related workflow steps
+- Context preservation across workflow boundaries
 
 ### Error Recovery
-```
-Error Detection → Actionable Message → Manual Intervention or Auto-retry
-```
-
-This architecture ensures robust, intelligent automation while maintaining transparency and debuggability.
+- Validation failures → Clear promptlets with resolution steps
+- Missing dependencies → Graceful degradation with warnings
+- Merge conflicts → Step-by-step resolution guidance
