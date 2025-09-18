@@ -1,56 +1,64 @@
 graph TD
     %% Entry Point
-    UserTrigger["👤 User: 'push', 'create PR'"]
-    ClaudeExec["🤖 make pr-workflow"]
+    UserSays["User: 'push', 'create PR'"]
+    ClaudeDetects["🤖 Claude detects trigger"]
+    ClaudeExec["🤖 Claude executes: make pr-workflow"]
 
-    %% Step 1: Validation
-    ValidateStart["🔍 validate_changes"]
+    %% Workflow Steps
+    MakefilePR["Makefile dispatches to pr-workflow"]
+    ValidateChanges["Validate branch changes"]
+
+    %% Validation Decisions
     CheckBranch{Protected branch?}
     CheckConflicts{Merge conflicts?}
     CheckCommits{Commits ahead?}
     CheckUncommitted{Uncommitted changes?}
 
-    %% Validation Outcomes & Claude Actions
-    BranchError["❌ branch_protection_error promptlet"]
-    ClaudeCreatesBranch["🤖 make branch-new NAME=feat/name"]
+    %% Error Promptlets
+    BranchError["Generate branch_protection_error promptlet"]
+    ConflictError["Generate conflict_resolution promptlet"]
+    NoChanges["Generate no_changes promptlet"]
+    UncommittedPromptlet["Generate validation warning promptlet"]
 
-    ConflictError["❌ conflict_resolution promptlet"]
-    ClaudeResolves["🤖 git rebase main → retry pr-workflow"]
+    %% Claude Actions
+    ClaudeCreatesBranch["🤖 Claude: create branch → retry workflow"]
+    ClaudeResolves["🤖 Claude: rebase main → retry workflow"]
+    ClaudeNoOp["🤖 Claude: understand no PR needed"]
+    ClaudeCommitsFirst["🤖 Claude: commit changes → retry workflow"]
 
-    NoChanges["ℹ️ no_changes promptlet"]
-    ClaudeNoOp["🤖 No PR needed"]
-
-    UncommittedPromptlet["⚠️ validation warning promptlet"]
-    ClaudeCommitsFirst["🤖 make commit → retry pr-workflow"]
-
-    %% Step 2: Documentation
-    DocsWorkflow["📚 docs-workflow.sh generate_docs"]
+    %% Documentation Flow
+    DocsWorkflow["Documentation workflow"]
     CheckDocNeeded{Doc changes needed?}
-    ApplyDocs["📝 apply_docs"]
-    CommitDocs["💾 commit_docs"]
-    SkipDocs["⏭️ Skip docs"]
+    ApplyDocs["Apply documentation updates"]
+    CommitDocs["Commit documentation"]
+    SkipDocs["Skip documentation"]
 
-    %% Step 3: Push & PR Creation
-    PushBranch["📤 push_branch"]
-    PrePushHook["🔗 Pre-push hook: CHANGELOG update"]
-    GeneratePRBody["📋 pr_body → promptlet"]
-    ClaudeCreatesPR["🤖 Processes PR description"]
-    CreatePR["🚀 create_pr"]
+    %% Push & PR Creation
+    PushBranch["Push branch"]
+    PrePushHook["Pre-push hook: CHANGELOG update"]
+    GeneratePRBody["Generate PR body"]
+    PRBodyPromptlet["Generate pr_description promptlet"]
+    ClaudeProcessesPR["🤖 Claude: process PR description"]
+    CreatePR["Create/Update PR"]
     CheckExistingPR{PR exists?}
-    UpdatePR["🔄 Update existing PR"]
-    NewPR["✨ Create new PR"]
+    UpdatePR["Update existing PR"]
+    NewPR["Create new PR"]
 
-    %% Step 4: Finalization
-    FinalizePR["✅ finalize_pr"]
+    %% Finalization
+    FinalizePR["Finalize PR"]
     CheckCI{CI passing?}
-    WorkflowComplete["🎉 COMPLETE"]
+    WorkflowComplete["Workflow Complete"]
 
-    %% Flow Connections
-    UserTrigger --> ClaudeExec
-    ClaudeExec --> ValidateStart
+    %% Entry Flow
+    UserSays --> ClaudeDetects
+    ClaudeDetects --> ClaudeExec
+    ClaudeExec --> MakefilePR
+
+    %% Workflow Flow
+    MakefilePR --> ValidateChanges
 
     %% Validation Flow
-    ValidateStart --> CheckBranch
+    ValidateChanges --> CheckBranch
     CheckBranch -->|Yes| BranchError
     CheckBranch -->|No| CheckConflicts
     CheckConflicts -->|Yes| ConflictError
@@ -60,16 +68,16 @@ graph TD
     CheckUncommitted -->|Yes| UncommittedPromptlet
     CheckUncommitted -->|No| DocsWorkflow
 
-    %% Claude Actions
+    %% Promptlet to Claude (ping-pong)
     BranchError -.->|promptlet| ClaudeCreatesBranch
     ConflictError -.->|promptlet| ClaudeResolves
     NoChanges -.->|promptlet| ClaudeNoOp
     UncommittedPromptlet -.->|promptlet| ClaudeCommitsFirst
 
-    %% Retry flows
-    ClaudeCreatesBranch --> ValidateStart
-    ClaudeResolves --> ValidateStart
-    ClaudeCommitsFirst --> ValidateStart
+    %% Claude Re-entry Points
+    ClaudeCreatesBranch --> MakefilePR
+    ClaudeResolves --> MakefilePR
+    ClaudeCommitsFirst --> MakefilePR
 
     %% Documentation Flow
     DocsWorkflow --> CheckDocNeeded
@@ -79,11 +87,16 @@ graph TD
     CommitDocs --> PushBranch
     SkipDocs --> PushBranch
 
-    %% PR Creation Flow
+    %% Push & PR Flow
     PushBranch --> PrePushHook
     PrePushHook --> GeneratePRBody
-    GeneratePRBody -.->|promptlet| ClaudeCreatesPR
-    ClaudeCreatesPR --> CreatePR
+    GeneratePRBody --> PRBodyPromptlet
+
+    %% Claude PR Processing (ping-pong)
+    PRBodyPromptlet -.->|promptlet| ClaudeProcessesPR
+    ClaudeProcessesPR --> CreatePR
+
+    %% PR Creation Flow
     CreatePR --> CheckExistingPR
     CheckExistingPR -->|Yes| UpdatePR
     CheckExistingPR -->|No| NewPR
@@ -94,17 +107,28 @@ graph TD
     FinalizePR --> CheckCI
     CheckCI --> WorkflowComplete
 
-    %% Styling
-    classDef entryPoint fill:#e1f5fe
+    %% Styling - Using Original Color Scheme
+    classDef userLayer fill:#e1f5fe
+    classDef agentLayer fill:#f3e5f5
     classDef processStep fill:#e8f5e8
     classDef decisionNode fill:#fff3e0
     classDef errorNode fill:#ffcdd2
     classDef successNode fill:#c8e6c9
-    classDef claudeAction fill:#f3e5f5
 
-    class UserTrigger,ClaudeExec entryPoint
-    class ValidateStart,DocsWorkflow,PushBranch,PrePushHook,CreatePR,FinalizePR,ApplyDocs,CommitDocs processStep
+    %% User Interaction (Blue)
+    class UserSays userLayer
+
+    %% Claude/Agent Actions (Purple)
+    class ClaudeDetects,ClaudeExec,ClaudeCreatesBranch,ClaudeResolves,ClaudeNoOp,ClaudeCommitsFirst,ClaudeProcessesPR agentLayer
+
+    %% Script Execution (Green)
+    class MakefilePR,ValidateChanges,DocsWorkflow,ApplyDocs,CommitDocs,SkipDocs,PushBranch,PrePushHook,GeneratePRBody,CreatePR,UpdatePR,NewPR,FinalizePR processStep
+
+    %% Decision Points (Yellow)
     class CheckBranch,CheckConflicts,CheckCommits,CheckUncommitted,CheckDocNeeded,CheckExistingPR,CheckCI decisionNode
-    class BranchError,ConflictError,NoChanges,UncommittedPromptlet errorNode
-    class WorkflowComplete,UpdatePR,NewPR successNode
-    class ClaudeCreatesBranch,ClaudeResolves,ClaudeNoOp,ClaudeCommitsFirst,ClaudeCreatesPR claudeAction
+
+    %% Promptlets (Red)
+    class BranchError,ConflictError,NoChanges,UncommittedPromptlet,PRBodyPromptlet errorNode
+
+    %% Success/Complete (Green)
+    class WorkflowComplete successNode
