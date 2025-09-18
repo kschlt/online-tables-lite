@@ -1,40 +1,56 @@
-graph TD
+flowchart TD
     %% Entry Point
-    UserTrigger["👤 User: 'commit', 'save changes'"]
-    ClaudeExec["🤖 make commit"]
+    UserTrigger["User: 'commit', 'save changes'"]
+    ClaudeDetects["🤖 Claude detects trigger"]
+    ClaudeExec["🤖 Claude executes: make commit"]
 
     %% Makefile Validation
     CheckStaged{Staged files exist?}
     CheckUnstaged{Unstaged files exist?}
-    NoChanges["ℹ️ Working tree clean"]
-    NoStaged["❌ No files staged<br/>💡 Use 'make stage'"]
 
-    %% Context Collection & Promptlet
-    CollectContext["🔍 Collect commit context:<br/>• Staged files<br/>• git-cliff preview<br/>• Diff summary<br/>• Allowed types"]
-    GeneratePromptlet["📋 conventional_commit_generation promptlet"]
+    %% STOP CONDITIONS (Terminal Messages Only)
+    NoChanges["ℹ️ STOP: Working tree clean<br/>Terminal: No changes to commit<br/>WORKFLOW COMPLETE"]
+    NoStaged["❌ STOP: No files staged<br/>Terminal: Use 'make stage' to stage files<br/>USER ACTION REQUIRED"]
 
-    %% Claude Processing
-    ClaudeProcesses["🤖 Claude generates commit message"]
-    ClaudeExecutes["🤖 execute_commit --message 'type(scope): description'"]
+    %% STAGING WORKFLOW (Black Box)
+    subgraph StagingBox ["📋 STAGING WORKFLOW<br/>📄 <i>See: make stage implementation</i>"]
+        direction TB
+        StageEntry["Entry: make stage"]
+        StageBlackBox["Staging automation handling:<br/>• Intelligent file detection<br/>• Agent staging decisions<br/>• Auto-stage relevant files"]
+        StageExit["Exit: Files staged, return to commit"]
+        StageEntry --> StageBlackBox
+        StageBlackBox --> StageExit
+    end
 
-    %% Commit Execution
-    ExecuteCommit["🚀 commit-workflow.sh execute_commit"]
+    %% Message Generation (Makefile)
+    CollectContext["Collect commit context:<br/>• git-cliff preview<br/>• Diff summary<br/>• Allowed commit types"]
+    ClaudeGenerates["🤖 Claude generates commit message"]
+
+    %% Commit Execution & Validation
+    ExecuteCommit["Execute commit with message"]
     ValidateFormat{Message format valid?}
-    FormatWarning["⚠️ Format warning"]
+    FormatWarning["⚠️ Format warning (continue)"]
     CheckStagedAgain{Files still staged?}
-    CommitFailed["❌ No staged files"]
+    CommitFailed["❌ STOP: No staged files<br/>Terminal: Files were unstaged<br/>USER ACTION REQUIRED"]
 
-    %% Pre-commit Hook
-    PreCommitHook["🔗 Pre-commit hooks:<br/>• Formatting (prettier, ruff)<br/>• Linting<br/>• Type checking"]
-    HookSuccess{Hooks passed?}
+    %% PRE-COMMIT HOOKS (Black Box)
+    subgraph PreCommitBox ["🔧 PRE-COMMIT HOOKS<br/>📄 <i>See: .git/hooks/pre-commit</i>"]
+        direction TB
+        HookEntry["Entry: git commit execution"]
+        HookBlackBox["Hook automation handling:<br/>• Code formatting (prettier, ruff)<br/>• Linting & style checks<br/>• Type checking & validation"]
+        HookExit["Exit: Success or failure"]
+        HookEntry --> HookBlackBox
+        HookBlackBox --> HookExit
+    end
 
-    %% Outcomes
+    %% Final Outcomes
     CommitSuccess["✅ Commit successful"]
-    HookFailed["❌ Pre-commit failed"]
-    WorkflowComplete["🎉 COMPLETE"]
+    HookFailed["❌ STOP: Pre-commit failed<br/>Terminal: Fix issues and retry<br/>USER ACTION REQUIRED"]
+    WorkflowComplete["Workflow Complete"]
 
     %% Flow Connections
-    UserTrigger --> ClaudeExec
+    UserTrigger --> ClaudeDetects
+    ClaudeDetects --> ClaudeExec
     ClaudeExec --> CheckStaged
 
     %% Staging Validation
@@ -43,41 +59,69 @@ graph TD
     CheckUnstaged -->|No| NoChanges
     CheckUnstaged -->|Yes| NoStaged
 
-    %% Message Generation
-    CollectContext --> GeneratePromptlet
-    GeneratePromptlet -.->|promptlet| ClaudeProcesses
-    ClaudeProcesses --> ClaudeExecutes
-    ClaudeExecutes --> ExecuteCommit
+    %% User goes to staging workflow (manual step)
+    NoStaged -.->|"User runs 'make stage'"| StagingBox
+    StageExit -.->|"User runs 'make commit' again"| CheckStaged
 
-    %% Commit Execution
+    %% Message Generation (happens in Makefile)
+    CollectContext --> ClaudeGenerates
+    ClaudeGenerates --> ExecuteCommit
+
+    %% Commit Execution & Validation (happens in execute_commit)
     ExecuteCommit --> ValidateFormat
-    ValidateFormat -->|Invalid| FormatWarning
+    ValidateFormat -->|Warning| FormatWarning
     ValidateFormat -->|Valid| CheckStagedAgain
     FormatWarning --> CheckStagedAgain
     CheckStagedAgain -->|No| CommitFailed
-    CheckStagedAgain -->|Yes| PreCommitHook
+    CheckStagedAgain -->|Yes| PreCommitBox
 
-    %% Pre-commit Flow
-    PreCommitHook --> HookSuccess
-    HookSuccess -->|Yes| CommitSuccess
-    HookSuccess -->|No| HookFailed
+    %% Pre-commit Hook Flow
+    HookExit -->|Success| CommitSuccess
+    HookExit -->|Failure| HookFailed
 
     %% Completion
     CommitSuccess --> WorkflowComplete
 
-    %% Styling
-    classDef entryPoint fill:#e1f5fe
-    classDef processStep fill:#e8f5e8
-    classDef decisionNode fill:#fff3e0
-    classDef errorNode fill:#ffcdd2
-    classDef successNode fill:#c8e6c9
-    classDef warningNode fill:#fff8e1
-    classDef claudeAction fill:#f3e5f5
+    %% Entry/Exit for Pre-commit Hooks
+    HookEntry --> HookBlackBox
+    HookBlackBox --> HookExit
 
-    class UserTrigger,ClaudeExec entryPoint
-    class CollectContext,ExecuteCommit,PreCommitHook,ClaudeExecutes processStep
-    class CheckStaged,CheckUnstaged,ValidateFormat,CheckStagedAgain,HookSuccess decisionNode
-    class NoChanges,NoStaged,CommitFailed,HookFailed errorNode
-    class CommitSuccess,WorkflowComplete successNode
-    class FormatWarning warningNode
-    class GeneratePromptlet,ClaudeProcesses claudeAction
+    %% Entry/Exit for Staging and Pre-commit
+    StageEntry --> StageBlackBox
+    StageBlackBox --> StageExit
+
+    %% Styling - Consistent with PR Workflow
+    UserTrigger@{ shape: rect}
+    StageEntry:::automationStep
+    StageBlackBox:::blackBoxStep
+    StageExit:::automationStep
+    HookEntry:::automationStep
+    HookBlackBox:::blackBoxStep
+    HookExit:::automationStep
+    UserTrigger:::userLayer
+    ClaudeDetects:::agentLayer
+    ClaudeExec:::agentLayer
+    CheckStaged:::automationStep
+    CheckUnstaged:::automationStep
+    NoChanges:::stopNode
+    NoStaged:::stopNode
+    StagingBox:::subgraphStyle
+    CollectContext:::automationStep
+    ClaudeGenerates:::agentLayer
+    ExecuteCommit:::automationStep
+    ValidateFormat:::automationStep
+    FormatWarning:::automationStep
+    CheckStagedAgain:::automationStep
+    CommitFailed:::stopNode
+    PreCommitBox:::subgraphStyle
+    CommitSuccess:::successNode
+    HookFailed:::stopNode
+    WorkflowComplete:::successNode
+
+    classDef userLayer fill:#e1f5fe
+    classDef agentLayer fill:#f3e5f5
+    classDef automationStep fill:#fff3e0
+    classDef stopNode fill:#ffcdd2
+    classDef blackBoxStep fill:#f5f5f5
+    classDef successNode fill:#a5d6a7
+    classDef subgraphStyle fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
