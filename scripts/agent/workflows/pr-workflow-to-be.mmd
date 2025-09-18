@@ -1,0 +1,83 @@
+flowchart TD
+ subgraph CommitWorkflowBox["🤖  COMMIT WF<br>📄 <i>See: commit-workflow.mmd</i>"]
+    direction TB
+        CommitEntry["Entry: make commit<br>--workflow-origin=pr-workflow"]
+        CommitBlackBox["Agent workflow handling:<br>• Agent commit message generation<br>• Pre-commit hooks &amp; validation<br>• Error handling &amp; retries"]
+        CommitExit["Exit: Returns to docs workflow"]
+  end
+ subgraph DocsWorkflowBox["🤖  DOCUMENTATION WF<br>📄 <i>See: docs-workflow.sh</i>"]
+    direction TB
+        DocsEntry["Entry: generate_docs<br>--workflow-origin=pr-workflow"]
+        DocsBlackBox["Agent workflow handling:<br>• Agent analysis of changes<br>• Doc updates &amp; validation<br>• Auto-commit or skip logic"]
+        DocsExit["Exit: Continue to push"]
+  end
+    CommitEntry --> CommitBlackBox
+    CommitBlackBox --> CommitExit
+    DocsEntry --> DocsBlackBox
+    DocsBlackBox --> DocsExit
+    UserSays@{ label: "User: 'push', 'create PR'" } --> ClaudeDetects["🤖 Claude detects trigger"]
+    ClaudeDetects --> ClaudeExec["🤖 Claude executes: make pr-workflow"]
+    ClaudeExec --> MakefilePR["Makefile dispatches to pr-workflow"]
+    MakefilePR --> ValidateChanges["Validate branch changes"]
+    ValidateChanges --> CheckBranch{"Protected branch?"}
+    CheckBranch -- Yes --> ProtectedStop["❌ STOP: Protected branch detected<br>Terminal: Cannot create PR from main/production<br>USER ACTION REQUIRED"]
+    CheckBranch -- No --> CheckConflicts{"Merge conflicts?"}
+    CheckConflicts -- Yes --> ConflictStop["⚠️ STOP: Merge conflicts detected<br>Terminal: Rebase required before PR<br>USER ACTION REQUIRED"]
+    CheckConflicts -- No --> CheckCommits{"Commits ahead?"}
+    CheckCommits -- 0 --> NoChangesStop["ℹ️ STOP: No changes to create PR<br>Terminal: 0 commits ahead of main<br>WORKFLOW COMPLETE"]
+    CheckCommits -- >0 --> CheckUncommitted{"Uncommitted changes?"}
+    CheckUncommitted -- Yes --> CommitWorkflowBox
+    CheckUncommitted -- No --> DocsWorkflowBox
+    CommitExit -.-> DocsWorkflowBox
+    DocsExit --> PushBranch["Push branch"]
+    PushBranch --> PrePushHook["Pre-push hook automation<br>📄 <i>See: .git/hooks/pre-push</i>"]
+    PrePushHook --> GeneratePRBody["🤖 Claude generates PR title & body"]
+    GeneratePRBody --> CreatePR["Create/Update PR"]
+    CreatePR --> CheckExistingPR{"PR exists?"}
+    CheckExistingPR -- Yes --> UpdatePR["Update existing PR"]
+    CheckExistingPR -- No --> NewPR["Create new PR"]
+    UpdatePR --> FinalizePR["Finalize PR"]
+    NewPR --> FinalizePR
+    FinalizePR --> CheckCI{"CI passing?"}
+    CheckCI --> WorkflowComplete["Workflow Complete"]
+
+    UserSays@{ shape: rect}
+     CommitEntry:::automationStep
+     CommitBlackBox:::blackBoxStep
+     CommitExit:::automationStep
+     DocsEntry:::automationStep
+     DocsBlackBox:::blackBoxStep
+     DocsExit:::automationStep
+     UserSays:::userLayer
+     ClaudeDetects:::agentLayer
+     ClaudeExec:::agentLayer
+     MakefilePR:::automationStep
+     ValidateChanges:::automationStep
+     CheckBranch:::automationStep
+     ProtectedStop:::stopNode
+     CheckConflicts:::automationStep
+     ConflictStop:::stopNode
+     CheckCommits:::automationStep
+     NoChangesStop:::stopNode
+     CheckUncommitted:::automationStep
+     CommitWorkflowBox:::subgraphStyle
+     DocsWorkflowBox:::subgraphStyle
+     PushBranch:::automationStep
+     PrePushHook:::blackBoxStep
+     GeneratePRBody:::agentLayer
+     CreatePR:::automationStep
+     CheckExistingPR:::automationStep
+     UpdatePR:::automationStep
+     NewPR:::automationStep
+     FinalizePR:::automationStep
+     CheckCI:::automationStep
+     WorkflowComplete:::successNode
+    classDef userLayer fill:#e1f5fe
+    classDef agentLayer fill:#f3e5f5
+    classDef automationStep fill:#fff3e0
+    classDef stopNode fill:#ffcdd2
+    classDef blackBoxStep fill:#f5f5f5
+    classDef successNode fill:#a5d6a7
+    classDef subgraphStyle fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
+
+
