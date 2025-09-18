@@ -97,32 +97,11 @@ generate_naming_promptlet() {
     local suggested_name="$2"
     local validation_errors="$3"
     
-    echo "{"
-    echo '  "task": {'
-    echo '    "type": "branch_name_compliance",'
-    echo '    "instructions": ['
-    echo '      "Current branch name violates naming policy",'
-    echo '      "Rename branch to comply with feat/ or fix/ standard",'
-    echo '      "Use: make branch-rename NAME=suggested-name",'
-    echo '      "Or create new compliant branch: make branch-new NAME=suggested-name"'
-    echo '    ],'
-    echo '    "context": {'
-    printf '      "current_branch": "%s",\n' "$current_branch"
-    printf '      "suggested_name": "%s",\n' "$suggested_name"
-    printf '      "validation_errors": "%s",\n' "$(echo "$validation_errors" | tr '\n' '; ')"
-    echo '      "policy": {'
-    echo '        "prefixes": ["feat/", "fix/"],'
-    echo '        "format": "kebab-case (lowercase, hyphens only)",'
-    echo '        "max_length": '$MAX_LENGTH','
-    echo '        "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export"]'
-    echo '      },'
-    echo '      "transliteration": {'
-    echo '        "guidelines": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",'
-    echo '        "example": "feat/müller-straße → feat/mueller-strasse"'
-    echo '      }'
-    echo '    }'
-    echo '  }'
-    echo "}"
+    # Use promptlet library for single source of truth
+    ./scripts/agent/promptlets/promptlet-reader.sh branch_name_compliance \
+        current_branch="$current_branch" \
+        suggested_name="$suggested_name" \
+        validation_errors="$(echo "$validation_errors" | tr '\n' '; ')"
 }
 
 # Main validation function

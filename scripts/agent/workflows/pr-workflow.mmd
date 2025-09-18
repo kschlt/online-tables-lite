@@ -1,0 +1,110 @@
+graph TD
+    %% Entry Point
+    UserTrigger["👤 User: 'push', 'create PR'"]
+    ClaudeExec["🤖 make pr-workflow"]
+
+    %% Step 1: Validation
+    ValidateStart["🔍 validate_changes"]
+    CheckBranch{Protected branch?}
+    CheckConflicts{Merge conflicts?}
+    CheckCommits{Commits ahead?}
+    CheckUncommitted{Uncommitted changes?}
+
+    %% Validation Outcomes & Claude Actions
+    BranchError["❌ branch_protection_error promptlet"]
+    ClaudeCreatesBranch["🤖 make branch-new NAME=feat/name"]
+
+    ConflictError["❌ conflict_resolution promptlet"]
+    ClaudeResolves["🤖 git rebase main → retry pr-workflow"]
+
+    NoChanges["ℹ️ no_changes promptlet"]
+    ClaudeNoOp["🤖 No PR needed"]
+
+    UncommittedPromptlet["⚠️ validation warning promptlet"]
+    ClaudeCommitsFirst["🤖 make commit → retry pr-workflow"]
+
+    %% Step 2: Documentation
+    DocsWorkflow["📚 docs-workflow.sh generate_docs"]
+    CheckDocNeeded{Doc changes needed?}
+    ApplyDocs["📝 apply_docs"]
+    CommitDocs["💾 commit_docs"]
+    SkipDocs["⏭️ Skip docs"]
+
+    %% Step 3: Push & PR Creation
+    PushBranch["📤 push_branch"]
+    PrePushHook["🔗 Pre-push hook: CHANGELOG update"]
+    GeneratePRBody["📋 pr_body → promptlet"]
+    ClaudeCreatesPR["🤖 Processes PR description"]
+    CreatePR["🚀 create_pr"]
+    CheckExistingPR{PR exists?}
+    UpdatePR["🔄 Update existing PR"]
+    NewPR["✨ Create new PR"]
+
+    %% Step 4: Finalization
+    FinalizePR["✅ finalize_pr"]
+    CheckCI{CI passing?}
+    WorkflowComplete["🎉 COMPLETE"]
+
+    %% Flow Connections
+    UserTrigger --> ClaudeExec
+    ClaudeExec --> ValidateStart
+
+    %% Validation Flow
+    ValidateStart --> CheckBranch
+    CheckBranch -->|Yes| BranchError
+    CheckBranch -->|No| CheckConflicts
+    CheckConflicts -->|Yes| ConflictError
+    CheckConflicts -->|No| CheckCommits
+    CheckCommits -->|0| NoChanges
+    CheckCommits -->|>0| CheckUncommitted
+    CheckUncommitted -->|Yes| UncommittedPromptlet
+    CheckUncommitted -->|No| DocsWorkflow
+
+    %% Claude Actions
+    BranchError -.->|promptlet| ClaudeCreatesBranch
+    ConflictError -.->|promptlet| ClaudeResolves
+    NoChanges -.->|promptlet| ClaudeNoOp
+    UncommittedPromptlet -.->|promptlet| ClaudeCommitsFirst
+
+    %% Retry flows
+    ClaudeCreatesBranch --> ValidateStart
+    ClaudeResolves --> ValidateStart
+    ClaudeCommitsFirst --> ValidateStart
+
+    %% Documentation Flow
+    DocsWorkflow --> CheckDocNeeded
+    CheckDocNeeded -->|Yes| ApplyDocs
+    CheckDocNeeded -->|No| SkipDocs
+    ApplyDocs --> CommitDocs
+    CommitDocs --> PushBranch
+    SkipDocs --> PushBranch
+
+    %% PR Creation Flow
+    PushBranch --> PrePushHook
+    PrePushHook --> GeneratePRBody
+    GeneratePRBody -.->|promptlet| ClaudeCreatesPR
+    ClaudeCreatesPR --> CreatePR
+    CreatePR --> CheckExistingPR
+    CheckExistingPR -->|Yes| UpdatePR
+    CheckExistingPR -->|No| NewPR
+    UpdatePR --> FinalizePR
+    NewPR --> FinalizePR
+
+    %% Finalization
+    FinalizePR --> CheckCI
+    CheckCI --> WorkflowComplete
+
+    %% Styling
+    classDef entryPoint fill:#e1f5fe
+    classDef processStep fill:#e8f5e8
+    classDef decisionNode fill:#fff3e0
+    classDef errorNode fill:#ffcdd2
+    classDef successNode fill:#c8e6c9
+    classDef claudeAction fill:#f3e5f5
+
+    class UserTrigger,ClaudeExec entryPoint
+    class ValidateStart,DocsWorkflow,PushBranch,PrePushHook,CreatePR,FinalizePR,ApplyDocs,CommitDocs processStep
+    class CheckBranch,CheckConflicts,CheckCommits,CheckUncommitted,CheckDocNeeded,CheckExistingPR,CheckCI decisionNode
+    class BranchError,ConflictError,NoChanges,UncommittedPromptlet errorNode
+    class WorkflowComplete,UpdatePR,NewPR successNode
+    class ClaudeCreatesBranch,ClaudeResolves,ClaudeNoOp,ClaudeCommitsFirst,ClaudeCreatesPR claudeAction

@@ -1,0 +1,84 @@
+{
+  "description": "Configuration for comprehensive promptlet compliance validation",
+  "version": "1.0.0",
+  "monitored_sources": {
+    "makefile_targets": {
+      "description": "Makefile targets that generate agent tasks",
+      "files": ["Makefile"],
+      "patterns": [
+        "echo.*\\\"task\\\".*:",
+        "echo.*\\\"type\\\".*:",
+        "echo.*\\\"instructions\\\".*:",
+        "printf.*\\\"task\\\".*:"
+      ],
+      "required_compliance": "must_use_promptlet_library",
+      "enforcement_level": "error"
+    },
+    "git_scripts": {
+      "description": "Git automation scripts that may generate agent tasks",
+      "files": [
+        "scripts/git/validate-branch-name.sh",
+        "scripts/git/aggregate-pr-metadata.sh",
+        "scripts/git/protect-main-branch.sh"
+      ],
+      "patterns": [
+        "echo.*\\\"task\\\".*:",
+        "echo.*\\\"type\\\".*:",
+        "generate.*promptlet"
+      ],
+      "required_compliance": "should_use_promptlet_library",
+      "enforcement_level": "warning"
+    },
+    "promptlet_references": {
+      "description": "All files that reference promptlet-reader.sh", 
+      "files": [
+        "Makefile",
+        "scripts/git/validate-branch-name.sh",
+        "scripts/git/aggregate-pr-metadata.sh",
+        "scripts/git/protect-main-branch.sh"
+      ],
+      "patterns": [
+        "promptlet-reader\\.sh\\s+([^\\s]+)"
+      ],
+      "required_compliance": "must_reference_valid_promptlets",
+      "enforcement_level": "error"
+    }
+  },
+  "validation_rules": {
+    "single_source_of_truth": {
+      "description": "All agent tasks must use promptlet library",
+      "applies_to": ["makefile_targets", "git_scripts"],
+      "exceptions": {
+        "aggregate-pr-metadata.sh": {
+          "reason": "Generates task descriptions for agent consumption, not JSON promptlets",
+          "approved_patterns": ["\\*\\*TASK\\*\\*:", "generate.*description"]
+        }
+      }
+    },
+    "promptlet_existence": {
+      "description": "All promptlet references must exist in library",
+      "applies_to": ["promptlet_references"],
+      "library_file": "scripts/agent/promptlets/promptlets.json"
+    },
+    "no_duplicate_definitions": {
+      "description": "Promptlets should only be defined in the library",
+      "forbidden_patterns": [
+        "echo.*\\\"type\\\":\\s*\\\"(branch_evaluation|branch_name_compliance|pr_description|conventional_commit_generation|uncommitted_changes_handling|branch_creation_with_open_prs|branch_name_generation|documentation_update)\\\""
+      ]
+    }
+  },
+  "auto_fix_suggestions": {
+    "echo_to_promptlet": {
+      "description": "Convert echo-based JSON generation to promptlet library calls",
+      "pattern": "echo.*\\\"task\\\".*:",
+      "replacement": "./scripts/git/promptlet-reader.sh {promptlet_name} {variables...}",
+      "requires_manual_review": true
+    }
+  },
+  "reporting": {
+    "output_format": "detailed",
+    "show_progress": true,
+    "group_by_file": true,
+    "include_suggestions": true
+  }
+}

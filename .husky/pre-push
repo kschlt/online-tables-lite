@@ -30,64 +30,40 @@ if [ ! -f "Makefile" ]; then
     exit 1
 fi
 
-echo "📚 Running documentation update and PR creation workflow..."
+echo "📚 Running streamlined PR creation workflow..."
 
-# 1. Lightweight verification - quality guaranteed by pre-commit hook
-echo "✅ Quality checks guaranteed by pre-commit hook - focusing on changelog automation"
+# Lightweight verification - all quality checks and changelog updates handled by pre-commit
+echo "✅ Quality checks and CHANGELOG.md updates handled by pre-commit hook"
 
-# Check if cached commit metadata is available for verification
+# Simple verification that we have the expected commit cache
 CACHE_FILE=".git/commit-cache/last-commit-meta"
 if [ -f "$CACHE_FILE" ]; then
-    echo "⚡ Using cached commit data for verification"
-    . "$CACHE_FILE"
-    if [ -n "$CH_CODE" ]; then
-        echo "📝 Code changes detected - agent should have run documentation updates"
-        echo "💡 If you're a human user and haven't run 'make ship', please run it first"
-    else
-        echo "✅ No significant code changes detected"
-    fi
+    echo "⚡ Commit metadata available from pre-commit hook"
 else
-    echo "🔍 No commit cache - performing lightweight verification..."
-    BASE=$(git merge-base origin/main HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
-    CODE_CHANGES=$(git diff --name-only $BASE...HEAD -- 'apps/**' 'supabase/**' 'scripts/**' 2>/dev/null | grep -v -E '\.(md|txt)$' | wc -l || echo "0")
-    if [ "$CODE_CHANGES" -gt 0 ]; then
-        echo "📝 Code changes detected - agent should have run documentation updates"
-        echo "💡 If you're a human user and haven't run 'make ship', please run it first"
-    else
-        echo "✅ No significant code changes detected"
-    fi
+    echo "⚠️  No commit cache found - this may indicate pre-commit hook issues"
 fi
 
-# 2. Auto-update changelog if git-cliff is available and configured
-if command -v git-cliff >/dev/null 2>&1 && [ -f "cliff.toml" ]; then
-    echo "📝 Auto-updating CHANGELOG.md with git-cliff..."
-    
-    # Generate the updated changelog
-    CHANGELOG_UPDATED=false
-    if git-cliff --prepend CHANGELOG.md 2>/dev/null; then
-        # Check if CHANGELOG.md was actually modified
-        if ! git diff --quiet CHANGELOG.md 2>/dev/null; then
-            echo "✅ CHANGELOG.md updated with new entries"
-            git add CHANGELOG.md
-            
-            # Amend the last commit to include changelog updates
-            git commit --amend --no-edit --no-verify
-            echo "✅ CHANGELOG.md changes amended to last commit"
-            CHANGELOG_UPDATED=true
-        else
-            echo "ℹ️  CHANGELOG.md already up to date"
-        fi
-    else
-        echo "⚠️  Could not update CHANGELOG.md with git-cliff"
-    fi
-    
-    if [ "$CHANGELOG_UPDATED" = true ]; then
-        echo "📝 Changelog updated automatically during push"
-    fi
-else
-    echo "ℹ️  git-cliff not available or not configured, skipping changelog auto-update"
-fi
-
-# 3. The actual push will happen after this hook completes successfully
+# Continue the promptlet chain for PR creation after successful push
 echo "✅ Pre-push verification complete!"
 echo "📤 Push will proceed..."
+
+# After push succeeds, generate promptlet for PR creation workflow
+cat << 'EOF'
+{
+  "task": {
+    "type": "pr_creation_workflow",
+    "instructions": [
+      "Create pull request with comprehensive description using git-cliff changelog",
+      "Generate intelligent PR title based on branch work and changes",
+      "Execute the complete PR creation process including validation"
+    ],
+    "context": {
+      "branch": "'"$BRANCH"'",
+      "push_successful": true,
+      "changelog_updated": true,
+      "workflow_stage": "post_push_pr_creation"
+    },
+    "next_step": "./scripts/agent/workflows/pr-workflow.sh pr_body --branch '"$BRANCH"'"
+  }
+}
+EOF

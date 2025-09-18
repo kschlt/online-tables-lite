@@ -1,0 +1,371 @@
+{
+  "branch_evaluation": {
+    "task": {
+      "type": "branch_evaluation",
+      "instructions": [
+        "Analyze current branch name clarity and descriptiveness",
+        "Compare with suggested name based on actual changes",
+        "Decide whether to rename or keep current name based on decision criteria"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "suggested_name": "${suggested_name}",
+        "decision_criteria": {
+          "rename_when": [
+            "Current name is generic (feature/update, feature/fix)",
+            "Suggested name is significantly more descriptive",
+            "Suggested name better reflects actual changes"
+          ],
+          "keep_when": [
+            "Current name is already clear and specific",
+            "Only minor wording differences",
+            "Current name accurately describes the work"
+          ]
+        },
+        "changes_context": "${changes_context}"
+      },
+      "next_step": "make branch-rename NAME=${suggested_name} (if renaming) or continue workflow (if keeping)"
+    }
+  },
+  "branch_name_compliance": {
+    "task": {
+      "type": "branch_name_compliance",
+      "instructions": [
+        "Current branch name violates naming policy",
+        "Rename branch to comply with feat/ or fix/ standard"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "suggested_name": "${suggested_name}",
+        "validation_errors": "${validation_errors}",
+        "naming_policy": {
+          "required_prefixes": ["feat/", "fix/"],
+          "format": "kebab-case",
+          "max_length": 70
+        }
+      },
+      "next_step": "make branch-rename NAME=${suggested_name}"
+    }
+  },
+  "pr_description": {
+    "task": {
+      "type": "pr_description",
+      "instructions": [
+        "Use the git-cliff generated changelog as the foundation for PR description",
+        "Transform changelog sections into PR summary and impact analysis",
+        "Generate intelligent test plan based on change categories",
+        "Add contextual information about branch and integration",
+        "Format as comprehensive GitHub-ready markdown PR description"
+      ],
+      "context": {
+        "branch": "${branch_name}",
+        "base_branch": "${base_branch}",
+        "changelog": "${changelog_content}",
+        "workflow_origin": "${workflow_origin}"
+      },
+      "next_step": "./scripts/agent/workflows/pr-workflow.sh create_pr --branch ${branch_name} --workflow-origin ${workflow_origin}"
+    }
+  },
+  "conventional_commit_generation": {
+    "task": {
+      "type": "conventional_commit_generation",
+      "instructions": [
+        "Analyze staged changes with: git diff --staged",
+        "Use git-cliff preview and configuration to determine appropriate commit type",
+        "Generate conventional commit message: type(scope): description (<72 chars)",
+        "Ensure format matches cliff.toml commit_parsers configuration",
+        "Validate with: echo \"message\" | git-cliff --unreleased --context",
+        "Execute next step with your generated message"
+      ],
+      "context": {
+        "staged_files": "${staged_files}",
+        "suggested_version": "${suggested_version}",
+        "diff_summary": "${diff_summary}",
+        "git_cliff_config": "${git_cliff_config}",
+        "allowed_types": "${allowed_types}",
+        "format_from_cliff": "type(scope): description - extracted from cliff.toml commit_parsers",
+        "sample_analysis": "${sample_analysis}",
+        "examples": [
+          "feat(ui): add user dashboard",
+          "fix(api): resolve authentication issue",
+          "docs: update README with setup instructions",
+          "perf(core): optimize database queries",
+          "refactor(auth): simplify token validation"
+        ],
+        "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)",
+        "validation": "Use git-cliff --context to validate message format"
+      },
+      "next_step": "./scripts/agent/workflows/commit-workflow.sh execute_commit --message \"YOUR_GENERATED_MESSAGE\""
+    }
+  },
+  "commit_complete": {
+    "task": {
+      "type": "commit_complete",
+      "instructions": [
+        "Commit executed successfully",
+        "Workflow complete - ready for next development cycle"
+      ],
+      "context": {
+        "message": "${message}",
+        "status": "${status}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "commit_error": {
+    "task": {
+      "type": "commit_error",
+      "instructions": [
+        "Commit execution failed",
+        "Review error and retry or fix issues manually"
+      ],
+      "context": {
+        "message": "${message}",
+        "error": "${error}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "uncommitted_changes_handling": {
+    "task": {
+      "type": "uncommitted_changes_handling", 
+      "instructions": [
+        "Uncommitted changes block branch creation",
+        "${action_instruction}"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "has_staged_changes": "${has_staged_changes}",
+        "has_unstaged_changes": "${has_unstaged_changes}",
+        "decision": "${decision}"
+      }
+    }
+  },
+  "branch_creation_with_open_prs": {
+    "task": {
+      "type": "branch_creation_with_open_prs",
+      "instructions": [
+        "Review open PRs to avoid conflicts",
+        "Consider if new branch relates to existing PRs", 
+        "Proceed with branch creation if work is independent",
+        "Use: make branch-new NAME=feature/descriptive-name"
+      ],
+      "context": {
+        "open_prs": "${open_prs}",
+        "pr_count": "${pr_count}",
+        "recommendation": "Review PR list and ensure new work does not conflict",
+        "main_status": "up to date",
+        "next_action": "specify branch name or proceed with caution"
+      }
+    }
+  },
+  "branch_name_generation": {
+    "task": {
+      "type": "branch_name_generation",
+      "instructions": [
+        "Generate compliant branch name based on planned work",
+        "REQUIRED: Use feat/ or fix/ prefix only (no feature/)",
+        "Format: feat/kebab-case or fix/kebab-case (≤48 chars)"
+      ],
+      "context": {
+        "required_prefixes": ["feat/", "fix/"],
+        "format": "kebab-case (lowercase, hyphens only)",
+        "max_length": 48,
+        "current_branch": "main",
+        "main_status": "up to date",
+        "open_prs": "${open_prs}",
+        "examples": ["feat/user-dashboard", "fix/login-bug", "feat/table-export", "fix/api-timeout"],
+        "transliteration": "ä→ae, ö→oe, ü→ue, ß→ss, é→e, etc.",
+        "policy": "Only feat/ and fix/ prefixes allowed by naming policy"
+      },
+      "next_step": "make branch-new NAME=${generated_branch_name}"
+    }
+  },
+  "documentation_update": {
+    "task": {
+      "type": "documentation_update",
+      "instructions": [
+        "Analyze git-cliff changelog to identify documentation impacts",
+        "Update CLI usage, API changes, configuration changes in README.md based on Added/Fixed sections",
+        "Update agent workflow docs in scripts/agent/ folder for workflow improvements",
+        "Update design system docs if UI component changes detected",
+        "If you make changes, call apply_docs to validate and continue workflow",
+        "If nothing needs updating, reply exactly: NO-OP"
+      ],
+      "context": {
+        "diff_base": "${diff_base}",
+        "branch": "${branch}",
+        "changelog_content": "${changelog_content}",
+        "workflow_origin": "${workflow_origin}",
+        "agent_docs_location": "scripts/agent/"
+      },
+      "next_step": "./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin ${workflow_origin}"
+    }
+  },
+  "change_validation": {
+    "task": {
+      "type": "change_validation",
+      "instructions": [
+        "Review validation results for branch changes",
+        "Analyze any issues or conflicts detected",
+        "Decide whether to proceed with PR creation or address issues first"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "base_branch": "${base_branch}",
+        "validation_status": "${validation_status}",
+        "commits_ahead": "${commits_ahead}",
+        "has_uncommitted": "${has_uncommitted}",
+        "conflicts_exist": "${conflicts_exist}",
+        "issues_detected": "${issues_detected}",
+        "workflow_origin": "${workflow_origin}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "pr_finalization": {
+    "task": {
+      "type": "pr_finalization",
+      "instructions": [
+        "PR has been created successfully",
+        "Review PR URL and proceed with finalization tasks",
+        "Verify all post-creation tasks completed successfully"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "pr_url": "${pr_url}",
+        "workflow_origin": "${workflow_origin}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "pr_completion": {
+    "task": {
+      "type": "pr_completion",
+      "instructions": [
+        "Review PR finalization results",
+        "Verify all post-creation tasks completed successfully",
+        "Proceed with next actions if any are required"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "pr_url": "${pr_url}",
+        "completion_status": "${completion_status}",
+        "ci_status": "${ci_status}",
+        "ci_checks_passing": "${ci_checks_passing}",
+        "deployment_needed": "${deployment_needed}",
+        "deployment_reason": "${deployment_reason}",
+        "workflow_origin": "${workflow_origin}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "documentation_commit": {
+    "task": {
+      "type": "documentation_commit",
+      "instructions": [
+        "Documentation changes have been applied",
+        "Review modified files and commit changes"
+      ],
+      "context": {
+        "modified_files": "${modified_files}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "documentation_no_changes": {
+    "task": {
+      "type": "documentation_no_changes",
+      "instructions": [
+        "No documentation changes were detected",
+        "Documentation workflow complete"
+      ],
+      "context": {},
+      "next_step": "${next_step}"
+    }
+  },
+  "workflow_complete": {
+    "task": {
+      "type": "workflow_complete",
+      "instructions": [
+        "Workflow has completed successfully",
+        "All tasks have been finished"
+      ],
+      "context": {
+        "status": "${status}",
+        "commit_message": "${commit_message}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "workflow_error": {
+    "task": {
+      "type": "workflow_error",
+      "instructions": [
+        "Workflow encountered an error",
+        "Manual intervention required"
+      ],
+      "context": {
+        "error": "${error}"
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "main_branch_rescue": {
+    "task": {
+      "type": "main_branch_rescue",
+      "instructions": [
+        "Commits on main branch are blocked by policy",
+        "Create a compliant feature branch for your changes",
+        "${rescue_instructions}"
+      ],
+      "context": {
+        "suggested_branch": "${suggested_branch}",
+        "has_changes": "${has_changes}",
+        "policy": {
+          "reason": "Main branch is protected to maintain stability",
+          "solution": "All development must happen on feature branches",
+          "branch_naming": "Use feat/ or fix/ prefixes"
+        }
+      }
+    }
+  },
+  "file_staging_decision": {
+    "task": {
+      "type": "file_staging_decision",
+      "instructions": [
+        "Review detected relevant files for staging",
+        "Decide which changes are relevant for staging",
+        "Execute appropriate staging command based on decision"
+      ],
+      "context": {
+        "total_changes": "${total_changes}",
+        "staged_count": "${staged_count}",
+        "modified_count": "${modified_count}",
+        "untracked_count": "${untracked_count}",
+        "relevant_files": "${relevant_files}",
+        "staging_options": {
+          "auto_stage": "Execute: ${auto_stage_command}",
+          "manual_stage": "Use: ${manual_stage_help}"
+        }
+      }
+    }
+  },
+  "manual_staging_required": {
+    "task": {
+      "type": "manual_staging_required",
+      "instructions": [
+        "No automatically stageable files detected",
+        "Manual file selection required for staging",
+        "Review files and stage specific ones manually"
+      ],
+      "context": {
+        "total_changes": "${total_changes}",
+        "modified_files": "${modified_files}",
+        "untracked_files": "${untracked_files}",
+        "staging_help": "${staging_help}"
+      },
+      "next_step": "Review files, use git add <files> for specific staging, then make commit"
+    }
+  }
+}
