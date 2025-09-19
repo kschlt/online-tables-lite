@@ -43,27 +43,9 @@ else
     echo "⚠️  No commit cache found - this may indicate pre-commit hook issues"
 fi
 
-# Continue the promptlet chain for PR creation after successful push
+# Pre-push verification complete - 2B workflow will handle PR creation
 echo "✅ Pre-push verification complete!"
 echo "📤 Push will proceed..."
 
-# After push succeeds, generate promptlet for PR creation workflow
-cat << 'EOF'
-{
-  "task": {
-    "type": "pr_creation_workflow",
-    "instructions": [
-      "Create pull request with comprehensive description using git-cliff changelog",
-      "Generate intelligent PR title based on branch work and changes",
-      "Execute the complete PR creation process including validation"
-    ],
-    "context": {
-      "branch": "'"$BRANCH"'",
-      "push_successful": true,
-      "changelog_updated": true,
-      "workflow_stage": "post_push_pr_creation"
-    },
-    "next_step": "./scripts/agent/workflows/pr-workflow.sh pr_body --branch '"$BRANCH"'"
-  }
-}
-EOF
+# Note: In 2B pattern, the push_branch function handles its own promptlet generation
+# No need for pre-push hook to generate promptlets - this breaks the clean automation flow
