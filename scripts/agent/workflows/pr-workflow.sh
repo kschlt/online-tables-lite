@@ -244,7 +244,26 @@ push_branch() {
     fi
 }
 
-# Function 7: PR description promptlet generation (GeneratePRBody in 2B)
+# Function 7: PR title suggestion (integrated from pr-title-suggest.sh)
+suggest_pr_title() {
+    local base_ref="${1:-origin/main}"
+
+    print_trace "SUGGEST_PR_TITLE" "Generating PR title suggestion from recent commits"
+
+    # Get base commit for comparison
+    local base=$(git merge-base "$base_ref" HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
+
+    # Extract title from most recent commit
+    local title=$(git log --format='%s' "$base..HEAD" | head -1 | sed 's/[[:space:]]\+/ /g')
+
+    # Fallback if no title found
+    [[ -n "$title" ]] || title="Update: miscellaneous changes"
+
+    print_trace "SUGGEST_PR_TITLE" "Generated title: $title"
+    echo "$title"
+}
+
+# Function 8: PR description promptlet generation (GeneratePRBody in 2B)
 generate_pr_body() {
     local branch="$1"
     local workflow_origin="$2"
@@ -272,11 +291,16 @@ generate_pr_body() {
 
     print_color $GREEN "✅ Retrieved changelog data for PR description"
 
+    # Generate suggested PR title
+    local suggested_title=$(suggest_pr_title)
+    print_color $BLUE "💡 Suggested PR title: $suggested_title"
+
     # Generate PR description promptlet (PRBodyPromptlet in 2B)
     $PROMPTLET_READER pr_description \
         branch_name="$branch" \
         base_branch="main" \
         diff_base="$base" \
+        suggested_title="$suggested_title" \
         changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
         workflow_origin="$workflow_origin" \
         next_step="./scripts/agent/workflows/pr-workflow.sh create_pr $branch $workflow_origin"
@@ -284,7 +308,7 @@ generate_pr_body() {
     print_trace "GENERATE_PR_BODY" "Generated PR description promptlet for agent processing"
 }
 
-# Function 8: GitHub PR creation (CreatePR in 2B)
+# Function 9: GitHub PR creation (CreatePR in 2B)
 create_pr() {
     local branch="$1"
     local workflow_origin="$2"
@@ -349,7 +373,7 @@ create_pr() {
     fi
 }
 
-# Function 9: Completion handling (FinalizePR/CheckCI in 2B)
+# Function 10: Completion handling (FinalizePR/CheckCI in 2B)
 finalize_workflow() {
     local branch="$1"
     local pr_url="$2"
@@ -402,6 +426,7 @@ main() {
         check_uncommitted) check_uncommitted "$@" ;;
         run_docs_workflow) run_docs_workflow "$@" ;;
         push_branch) push_branch "$@" ;;
+        suggest_pr_title) suggest_pr_title "$@" ;;
         generate_pr_body) generate_pr_body "$@" ;;
         create_pr) create_pr "$@" ;;
         finalize_workflow) finalize_workflow "$@" ;;
@@ -414,6 +439,7 @@ main() {
             echo "  check_uncommitted BRANCH WORKFLOW_ORIGIN - Uncommitted changes detection"
             echo "  run_docs_workflow BRANCH WORKFLOW_ORIGIN - Documentation workflow execution"
             echo "  push_branch BRANCH WORKFLOW_ORIGIN - Branch pushing with pre-push hook"
+            echo "  suggest_pr_title [BASE_REF] - Generate PR title from commits"
             echo "  generate_pr_body BRANCH WORKFLOW_ORIGIN - PR description promptlet generation"
             echo "  create_pr BRANCH WORKFLOW_ORIGIN [TITLE] [BODY] - GitHub PR creation"
             echo "  finalize_workflow BRANCH PR_URL WORKFLOW_ORIGIN - Completion handling"

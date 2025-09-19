@@ -133,74 +133,22 @@ fix:
 
 # ------------------------ AGENT WORKFLOWS ------------------------
 
-# Path constants for agent scripts
-AGENT_BASE := ./scripts/agent
-AGENT_WORKFLOWS := $(AGENT_BASE)/workflows
-AGENT_PROMPTLETS := $(AGENT_BASE)/promptlets
-AGENT_UTILS := $(AGENT_BASE)/utils
-
 # Commit workflow (Agent Workflow)
 commit:
 	@echo "🤖 Starting integrated commit workflow..."
-	@$(AGENT_WORKFLOWS)/commit-workflow.sh integrated_commit_workflow false commit
+	@./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow false commit
 
 # PR Workflow (Agent Workflow)
 pr-workflow:
 	@echo "🚀 Starting PR creation workflow..."; \
 	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	echo "🌿 Current branch: $$BRANCH"; \
-	$(AGENT_WORKFLOWS)/pr-workflow.sh pr_workflow_orchestrator --branch $$BRANCH --workflow-origin pr-workflow
+	./scripts/agent/workflows/pr-workflow.sh pr_workflow_orchestrator --branch $$BRANCH --workflow-origin pr-workflow
 
 # Branch Workflow (Agent Workflow)
 branch-new:
-	@CURRENT_BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
-	if [ "$$CURRENT_BRANCH" != "main" ]; then \
-		if ! git diff --quiet || ! git diff --cached --quiet; then \
-			if ! git diff --cached --quiet; then \
-				echo "❌ STOP: Staged changes detected"; \
-				echo "Terminal: Commit changes first"; \
-				echo "USER ACTION REQUIRED: make commit"; \
-			else \
-				echo "❌ STOP: Unstaged changes detected"; \
-				echo "Terminal: Stash changes first"; \
-				echo "USER ACTION REQUIRED: git stash"; \
-			fi; \
-			exit 1; \
-		fi; \
-		git checkout main; \
-	fi; \
-	git fetch origin main >/dev/null 2>&1; \
-	if [ "$$(git rev-parse main)" != "$$(git rev-parse origin/main)" ]; then \
-		git pull origin main; \
-	fi; \
-	if command -v gh >/dev/null 2>&1; then \
-		OPEN_PRS=$$(gh pr list --state open --json number,title,headRefName 2>/dev/null || echo "[]"); \
-		PR_COUNT=$$(echo "$$OPEN_PRS" | jq length 2>/dev/null || echo "0"); \
-		if [ "$$PR_COUNT" -gt 0 ]; then \
-			echo "⚠️ STOP: Open PRs detected"; \
-			echo "Terminal: $$PR_COUNT open PRs found"; \
-			echo "$$OPEN_PRS" | jq -r '.[] | "  #\(.number): \(.title) (\(.headRefName))"' 2>/dev/null || echo "  Could not parse PR details"; \
-			echo "USER CHOICE: Continue anyway? (Y/N)"; \
-		fi; \
-	fi; \
-	BRANCH_NAME=$${NAME:-}; \
-	if [ -z "$$BRANCH_NAME" ]; then \
-		$(AGENT_PROMPTLETS)/promptlet-reader.sh branch_name_generation \
-			open_prs="$${PR_COUNT:-0}"; \
-	else \
-		if ! $(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" validate >/dev/null 2>&1; then \
-			AUTO_FIXED=$$($(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" auto-fix 2>/dev/null || echo ""); \
-			if [ -n "$$AUTO_FIXED" ] && $(AGENT_UTILS)/validate-branch-name.sh "$$AUTO_FIXED" validate >/dev/null 2>&1; then \
-				BRANCH_NAME="$$AUTO_FIXED"; \
-				echo "✅ Auto-fixed name: $$BRANCH_NAME"; \
-			else \
-				$(AGENT_UTILS)/validate-branch-name.sh "$$BRANCH_NAME" promptlet; \
-				exit 1; \
-			fi; \
-		fi; \
-		git checkout -b "$$BRANCH_NAME"; \
-		echo "✅ Branch created: $$BRANCH_NAME"; \
-	fi
+	@echo "🌿 Starting branch creation workflow..."
+	@./scripts/agent/workflows/branch-workflow.sh branch_new_orchestrator $${NAME:+--name $$NAME} --workflow-origin branch-new
 
 
 # Help command

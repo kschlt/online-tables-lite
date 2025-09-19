@@ -24,7 +24,7 @@
         },
         "changes_context": "${changes_context}"
       },
-      "next_step": "make branch-rename NAME=${suggested_name} (if renaming) or continue workflow (if keeping)"
+      "next_step": "./scripts/agent/workflows/branch-workflow.sh branch_rename ${suggested_name} (if renaming) or continue workflow (if keeping)"
     }
   },
   "branch_name_compliance": {
@@ -44,7 +44,7 @@
           "max_length": 70
         }
       },
-      "next_step": "make branch-rename NAME=${suggested_name}"
+      "next_step": "./scripts/agent/workflows/branch-workflow.sh branch_rename ${suggested_name}"
     }
   },
   "pr_description": {
@@ -60,6 +60,7 @@
       "context": {
         "branch": "${branch_name}",
         "base_branch": "${base_branch}",
+        "suggested_title": "${suggested_title}",
         "changelog": "${changelog_content}",
         "workflow_origin": "${workflow_origin}"
       },
@@ -145,7 +146,7 @@
         "auto_fix_enabled": true,
         "workflow_mode": "streamlined"
       },
-      "next_step": "make branch-new NAME=${generated_branch_name}"
+      "next_step": "./scripts/agent/workflows/branch-workflow.sh branch_new_orchestrator --name ${generated_branch_name} --workflow-origin branch_name_generation"
     }
   },
   "documentation_update": {

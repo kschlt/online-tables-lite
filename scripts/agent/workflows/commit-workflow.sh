@@ -8,7 +8,6 @@ set -e
 # Path constants
 AGENT_BASE="./scripts/agent"
 PROMPTLET_READER="$AGENT_BASE/promptlets/promptlet-reader.sh"
-STAGING_LOGIC="$AGENT_BASE/utils/staging-logic.sh"
 
 # Colors for output and traceability
 RED='\033[0;31m'
@@ -30,6 +29,84 @@ print_trace() {
     echo -e "${PURPLE}🔍 TRACE [$step]: ${message}${NC}" >&2
 }
 
+# Integrated staging functions (from staging-logic.sh)
+analyze_changes() {
+    local staged_count=$(git diff --staged --name-only | wc -l | tr -d ' ')
+    local unstaged_count=$(git diff --name-only | wc -l | tr -d ' ')
+    local untracked_count=$(git ls-files --others --exclude-standard | wc -l | tr -d ' ')
+    local total_changes=$((staged_count + unstaged_count + untracked_count))
+
+    echo "$staged_count:$unstaged_count:$untracked_count:$total_changes"
+}
+
+detect_relevant_files() {
+    # File patterns for automatic staging
+    local relevant_patterns="\.md$|\.json$|\.js$|\.ts$|\.tsx$|\.py$|\.sh$|Makefile$|\.toml$|\.yaml$|\.yml$|\.env"
+    local ignore_patterns="node_modules|\.next|dist|build|venv|\.git|\.agent|package-lock\.json|\.log$|\.tmp$"
+
+    # Get all unstaged and untracked files that match relevant patterns
+    local relevant_files=$(git diff --name-only && git ls-files --others --exclude-standard | grep -E "$relevant_patterns" | grep -vE "$ignore_patterns" || true)
+
+    # Filter out empty lines and return
+    echo "$relevant_files" | grep -v '^$' || true
+}
+
+auto_stage_relevant_files() {
+    local relevant_files="$1"
+
+    if [ -z "$relevant_files" ]; then
+        print_color $YELLOW "⚠️ No relevant files found for staging"
+        return 1
+    fi
+
+    print_color $GREEN "⚡ Auto-staging relevant files..."
+    echo "$relevant_files" | while IFS= read -r file; do
+        if [ -n "$file" ]; then
+            echo "  + $file"
+            git add "$file"
+        fi
+    done
+
+    print_color $GREEN "✅ Relevant files staged automatically"
+    return 0
+}
+
+call_agent_staging_decision() {
+    local total_changes="$1"
+    local staged_count="$2"
+    local unstaged_count="$3"
+    local untracked_count="$4"
+    local relevant_files="$5"
+    local auto_stage="$6"
+    local workflow_context="$7"
+    local origin="$8"
+    local caller="$9"
+
+    print_color $BLUE "🤖 Agent staging decision required..."
+
+    # Generate staging decision promptlet
+    $PROMPTLET_READER file_staging_decision \
+        total_changes="$total_changes" \
+        staged_count="$staged_count" \
+        unstaged_count="$unstaged_count" \
+        untracked_count="$untracked_count" \
+        relevant_files="$(echo "$relevant_files" | tr '\n' '|' | sed 's/|$//')" \
+        auto_stage_command="./scripts/agent/workflows/commit-workflow.sh auto_stage_files \"$relevant_files\"" \
+        manual_stage_help="git add <specific-files>" \
+        workflow_context="$workflow_context" \
+        origin="$origin" \
+        caller="$caller" \
+        auto_stage="$auto_stage"
+}
+
+auto_stage_files() {
+    local files_to_stage="$1"
+
+    print_color $GREEN "🤖 Agent decision: AUTO_STAGE - staging relevant files..."
+    auto_stage_relevant_files "$files_to_stage"
+    return $?
+}
+
 # Integrated staging workflow - handles staging before commit
 integrate_staging() {
     local auto_stage="${1:-false}"
@@ -37,14 +114,8 @@ integrate_staging() {
 
     print_trace "STAGING_INTEGRATION" "Starting integrated staging workflow (auto_stage=$auto_stage)"
 
-    # Source staging logic functions
-    if [ ! -f "$STAGING_LOGIC" ]; then
-        print_color $RED "❌ Error: Staging logic script not found at $STAGING_LOGIC"
-        return 1
-    fi
-
-    # Execute staging workflow
-    $STAGING_LOGIC execute_staging_workflow "$auto_stage" "integrated_commit" "$workflow_starter" "commit_workflow"
+    # Execute integrated staging workflow
+    execute_staging_workflow "$auto_stage" "integrated_commit" "$workflow_starter" "commit_workflow"
     local staging_result=$?
 
     case $staging_result in
@@ -61,6 +132,68 @@ integrate_staging() {
             return 1
             ;;
     esac
+}
+
+# Execute staging workflow (integrated from staging-logic.sh)
+execute_staging_workflow() {
+    local auto_stage="${1:-false}"
+    local workflow_context="${2:-integrated_commit}"
+    local origin="${3:-commit_command}"
+    local caller="${4:-commit_workflow}"
+
+    print_trace "STAGING_START" "Beginning staging analysis for $workflow_context"
+
+    # Analyze current state
+    local counts=$(analyze_changes)
+    local staged_count=$(echo "$counts" | cut -d: -f1)
+    local unstaged_count=$(echo "$counts" | cut -d: -f2)
+    local untracked_count=$(echo "$counts" | cut -d: -f3)
+    local total_changes=$(echo "$counts" | cut -d: -f4)
+
+    print_color $BLUE "📊 Change Summary:"
+    print_color $BLUE "  📝 Staged: $staged_count files"
+    print_color $BLUE "  ✏️  Modified: $unstaged_count files"
+    print_color $BLUE "  🆕 Untracked: $untracked_count files"
+
+    # Show current files
+    if [ "$staged_count" -gt 0 ]; then
+        print_color $BLUE "📋 Staged files:"
+        git diff --staged --name-only | sed 's/^/  📝 /'
+    fi
+
+    if [ "$unstaged_count" -gt 0 ]; then
+        print_color $BLUE "📋 Modified files:"
+        git diff --name-only | sed 's/^/  ✏️  /'
+    fi
+
+    if [ "$untracked_count" -gt 0 ]; then
+        print_color $BLUE "📋 Untracked files:"
+        git ls-files --others --exclude-standard | sed 's/^/  🆕 /'
+    fi
+
+    # Check for relevant files if no staged files
+    if [ "$staged_count" -eq 0 ]; then
+        local relevant_files=$(detect_relevant_files)
+
+        if [ -n "$relevant_files" ]; then
+            print_color $GREEN "🎯 Relevant files detected for staging:"
+            echo "$relevant_files" | sed 's/^/  + /'
+
+            if [ "$auto_stage" = "true" ]; then
+                auto_stage_relevant_files "$relevant_files"
+                return $?
+            else
+                call_agent_staging_decision "$total_changes" "$staged_count" "$unstaged_count" "$untracked_count" "$relevant_files" "$auto_stage" "$workflow_context" "$origin" "$caller"
+                return 2  # Indicates agent decision required
+            fi
+        else
+            print_color $YELLOW "⚠️ No relevant files found for automatic staging"
+            return 1
+        fi
+    else
+        print_color $GREEN "✅ Files already staged, proceeding with commit"
+        return 0
+    fi
 }
 
 # Full integrated commit workflow - staging + commit in one flow
@@ -271,6 +404,8 @@ main() {
         integrated_commit_workflow) integrated_commit_workflow "$@" ;;
         validate_commit_message_format) validate_commit_message_format "$@" ;;
         validate_and_execute_commit) validate_and_execute_commit "$@" ;;
+        auto_stage_files) auto_stage_files "$@" ;;
+        execute_staging_workflow) execute_staging_workflow "$@" ;;
         -h|--help|help)
             echo "Commit Workflow Functions:"
             echo "  execute_commit --message MESSAGE        - Execute git commit (no validation)"
@@ -278,6 +413,8 @@ main() {
             echo "  integrated_commit_workflow [auto_stage] [starter] - Full staging + commit workflow"
             echo "  validate_commit_message_format MESSAGE [starter] - Validate message format only"
             echo "  validate_and_execute_commit MESSAGE [starter] - Chain validation and execution"
+            echo "  auto_stage_files FILES_STRING           - Auto-stage specific files (agent callable)"
+            echo "  execute_staging_workflow [auto_stage] [context] [origin] [caller] - Internal staging logic"
             ;;
         *)
             echo "Unknown function: $function_name" >&2
