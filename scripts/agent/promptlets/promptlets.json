@@ -318,7 +318,8 @@
           "manual_stage": "Use: ${manual_stage_help}"
         },
         "workflow_context": "integrated_commit"
-      }
+      },
+      "next_step": "make commit"
     }
   },
   "manual_staging_required": {

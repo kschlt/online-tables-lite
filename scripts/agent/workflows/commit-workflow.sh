@@ -44,13 +44,23 @@ integrate_staging() {
     fi
 
     # Execute staging workflow
-    if $STAGING_LOGIC execute_staging_workflow "$auto_stage" "integrated_commit"; then
-        print_trace "STAGING_SUCCESS" "Staging workflow completed successfully"
-        return 0
-    else
-        print_trace "STAGING_FAILED" "Staging workflow did not stage any files"
-        return 1
-    fi
+    $STAGING_LOGIC execute_staging_workflow "$auto_stage" "integrated_commit"
+    local staging_result=$?
+
+    case $staging_result in
+        0)
+            print_trace "STAGING_SUCCESS" "Staging workflow completed successfully"
+            return 0
+            ;;
+        2)
+            print_trace "STAGING_AGENT_HANDOFF" "Staging workflow handed off to agent"
+            return 2  # Pass through agent decision signal
+            ;;
+        *)
+            print_trace "STAGING_FAILED" "Staging workflow did not stage any files"
+            return 1
+            ;;
+    esac
 }
 
 # Full integrated commit workflow - staging + commit in one flow
@@ -104,7 +114,8 @@ integrated_commit_workflow() {
             2)
                 # Agent decision required - workflow handed off to agent
                 print_trace "AGENT_HANDOFF" "Workflow handed off to agent for staging decision"
-                return 1  # Stop current execution, agent will continue
+                print_color $BLUE "🤖 Promptlet generated - awaiting agent decision"
+                return 0  # Clean exit for ping-pong pattern, agent will continue
                 ;;
             *)
                 print_color $RED "❌ Staging workflow failed with error"

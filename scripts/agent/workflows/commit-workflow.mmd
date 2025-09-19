@@ -15,7 +15,9 @@ flowchart TD
     AnalyzeChanges["Analyze changes:<br/>• Count staged/unstaged/untracked<br/>• Apply file patterns (.md,.js,.py,...)<br/>• Filter ignore patterns (node_modules,...)"]
     CheckRelevant{Relevant files detected?}
     AutoStage["Auto-stage relevant files<br/>Business logic: Standard dev files"]
-    AgentStaging["🤖 Agent reviews & stages files<br/>Complex case: Mixed file types"]
+    StagingPromptlet["Generate staging promptlet<br/>Complex case: Mixed file types"]
+    AgentStaging["🤖 Agent reviews & stages files"]
+    AgentReentry["🤖 Agent re-enters: make commit"]
     NoRelevantStop["⚠️ WARNING: No relevant files detected<br/>Terminal: Either no changes or only ignored/binary files<br/>USER ACTION: Check git status, use git add manually if needed"]
 
     %% Message Generation & Validation Loop
@@ -50,10 +52,14 @@ flowchart TD
     %% Staging Decision Flow
     AnalyzeChanges --> CheckRelevant
     CheckRelevant -->|Yes - Simple| AutoStage
-    CheckRelevant -->|Yes - Complex| AgentStaging
+    CheckRelevant -->|Yes - Complex| StagingPromptlet
     CheckRelevant -->|No| NoRelevantStop
     AutoStage --> CollectContext
-    AgentStaging --> CollectContext
+
+    %% Ping-Pong Pattern for Agent Staging
+    StagingPromptlet -.->|promptlet| AgentStaging
+    AgentStaging --> AgentReentry
+    AgentReentry --> CollectContext
 
     %% Message Generation & Validation Loop
     CollectContext --> ClaudeGenerates
@@ -71,7 +77,9 @@ flowchart TD
     AnalyzeChanges:::automationStep
     CheckRelevant:::automationStep
     AutoStage:::automationStep
+    StagingPromptlet:::automationStep
     AgentStaging:::agentLayer
+    AgentReentry:::agentLayer
     NoRelevantStop:::stopNode
     HookBlackBox:::blackBoxStep
     UserTrigger:::userLayer
