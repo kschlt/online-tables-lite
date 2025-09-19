@@ -10,23 +10,22 @@
 - Start services: `make stop && make dev-all`
 - Fix environment: `make setup` or `make install-all`
 
-## Development Workflow
+## Development Workflows
 
 ### Where the development work happens
 - Work only in feature branches (one active branch at a time)
 - No direct commits to main
-1. Print "🤖 Development workflow triggert. Starting execution..."
-2. Use `make branch-new NAME=feat/descriptive-name` or `NAME=fix/bug-description` - automated workflow with validation and auto-fix
+1. Print "🤖 Branch Workflow triggert. Starting execution..."
+2. Use `make branch-new NAME=feat/descriptive-name` or `NAME=fix/bug-description`
 
 ### When to Commit
 **User triggers**: "commit", "commit changes", "save changes"
-1. Print "🤖 Commit workflow has been triggered. Starting execution..."
-2. `make commit` - Integrated workflow: auto-stage relevant files + generate conventional commit message via agent chain
-3. If pre-commit hook fails: fix problems and retry
+1. Print "🤖 Commit Workflow triggered. Starting execution..."
+2. `make commit`
 
 ### When to Push
 **User triggers**: "push", "create PR", "open PR", "make PR"
-1. Print "🤖 Push & PR to Main workflow triggered. Starting execution..."
+1. Print "🤖 PR Workflow triggered. Starting execution..."
 2. `make pr-workflow` - Automated pipeline with agent chain
 
 ## Forbidden

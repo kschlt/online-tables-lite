@@ -146,10 +146,11 @@ apply_docs() {
         ./scripts/agent/workflows/docs-workflow.sh commit_docs --workflow-origin "$workflow_origin"
     else
         print_color $YELLOW "⚠️  No documentation changes detected"
+        print_color $GREEN "✅ Documentation workflow complete"
 
-        # Continue workflow chain based on origin
+        # Optional chaining: If part of PR workflow, continue to push step
         if [ "$workflow_origin" = "pr-workflow" ]; then
-            print_color $GREEN "✅ No docs changes - continuing to push step..."
+            print_color $BLUE "🔗 Chaining back to PR workflow..."
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
             # Generate promptlet to continue PR workflow at push step
@@ -158,7 +159,7 @@ apply_docs() {
                 next_step="./scripts/agent/workflows/pr-workflow.sh push_branch $BRANCH $workflow_origin"
             return 0
         else
-            # Generate no-op promptlet for standalone docs workflow
+            # Standalone execution - workflow is complete
             $PROMPTLET_READER documentation_no_changes \
                 workflow_origin="$workflow_origin" \
                 next_step="WORKFLOW_COMPLETE"
@@ -191,11 +192,12 @@ commit_docs() {
     # Check if there are changes to commit
     if git diff --quiet HEAD; then
         print_color $YELLOW "⚠️  No changes to commit"
-        
+        print_color $GREEN "✅ Documentation workflow complete"
+
         $PROMPTLET_READER workflow_complete \
             status="no_changes" \
             next_step="WORKFLOW_COMPLETE"
-        
+
         print_trace "OUTPUT" "Generated no-changes completion promptlet"
         return 0
     fi
@@ -209,10 +211,11 @@ commit_docs() {
     # Commit changes
     if git commit -m "$commit_message"; then
         print_color $GREEN "✅ Documentation changes committed successfully"
+        print_color $GREEN "✅ Documentation workflow complete"
 
-        # If part of PR workflow, continue to push step
+        # Optional chaining: If part of PR workflow, continue to push step
         if [ "$workflow_origin" = "pr-workflow" ]; then
-            print_color $GREEN "✅ Docs committed - continuing to push step..."
+            print_color $BLUE "🔗 Chaining back to PR workflow..."
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
             # Generate promptlet to continue PR workflow at push step
@@ -223,7 +226,7 @@ commit_docs() {
                 next_step="./scripts/agent/workflows/pr-workflow.sh push_branch $BRANCH $workflow_origin"
             return 0
         else
-            # Generate completion promptlet for standalone docs workflow
+            # Standalone execution - workflow is complete
             $PROMPTLET_READER workflow_complete \
                 status="success" \
                 workflow_origin="$workflow_origin" \

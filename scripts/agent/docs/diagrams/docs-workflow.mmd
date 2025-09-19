@@ -1,0 +1,80 @@
+flowchart TD
+    %% Entry Points
+    PREntry["From PR Workflow: Auto-chained call"]
+    ManualTrigger["User: 'update docs', 'generate docs'"]
+    ClaudeDetects["🤖 Claude detects trigger"]
+    ClaudeExec["🤖 Claude executes: make docs-update"]
+
+    %% Analysis Phase
+    GenerateDocs["Generate docs analysis"]
+    CollectChangelog["Collect git-cliff changelog data"]
+    AnalyzeScope["Analyze change scope & impact"]
+
+    %% Agent Decision Phase
+    DocsPromptlet["Generate documentation_update promptlet<br/>next_step: apply_docs"]
+    AgentWork["🤖 Agent analyzes changelog & updates docs if needed"]
+
+    %% Always Executed - Apply Docs
+    ApplyDocs["apply_docs: Check if files were modified"]
+    FilesModified{Files actually modified?}
+    AutoCommit["Auto-commit documentation changes"]
+    CommitMessage["Generate commit message:<br/>'docs: update documentation based on recent changes'"]
+
+    %% No Changes Path
+    NoDocs["No documentation changes needed"]
+
+    %% Completion Paths
+    WorkflowComplete["Documentation workflow complete"]
+    ReturnToPR["Return to PR workflow: push_branch"]
+
+    %% Entry Flow
+    PREntry --> GenerateDocs
+    ManualTrigger --> ClaudeDetects
+    ClaudeDetects --> ClaudeExec
+    ClaudeExec --> GenerateDocs
+
+    %% Analysis Flow
+    GenerateDocs --> CollectChangelog
+    CollectChangelog --> AnalyzeScope
+    AnalyzeScope --> DocsPromptlet
+
+    %% Agent Work (ping-pong)
+    DocsPromptlet -.->|promptlet| AgentWork
+    AgentWork --> ApplyDocs
+
+    %% Apply Docs Always Runs
+    ApplyDocs --> FilesModified
+    FilesModified -->|Yes| AutoCommit
+    FilesModified -->|No| NoDocs
+    AutoCommit --> CommitMessage
+    CommitMessage --> WorkflowComplete
+
+    %% No Changes Flow
+    NoDocs --> WorkflowComplete
+
+    %% Optional Chaining (if from PR workflow)
+    WorkflowComplete -->|If from PR workflow| ReturnToPR
+
+    %% Styling - Consistent with Other Workflows
+    PREntry:::entryPoint
+    ManualTrigger:::userLayer
+    ClaudeDetects:::agentLayer
+    ClaudeExec:::agentLayer
+    GenerateDocs:::automationStep
+    CollectChangelog:::automationStep
+    AnalyzeScope:::automationStep
+    DocsPromptlet:::automationStep
+    AgentWork:::agentLayer
+    ApplyDocs:::automationStep
+    FilesModified:::automationStep
+    AutoCommit:::automationStep
+    CommitMessage:::automationStep
+    NoDocs:::automationStep
+    WorkflowComplete:::successNode
+    ReturnToPR:::automationStep
+
+    classDef userLayer fill:#e1f5fe
+    classDef agentLayer fill:#f3e5f5
+    classDef automationStep fill:#fff3e0
+    classDef successNode fill:#a5d6a7
+    classDef entryPoint fill:#e8f5e8
