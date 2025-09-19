@@ -72,10 +72,7 @@ integrated_commit_workflow() {
     # Handle different scenarios
     if [ "$total_changes" -eq 0 ]; then
         print_color $BLUE "ℹ️ No changes found. Working tree is clean - skipping commit."
-        $PROMPTLET_READER workflow_complete \
-            status="no_changes" \
-            commit_message="none" \
-            next_step="WORKFLOW_COMPLETE"
+        print_trace "WORKFLOW_COMPLETE" "No changes detected - workflow complete"
         return 0
     fi
 
