@@ -96,7 +96,7 @@
         "breaking_changes": "add ! after type for breaking changes (feat!: breaking change)",
         "validation": "Use git-cliff --context to validate message format"
       },
-      "next_step": "./scripts/agent/workflows/commit-workflow.sh execute_commit --message \"YOUR_GENERATED_MESSAGE\""
+      "next_step": "./scripts/agent/workflows/commit-workflow.sh validate_and_execute_commit \"YOUR_GENERATED_MESSAGE\""
     }
   },
   "commit_complete": {
@@ -338,6 +338,30 @@
         "workflow_context": "integrated_commit"
       },
       "next_step": "Review files, use git add <files> for specific staging, then run make commit again"
+    }
+  },
+  "commit_message_validation_failed": {
+    "task": {
+      "type": "commit_message_validation_failed",
+      "instructions": [
+        "The commit message format validation failed",
+        "Fix the commit message to follow conventional commit format",
+        "Generate a corrected message and execute the next step",
+        "Format: type(scope): description (scope is optional)"
+      ],
+      "context": {
+        "original_message": "${original_message}",
+        "error": "${error}",
+        "expected_format": "${expected_format}",
+        "workflow_starter": "${workflow_starter}",
+        "examples": [
+          "feat(ui): add user dashboard",
+          "fix(api): resolve authentication issue",
+          "docs: update README with setup instructions",
+          "refactor(auth): simplify token validation"
+        ]
+      },
+      "next_step": "./scripts/agent/workflows/commit-workflow.sh validate_and_execute_commit \"YOUR_CORRECTED_MESSAGE\""
     }
   }
 }

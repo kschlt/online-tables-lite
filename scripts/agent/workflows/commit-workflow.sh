@@ -83,20 +83,37 @@ integrated_commit_workflow() {
     if [ "$staged_count" -eq 0 ] && [ "$((unstaged_count + untracked_count))" -gt 0 ]; then
         print_color $BLUE "🔍 No staged files found. Running integrated staging..."
 
-        if integrate_staging "$auto_stage" "$workflow_starter"; then
-            # Check if staging was successful
-            local new_staged_count=$(git diff --staged --name-only | wc -l | tr -d ' ')
-            if [ "$new_staged_count" -eq 0 ]; then
-                print_color $YELLOW "⚠️ Staging workflow completed but no files were staged"
-                print_color $BLUE "💡 Manual staging may be required. Check git status and stage specific files."
+        local staging_result
+        integrate_staging "$auto_stage" "$workflow_starter"
+        staging_result=$?
+
+        case $staging_result in
+            0)
+                # Staging succeeded - verify files were actually staged
+                local new_staged_count=$(git diff --staged --name-only | wc -l | tr -d ' ')
+                if [ "$new_staged_count" -eq 0 ]; then
+                    print_color $YELLOW "⚠️ Staging workflow completed but no files were staged"
+                    print_color $BLUE "💡 Manual staging may be required. Check git status and stage specific files."
+                    return 1
+                fi
+                print_color $GREEN "✅ Staging completed. $new_staged_count files staged."
+                ;;
+            1)
+                # No relevant files or staging failed - stop workflow
+                print_color $YELLOW "⚠️ No relevant files for automatic staging"
+                print_color $BLUE "💡 Manual intervention required. Check git status and stage specific files."
                 return 1
-            fi
-            print_color $GREEN "✅ Staging completed. $new_staged_count files staged."
-        else
-            print_color $YELLOW "⚠️ Staging workflow did not stage any files"
-            print_color $BLUE "💡 Manual intervention may be required. Check git status and stage specific files."
-            return 1
-        fi
+                ;;
+            2)
+                # Agent decision required - workflow handed off to agent
+                print_trace "AGENT_HANDOFF" "Workflow handed off to agent for staging decision"
+                return 1  # Stop current execution, agent will continue
+                ;;
+            *)
+                print_color $RED "❌ Staging workflow failed with error"
+                return 1
+                ;;
+        esac
     elif [ "$staged_count" -gt 0 ]; then
         print_color $GREEN "📝 Found $staged_count staged file(s). Proceeding with commit..."
     fi
@@ -130,6 +147,51 @@ integrated_commit_workflow() {
     print_trace "INTEGRATED_WORKFLOW_COMPLETE" "Handed off to agent for commit message generation and execution"
 }
 
+# Validate commit message format (single responsibility: validation only)
+validate_commit_message_format() {
+    local message="$1"
+    local workflow_starter="${2:-commit_command}"
+
+    print_trace "MESSAGE_VALIDATION" "Validating commit message format: $message"
+
+    # Check conventional commit format (reuse existing validation logic)
+    if echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'; then
+        print_color $GREEN "✅ Message follows conventional commit format"
+        return 0
+    else
+        print_color $YELLOW "⚠️ Invalid format: Message does not follow conventional commit format"
+        print_color $BLUE "Expected format: type(scope): description"
+        print_color $BLUE "Examples: feat(ui): add dashboard, fix(api): resolve auth issue"
+
+        # Generate format feedback promptlet for agent to fix message (validation loop)
+        $PROMPTLET_READER commit_message_validation_failed \
+            original_message="$message" \
+            error="Invalid conventional commit format" \
+            expected_format="type(scope): description" \
+            workflow_starter="$workflow_starter"
+
+        print_trace "VALIDATION_FAILED" "Generated format feedback promptlet for message correction"
+        return 1
+    fi
+}
+
+# Chain validation and execution (implements diagram flow: ValidateFormat -> ExecuteCommit)
+validate_and_execute_commit() {
+    local message="$1"
+    local workflow_starter="${2:-commit_command}"
+
+    # Step 1: Validate message format
+    if validate_commit_message_format "$message" "$workflow_starter"; then
+        print_trace "VALIDATION_PASSED" "Message validation passed, proceeding to execution"
+        # Step 2: Execute commit with validated message
+        execute_commit --message "$message"
+        return $?
+    else
+        print_trace "VALIDATION_FAILED" "Message validation failed, stopping execution"
+        return 1
+    fi
+}
+
 # Execute commit with provided message
 execute_commit() {
     local message=""
@@ -153,15 +215,6 @@ execute_commit() {
     fi
 
     print_trace "COMMIT_EXEC" "Executing commit with message: $message"
-
-    # Validate conventional commit format
-    if ! echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'; then
-        print_color $YELLOW "⚠️  Warning: Message may not follow conventional commit format"
-        print_color $BLUE "Expected format: type(scope): description"
-        print_color $BLUE "Examples: feat(ui): add dashboard, fix(api): resolve auth issue"
-    else
-        print_color $GREEN "✅ Message follows conventional commit format"
-    fi
 
     # Check if there are staged changes
     local staged_files=$(git diff --staged --name-only | wc -l | tr -d ' ')
@@ -208,11 +261,15 @@ main() {
         execute_commit) execute_commit "$@" ;;
         integrate_staging) integrate_staging "$@" ;;
         integrated_commit_workflow) integrated_commit_workflow "$@" ;;
+        validate_commit_message_format) validate_commit_message_format "$@" ;;
+        validate_and_execute_commit) validate_and_execute_commit "$@" ;;
         -h|--help|help)
             echo "Commit Workflow Functions:"
-            echo "  execute_commit --message MESSAGE        - Validate and execute git commit"
+            echo "  execute_commit --message MESSAGE        - Execute git commit (no validation)"
             echo "  integrate_staging [auto_stage] [starter] - Run staging workflow integration"
             echo "  integrated_commit_workflow [auto_stage] [starter] - Full staging + commit workflow"
+            echo "  validate_commit_message_format MESSAGE [starter] - Validate message format only"
+            echo "  validate_and_execute_commit MESSAGE [starter] - Chain validation and execution"
             ;;
         *)
             echo "Unknown function: $function_name" >&2

@@ -72,6 +72,7 @@ auto_stage_relevant_files() {
 }
 
 # Use agent to make staging decisions for complex cases
+# This outputs the staging decision promptlet and waits for agent response
 call_agent_staging_decision() {
     local total_changes="$1"
     local staged_count="$2"
@@ -87,8 +88,22 @@ call_agent_staging_decision() {
         modified_count="$unstaged_count" \
         untracked_count="$untracked_count" \
         relevant_files="$(echo "$relevant_files" | tr '\n' '|' | sed 's/|$//')" \
-        auto_stage_command="AUTO_STAGE=true staging workflow" \
+        auto_stage_command="./scripts/agent/utils/staging-logic.sh auto_stage_files \"$relevant_files\"" \
         manual_stage_help="git add <specific-files>"
+}
+
+# Helper function for agent to auto-stage files (called by agent response)
+auto_stage_files() {
+    local relevant_files="$1"
+
+    if [ -n "$relevant_files" ]; then
+        print_color $GREEN "🤖 Agent decision: AUTO_STAGE - staging relevant files..."
+        auto_stage_relevant_files "$relevant_files"
+        return $?
+    else
+        print_color $RED "❌ Error: No files provided for auto-staging"
+        return 1
+    fi
 }
 
 # Handle case when no relevant files are detected
@@ -162,17 +177,17 @@ execute_staging_workflow() {
 
         if [ "$auto_stage" = "true" ]; then
             auto_stage_relevant_files "$relevant_files"
-            return 0
+            return $?
         else
             call_agent_staging_decision "$total_changes" "$staged_count" "$unstaged_count" "$untracked_count" "$relevant_files"
-            return 0  # Agent will handle the decision
+            return 2  # Indicates agent decision required - caller should handle
         fi
     else
-        # No relevant files detected
+        # No relevant files detected - stop workflow with user guidance
         local unstaged_files=$(git diff --name-only)
         local untracked_files=$(git ls-files --others --exclude-standard)
         handle_no_relevant_files "$total_changes" "$unstaged_files" "$untracked_files"
-        return 1
+        return 1  # Stop workflow - no automatic staging possible
     fi
 }
 
@@ -196,6 +211,7 @@ main() {
         analyze_changes) analyze_changes "$@" ;;
         detect_relevant_files) detect_relevant_files "$@" ;;
         auto_stage_relevant_files) auto_stage_relevant_files "$@" ;;
+        auto_stage_files) auto_stage_files "$@" ;;
         call_agent_staging_decision) call_agent_staging_decision "$@" ;;
         handle_no_relevant_files) handle_no_relevant_files "$@" ;;
         execute_staging_workflow) execute_staging_workflow "$@" ;;
@@ -205,6 +221,7 @@ main() {
             echo "  analyze_changes                 - Get counts of staged/unstaged/untracked files"
             echo "  detect_relevant_files          - Find files matching staging patterns"
             echo "  auto_stage_relevant_files      - Stage files automatically"
+            echo "  auto_stage_files FILES          - Agent callable auto-staging function"
             echo "  execute_staging_workflow       - Run complete staging workflow"
             echo "  show_staging_status            - Display current git status summary"
             ;;
