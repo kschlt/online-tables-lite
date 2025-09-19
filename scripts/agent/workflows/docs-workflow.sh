@@ -151,7 +151,7 @@ apply_docs() {
             # Generate promptlet to continue PR workflow at push step
             $PROMPTLET_READER documentation_no_changes \
                 workflow_origin="$workflow_origin" \
-                next_step="./scripts/agent/workflows/pr-workflow.sh push_branch --branch $BRANCH --workflow-origin $workflow_origin"
+                next_step="./scripts/agent/workflows/pr-workflow.sh push_branch $BRANCH $workflow_origin"
             return 0
         else
             # Generate no-op promptlet for standalone docs workflow
@@ -216,7 +216,7 @@ commit_docs() {
                 status="success" \
                 workflow_origin="$workflow_origin" \
                 commit_message="$commit_message" \
-                next_step="./scripts/agent/workflows/pr-workflow.sh push_branch --branch $BRANCH --workflow-origin $workflow_origin"
+                next_step="./scripts/agent/workflows/pr-workflow.sh push_branch $BRANCH $workflow_origin"
             return 0
         else
             # Generate completion promptlet for standalone docs workflow

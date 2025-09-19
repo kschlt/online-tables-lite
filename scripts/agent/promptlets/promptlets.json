@@ -363,5 +363,62 @@
       },
       "next_step": "./scripts/agent/workflows/commit-workflow.sh validate_and_execute_commit \"YOUR_CORRECTED_MESSAGE\""
     }
+  },
+  "branch_protection_error": {
+    "task": {
+      "type": "branch_protection_error",
+      "instructions": [
+        "Commits on protected branch (main/production) are blocked by policy",
+        "Create a compliant feature branch for your changes",
+        "Use feat/ or fix/ prefix with descriptive name"
+      ],
+      "context": {
+        "current_branch": "${current_branch}",
+        "policy": {
+          "reason": "Protected branches maintain stability",
+          "solution": "All development must happen on feature branches",
+          "branch_naming": "Use feat/ or fix/ prefixes"
+        }
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "conflict_resolution": {
+    "task": {
+      "type": "conflict_resolution",
+      "instructions": [
+        "Merge conflicts detected with base branch",
+        "Rebase the current branch against the base branch",
+        "Resolve any conflicts that arise during rebase",
+        "Continue with PR workflow after resolution"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "base_branch": "${base_branch}",
+        "resolution_steps": [
+          "git rebase ${base_branch}",
+          "Resolve conflicts in affected files",
+          "git add <resolved-files>",
+          "git rebase --continue"
+        ]
+      },
+      "next_step": "${next_step}"
+    }
+  },
+  "uncommitted_changes": {
+    "task": {
+      "type": "uncommitted_changes",
+      "instructions": [
+        "Uncommitted changes detected before PR creation",
+        "Commit changes using the commit workflow",
+        "After commit completion, continue with documentation workflow"
+      ],
+      "context": {
+        "branch": "${branch}",
+        "workflow_origin": "${workflow_origin}",
+        "commit_workflow": "make commit --workflow-origin=${workflow_origin}"
+      },
+      "next_step": "${next_step}"
+    }
   }
 }

@@ -209,12 +209,12 @@ pr-body:
 	@$(AGENT_WORKFLOWS)/pr-workflow.sh pr_body
 
 
-# Start PR creation workflow (entry point)
+# Start PR creation workflow (entry point) - 2B Pattern
 pr-workflow:
 	@echo "🚀 Starting PR creation workflow..."; \
 	BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
 	echo "🌿 Current branch: $$BRANCH"; \
-	$(AGENT_WORKFLOWS)/pr-workflow.sh validate_changes --branch $$BRANCH --workflow-origin pr-workflow
+	$(AGENT_WORKFLOWS)/pr-workflow.sh pr_workflow_orchestrator --branch $$BRANCH --workflow-origin pr-workflow
 
 # Create GitHub PR with provided title and body (ping-pong final step)
 # Usage: make pr-open TITLE="PR Title" BODY="PR markdown description"
