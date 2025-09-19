@@ -87,13 +87,17 @@ generate_docs() {
 
     print_color $GREEN "✅ Retrieved changelog data for documentation analysis"
 
-    # Quick check: if this is only branch naming changes, skip agent analysis
-    if echo "$changelog_entry" | grep -q "branch naming\|branch-naming\|branch validation\|workflow.*branch" &&
-       ! echo "$changelog_entry" | grep -qE "(Added.*API|Added.*component|Fixed.*UI|Added.*feature)" 2>/dev/null; then
-        print_color $BLUE "🎯 Branch naming/validation changes detected - likely no docs updates needed"
+    # Quick check: Always run agent analysis for major changes, skip only for trivial updates
+    if echo "$changelog_entry" | grep -qE "(refactor|implement|orchestrator|workflow.*pattern|architecture|Added.*API|Added.*component|Fixed.*UI|Added.*feature|scripts/agent)" 2>/dev/null; then
+        print_color $BLUE "🎯 Major changes detected - running full agent analysis"
+    elif echo "$changelog_entry" | grep -qE "^.*branch.*naming.*only|^.*validation.*only" &&
+         ! echo "$changelog_entry" | grep -qE "(refactor|implement|orchestrator)" 2>/dev/null; then
+        print_color $BLUE "🎯 Only minor branch naming changes detected - likely no docs updates needed"
 
         # Skip agent analysis and go directly to apply_docs with NO-OP expectation
         exec ./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin "$workflow_origin"
+    else
+        print_color $BLUE "🎯 Complex changes detected - running full agent analysis"
     fi
 
     # Generate documentation update promptlet for complex changes
