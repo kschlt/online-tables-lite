@@ -138,102 +138,13 @@ fix:
 	cd apps/api && source venv/bin/activate && ruff check --fix . && ruff format .
 	@echo "✅ All fixes applied!"
 
-# ---------- Staging workflow (intelligent file staging with agent decision) ----------
+# ---------- Integrated Commit workflow (staging + conventional commits with git-cliff) ----------
 
-# Intelligent staging with agent decision-making for file selection
-stage:
-	@echo "🔍 Analyzing changes for staging..."
-	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
-	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
-	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
-	TOTAL_CHANGES=$$((STAGED + UNSTAGED + UNTRACKED)); \
-	if [ "$$TOTAL_CHANGES" -eq 0 ]; then \
-		echo "ℹ️  No changes found. Working tree is clean."; \
-		exit 0; \
-	fi; \
-	echo "📊 Change Summary:"; \
-	echo "  📝 Staged: $$STAGED files"; \
-	echo "  ✏️  Modified: $$UNSTAGED files"; \
-	echo "  🆕 Untracked: $$UNTRACKED files"; \
-	echo; \
-	if [ "$$UNSTAGED" -gt 0 ] || [ "$$UNTRACKED" -gt 0 ]; then \
-		echo "📋 Modified files:"; \
-		git diff --name-only | head -10 | sed 's/^/  - /' || true; \
-		if [ "$$UNTRACKED" -gt 0 ]; then \
-			echo "📋 Untracked files:"; \
-			git ls-files --others --exclude-standard | head -10 | sed 's/^/  - /' || true; \
-		fi; \
-		echo; \
-		RELEVANT_PATTERNS="\.md$$|\.json$$|\.js$$|\.ts$$|\.tsx$$|\.py$$|\.sh$$|Makefile$$|\.toml$$|\.yaml$$|\.yml$$|\.env"; \
-		RELEVANT_FILES=$$(git diff --name-only && git ls-files --others --exclude-standard | grep -E "$$RELEVANT_PATTERNS" || true); \
-		IGNORE_PATTERNS="node_modules|\.next|dist|build|venv|\.git|\.agent|package-lock\.json|\.log$$|\.tmp$$"; \
-		FILTERED_FILES=$$(echo "$$RELEVANT_FILES" | grep -vE "$$IGNORE_PATTERNS" || true); \
-		if [ -n "$$FILTERED_FILES" ]; then \
-			echo "🎯 Relevant files detected for staging:"; \
-			echo "$$FILTERED_FILES" | sed 's/^/  + /' | head -15; \
-			if [ "$${AUTO_STAGE:-false}" = "true" ]; then \
-				echo "⚡ AUTO_STAGE=true: Staging relevant files automatically..."; \
-				echo "$$FILTERED_FILES" | xargs git add; \
-				echo "✅ Relevant files staged automatically"; \
-			else \
-				$(AGENT_PROMPTLETS)/promptlet-reader.sh file_staging_decision \
-					total_changes="$$TOTAL_CHANGES" \
-					staged_count="$$STAGED" \
-					modified_count="$$UNSTAGED" \
-					untracked_count="$$UNTRACKED" \
-					relevant_files="$$(echo "$$FILTERED_FILES" | tr '\n' '|' | sed 's/|$$//')" \
-					auto_stage_command="make stage AUTO_STAGE=true" \
-					manual_stage_help="git add <specific-files>"; \
-			fi; \
-		else \
-			echo "⚠️  No obviously relevant files detected for automatic staging"; \
-			echo "💡 Use: git add <specific-files> for manual staging"; \
-			$(AGENT_PROMPTLETS)/promptlet-reader.sh manual_staging_required \
-				total_changes="$$TOTAL_CHANGES" \
-				modified_files="$$(git diff --name-only | tr '\n' '|' | sed 's/|$$//')" \
-				untracked_files="$$(git ls-files --others --exclude-standard | tr '\n' '|' | sed 's/|$$//')" \
-				staging_help="Use git add to stage specific files, then run make commit"; \
-		fi; \
-	else \
-		echo "✅ All changes are already staged ($$STAGED files)"; \
-		echo "💡 Ready for commit: make commit"; \
-	fi
-
-# ---------- Commit workflow (conventional commits with git-cliff) ----------
-
-# Generate conventional commit message using git-cliff configuration and agent assistance
-# Shows branch context to prevent accidental commits on wrong branch
+# Integrated commit workflow - handles staging + conventional commit generation
+# Automatically stages relevant files if no files are staged, then generates commit message
 commit:
-	@echo "🌿 Current branch: $$(git rev-parse --abbrev-ref HEAD)"
-	@echo "🔍 Checking for staged changes..."
-	@STAGED=$$(git diff --staged --name-only | wc -l | tr -d ' '); \
-	UNSTAGED=$$(git diff --name-only | wc -l | tr -d ' '); \
-	UNTRACKED=$$(git ls-files --others --exclude-standard | wc -l | tr -d ' '); \
-	if [ "$$STAGED" -eq 0 ]; then \
-		if [ "$$((UNSTAGED + UNTRACKED))" -eq 0 ]; then \
-			echo "ℹ️  No changes found. Working tree is clean - skipping commit."; \
-			exit 0; \
-		else \
-			echo "❌ No files staged for commit."; \
-			echo "💡 Use 'make stage' to intelligently stage files"; \
-			exit 1; \
-		fi; \
-	else \
-		echo "📝 Found $$STAGED staged file(s). Generating commit message..."; \
-	fi; \
-	BASE=$$(git merge-base $(BASE_REF) HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1); \
-	PREVIEW=$$(git-cliff --unreleased --bump 2>/dev/null | head -5 | tail -1 | sed 's/^## \[//' | sed 's/\].*//' || echo "preview unavailable"); \
-	DIFF_SUMMARY=$$(git diff --staged --stat | head -10); \
-	COMMIT_TYPES=$$(grep -E '^\s*\{\s*message\s*=\s*"\^[a-z]+' cliff.toml 2>/dev/null | sed -E 's/.*"\^([a-z]+).*/\1/' | tr '\n' '|' | sed 's/|$$//' || echo "feat|fix|docs|refactor|chore|test|ci|build|perf"); \
-	CLIFF_CONFIG_STATUS=$$(if [ -f "cliff.toml" ]; then echo "✅ Using cliff.toml configuration"; else echo "⚠️ cliff.toml not found, using defaults"; fi); \
-	SAMPLE_ANALYSIS=$$(git-cliff --unreleased --context 2>/dev/null | jq -r '.commits[0].message // "No recent commits"' 2>/dev/null || echo "No context available"); \
-	$(AGENT_PROMPTLETS)/promptlet-reader.sh conventional_commit_generation \
-		staged_files="$$STAGED" \
-		suggested_version="$$PREVIEW" \
-		diff_summary="$$DIFF_SUMMARY" \
-		git_cliff_config="$$CLIFF_CONFIG_STATUS" \
-		allowed_types="$$COMMIT_TYPES" \
-		sample_analysis="$$SAMPLE_ANALYSIS"
+	@echo "🤖 Starting integrated commit workflow..."
+	@$(AGENT_WORKFLOWS)/commit-workflow.sh integrated_commit_workflow false commit_command
 
 
 # ---------- Ship workflow (agent-friendly PR creation) ----------
@@ -491,8 +402,8 @@ help:
 	@echo "  make setup           - Quick setup for new developers"
 	@echo "  make setup-git-tools - Install git-cliff and changelog tools"
 	@echo ""
-	@echo "📝 Conventional Commits (Agent Workflow):"
-	@echo "  make commit          - Generate conventional commit message (agent task)"
+	@echo "📝 Integrated Commit Workflow (Agent Workflow):"
+	@echo "  make commit          - Auto-stage relevant files + generate conventional commit message"
 	@echo ""
 	@echo "🔧 Quality Control (Manual + Hooks):"
 	@echo "  make cleanup         - Clean up before merge/push"

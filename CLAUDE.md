@@ -21,9 +21,8 @@
 ### When to Commit
 **User triggers**: "commit", "commit changes", "save changes"
 1. Print "🤖 Commit workflow has been triggered. Starting execution..."
-2. `make stage` - Intelligent file staging (follow JSON task for decisions)
-3. `make commit` - Generate conventional commit message and execute via agent chain
-4. If pre-commit hook fails: fix problems and retry
+2. `make commit` - Integrated workflow: auto-stage relevant files + generate conventional commit message via agent chain
+3. If pre-commit hook fails: fix problems and retry
 
 ### When to Push
 **User triggers**: "push", "create PR", "open PR", "make PR"

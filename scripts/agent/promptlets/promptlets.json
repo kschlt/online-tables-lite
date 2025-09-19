@@ -85,6 +85,7 @@
         "allowed_types": "${allowed_types}",
         "format_from_cliff": "type(scope): description - extracted from cliff.toml commit_parsers",
         "sample_analysis": "${sample_analysis}",
+        "workflow_starter": "${workflow_starter}",
         "examples": [
           "feat(ui): add user dashboard",
           "fix(api): resolve authentication issue",
@@ -302,7 +303,9 @@
       "instructions": [
         "Review detected relevant files for staging",
         "Decide which changes are relevant for staging",
-        "Execute appropriate staging command based on decision"
+        "This is part of the integrated commit workflow - staging will proceed automatically",
+        "If you want to auto-stage relevant files, respond with: AUTO_STAGE",
+        "If manual staging is needed, respond with: MANUAL_STAGE"
       ],
       "context": {
         "total_changes": "${total_changes}",
@@ -313,7 +316,8 @@
         "staging_options": {
           "auto_stage": "Execute: ${auto_stage_command}",
           "manual_stage": "Use: ${manual_stage_help}"
-        }
+        },
+        "workflow_context": "integrated_commit"
       }
     }
   },
@@ -321,17 +325,19 @@
     "task": {
       "type": "manual_staging_required",
       "instructions": [
-        "No automatically stageable files detected",
+        "No automatically stageable files detected during integrated commit workflow",
         "Manual file selection required for staging",
-        "Review files and stage specific ones manually"
+        "Review files and stage specific ones manually",
+        "Use git add <files> to stage specific files, then run make commit again"
       ],
       "context": {
         "total_changes": "${total_changes}",
         "modified_files": "${modified_files}",
         "untracked_files": "${untracked_files}",
-        "staging_help": "${staging_help}"
+        "staging_help": "${staging_help}",
+        "workflow_context": "integrated_commit"
       },
-      "next_step": "Review files, use git add <files> for specific staging, then make commit"
+      "next_step": "Review files, use git add <files> for specific staging, then run make commit again"
     }
   }
 }
