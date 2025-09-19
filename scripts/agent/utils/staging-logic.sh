@@ -79,6 +79,10 @@ call_agent_staging_decision() {
     local unstaged_count="$3"
     local untracked_count="$4"
     local relevant_files="$5"
+    local auto_stage="$6"
+    local workflow_context="$7"
+    local origin="$8"
+    local caller="$9"
 
     print_color $BLUE "🤖 Agent staging decision required..."
 
@@ -89,7 +93,11 @@ call_agent_staging_decision() {
         untracked_count="$untracked_count" \
         relevant_files="$(echo "$relevant_files" | tr '\n' '|' | sed 's/|$//')" \
         auto_stage_command="./scripts/agent/utils/staging-logic.sh auto_stage_files \"$relevant_files\"" \
-        manual_stage_help="git add <specific-files>"
+        manual_stage_help="git add <specific-files>" \
+        workflow_context="$workflow_context" \
+        origin="$origin" \
+        caller="$caller" \
+        auto_stage="$auto_stage"
 }
 
 # Helper function for agent to auto-stage files (called by agent response)
@@ -129,6 +137,8 @@ handle_no_relevant_files() {
 execute_staging_workflow() {
     local auto_stage="${1:-false}"
     local workflow_context="${2:-integrated_commit}"
+    local origin="${3:-commit_command}"
+    local caller="${4:-commit_workflow}"
 
     print_trace "STAGING_START" "Beginning staging analysis for $workflow_context"
 
@@ -179,7 +189,7 @@ execute_staging_workflow() {
             auto_stage_relevant_files "$relevant_files"
             return $?
         else
-            call_agent_staging_decision "$total_changes" "$staged_count" "$unstaged_count" "$untracked_count" "$relevant_files"
+            call_agent_staging_decision "$total_changes" "$staged_count" "$unstaged_count" "$untracked_count" "$relevant_files" "$auto_stage" "$workflow_context" "$origin" "$caller"
             return 2  # Indicates agent decision required - caller should handle
         fi
     else

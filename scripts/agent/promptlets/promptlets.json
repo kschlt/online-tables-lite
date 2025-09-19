@@ -317,9 +317,16 @@
           "auto_stage": "Execute: ${auto_stage_command}",
           "manual_stage": "Use: ${manual_stage_help}"
         },
-        "workflow_context": "integrated_commit"
+        "workflow_context": "${workflow_context}",
+        "origin": "${origin}",
+        "caller": "${caller}",
+        "auto_stage": "${auto_stage}",
+        "workflow_metadata": {
+          "chain": "${origin} → ${caller} → staging_logic → agent",
+          "return_to": "${caller}"
+        }
       },
-      "next_step": "make commit"
+      "next_step": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow ${auto_stage} ${origin}"
     }
   },
   "manual_staging_required": {

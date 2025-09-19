@@ -44,7 +44,7 @@ integrate_staging() {
     fi
 
     # Execute staging workflow
-    $STAGING_LOGIC execute_staging_workflow "$auto_stage" "integrated_commit"
+    $STAGING_LOGIC execute_staging_workflow "$auto_stage" "integrated_commit" "$workflow_starter" "commit_workflow"
     local staging_result=$?
 
     case $staging_result in
