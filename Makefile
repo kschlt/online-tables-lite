@@ -1,6 +1,6 @@
 # Development Commands
 
-.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit pr-workflow branch-new
+.PHONY: dev-frontend dev-backend dev install-frontend install-backend install-all setup setup-git-tools cleanup verify commit pr-workflow branch-new check-agent-system
 
 # Start frontend development server
 dev-frontend:
@@ -94,7 +94,7 @@ verify:
 	./scripts/git/verify-clean-commit.sh
 
 # Fix issues then run quality checks (recommended workflow)
-check: verify
+check: verify check-agent-system
 	@echo "🔧 Auto-fixing and checking..."
 	@echo "🔧 Frontend: Auto-fixing..."
 	cd apps/web && npm run fix
@@ -130,6 +130,11 @@ fix:
 	cd apps/web && npm run fix
 	cd apps/api && source venv/bin/activate && ruff check --fix . && ruff format .
 	@echo "✅ All fixes applied!"
+
+# Agent system validation (diagrams + promptlets)
+check-agent-system:
+	@echo "🤖 Validating agent system..."
+	@./scripts/agent/system/validate-agent-system.sh
 
 # ------------------------ AGENT WORKFLOWS ------------------------
 
@@ -182,6 +187,7 @@ help:
 	@echo "  make verify          - Verify clean commit"
 	@echo "  make fix             - Auto-fix linting and formatting"
 	@echo "  make check           - Run all quality checks"
+	@echo "  make check-agent-system - Validate agent diagrams and promptlets"
 	@echo ""
 	@echo "🌿 Branch Management Workflow (Agent Workflow):"
 	@echo "  make branch-new      - Create new feature branch with checks (NAME=optional)"

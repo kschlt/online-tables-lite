@@ -15,7 +15,7 @@ flowchart TD
     CommitBlackBox --> CommitExit
     DocsEntry --> DocsBlackBox
     DocsBlackBox --> DocsExit
-    UserSays@{ label: "User: 'push', 'create PR'" } --> ClaudeDetects["🤖 Claude detects trigger"]
+    UserSays@{ label: "👤 User: 'push', 'create PR'" } --> ClaudeDetects["🤖 Claude detects trigger"]
     ClaudeDetects --> ClaudeExec["🤖 Claude executes: make pr-workflow"]
     ClaudeExec --> MakefilePR["Makefile dispatches to pr-workflow"]
     MakefilePR --> ValidateChanges["Validate branch changes"]

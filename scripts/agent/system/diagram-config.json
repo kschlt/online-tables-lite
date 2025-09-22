@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Single source of truth for all Mermaid diagram styling and configuration",
+    "last_updated": "2025-01-22"
+  },
+  "colors": {
+    "userLayer": {
+      "hex": "#e1f5fe",
+      "name": "Light Blue",
+      "semantic": "User Layer - User triggers, interactions, manual input points, user decisions"
+    },
+    "agentLayer": {
+      "hex": "#f3e5f5",
+      "name": "Light Purple",
+      "semantic": "Agent Layer - Claude detects, executes, generates, AI reasoning and analysis tasks"
+    },
+    "automationStep": {
+      "hex": "#fff3e0",
+      "name": "Light Yellow",
+      "semantic": "Automation Steps - Makefile dispatching, script execution, validation checks, system operations"
+    },
+    "stopNode": {
+      "hex": "#ffcdd2",
+      "name": "Light Red",
+      "semantic": "Stop Nodes - Error conditions, blocking states, user action required"
+    },
+    "successNode": {
+      "hex": "#a5d6a7",
+      "name": "Light Green",
+      "semantic": "Success Nodes - Workflow completion, successful outcomes"
+    },
+    "blackBoxStep": {
+      "hex": "#f5f5f5",
+      "name": "Light Gray",
+      "semantic": "Black Box Steps - Pre-commit hooks, external system interactions, simplified complex processes"
+    },
+    "entryPoint": {
+      "hex": "#e8f5e8",
+      "name": "Very Light Green",
+      "semantic": "Entry Points - Workflow initiation points, chain entry from other workflows"
+    },
+    "subgraphBackground": {
+      "hex": "#f9f9f9",
+      "name": "Very Light Gray",
+      "semantic": "Subgraph background color"
+    },
+    "subgraphBorder": {
+      "hex": "#666",
+      "name": "Dark Gray",
+      "semantic": "Subgraph border color"
+    }
+  },
+  "classDefs": {
+    "userLayer": "fill:#e1f5fe",
+    "agentLayer": "fill:#f3e5f5",
+    "automationStep": "fill:#fff3e0",
+    "stopNode": "fill:#ffcdd2",
+    "successNode": "fill:#a5d6a7",
+    "blackBoxStep": "fill:#f5f5f5",
+    "entryPoint": "fill:#e8f5e8",
+    "subgraphStyle": "fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5"
+  },
+  "nodeShapes": {
+    "standard": {
+      "syntax": "[\"text\"]",
+      "usage": "Standard process steps"
+    },
+    "decision": {
+      "syntax": "{\"text\"}",
+      "usage": "Decision points/conditionals"
+    },
+    "rounded": {
+      "syntax": "(\"text\")",
+      "usage": "Start/end points"
+    },
+    "circle": {
+      "syntax": "((\"text\"))",
+      "usage": "Connection points"
+    },
+    "asymmetric": {
+      "syntax": "@{ shape: rect}",
+      "usage": "Special user interaction nodes"
+    }
+  },
+  "subgraphs": {
+    "template": "subgraph WorkflowBox[\"🤖 WORKFLOW NAME<br>📄 <i>See: script-name.sh</i>\"]\n    direction TB\n    Content[\"Workflow content\"]\nend",
+    "styling": "WorkflowBox:::subgraphStyle"
+  },
+  "standard_emojis": {
+    "user": "👤",
+    "agent": "🤖",
+    "stop": "❌",
+    "success": "✅",
+    "warning": "⚠️",
+    "info": "ℹ️",
+    "automation": "⚙️",
+    "github": "🐙",
+    "scripts": "📁",
+    "utils": "🔧"
+  },
+  "validation": {
+    "allowed_colors": [
+      "#e1f5fe",
+      "#f3e5f5",
+      "#fff3e0",
+      "#ffcdd2",
+      "#a5d6a7",
+      "#f5f5f5",
+      "#e8f5e8",
+      "#f9f9f9",
+      "#666"
+    ],
+    "emoji_patterns": {
+      "user_nodes": "User:|👤",
+      "agent_nodes": "🤖|Claude",
+      "stop_nodes": "❌.*STOP|STOP.*❌",
+      "success_nodes": "✅.*Complete|Complete.*✅"
+    }
+  },
+  "template": {
+    "header": "flowchart TD"
+  }
+}

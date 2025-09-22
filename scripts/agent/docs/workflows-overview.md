@@ -4,7 +4,7 @@ Detailed descriptions and usage patterns for all agent workflows.
 
 ## 🚀 PR Workflow (`pr-workflow.sh`)
 
-**📊 [View PR Workflow Diagram](./diagrams/pr-workflow.mmd)**
+**📊 [View PR Workflow Diagram](./diagrams/pr-workflow.mmd)** | **🎨 [Diagram Guidelines](./diagrams/README.md)**
 
 Complete pull request creation pipeline with intelligent validation and automation.
 

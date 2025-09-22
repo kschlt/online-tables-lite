@@ -79,4 +79,5 @@ Follow established patterns when extending the system:
 
 - **[Technical Usage Guide](./workflows-overview.md)** - Detailed workflow usage and parameters
 - **[Visual Diagrams](./diagrams/)** - Mermaid workflow diagrams
+- **[Diagram Standards](./diagrams/README.md)** - Color guidelines and consistency rules
 - **Getting Started**: Review system architecture diagram, then explore individual workflow diagrams

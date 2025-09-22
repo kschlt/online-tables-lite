@@ -56,13 +56,14 @@ fi
 echo "📝 Staging auto-fixes..."
 git add -A
 
-# 4. Validate promptlet system compliance (comprehensive)
-echo "🤖 Validating promptlet system compliance..."
-$AGENT_SYSTEM/validate-promptlet-compliance.sh
+# 4. Validate agent system (diagrams + promptlets with smart change detection)
+echo "🤖 Validating agent system (diagrams + promptlets)..."
+$AGENT_SYSTEM/validate-agent-system.sh
 if [ $? -ne 0 ]; then
-    echo "❌ Comprehensive promptlet validation failed!"
-    echo "💡 Please fix violations above to ensure complete compliance."
-    echo "💡 Check configuration in $AGENT_SYSTEM/promptlet-sources.json"
+    echo "❌ Agent system validation failed!"
+    echo "💡 Check diagram compliance: $AGENT_SYSTEM/validate-diagrams.sh"
+    echo "💡 Check promptlet compliance: $AGENT_SYSTEM/validate-promptlet-system.sh"
+    echo "💡 Force validation: $AGENT_SYSTEM/validate-agent-system.sh --force"
     exit 1
 fi
 

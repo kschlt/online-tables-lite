@@ -57,15 +57,28 @@ graph TB
     %% External Integration
     PRScript --> GitHub
 
-    %% Styling
-    classDef userLayer fill:#e1f5fe
-    classDef dispatchLayer fill:#f3e5f5
-    classDef workflowLayer fill:#e8f5e8
-    classDef agentLayer fill:#fff3e0
-    classDef externalLayer fill:#fce4ec
+    %% Styling - Following established standards
+    User:::userLayer
+    Claude:::agentLayer
+    Triggers:::automationStep
+    Makefile:::automationStep
+    CommitWF:::automationStep
+    BranchWF:::automationStep
+    PRWF:::automationStep
+    AgentScripts:::automationStep
+    CommitScript:::automationStep
+    PRScript:::automationStep
+    DocsScript:::automationStep
+    Utils:::automationStep
+    Promptlets:::automationStep
+    GitHub:::blackBoxStep
 
-    class User,Claude userLayer
-    class Triggers,Makefile dispatchLayer
-    class CommitWF,BranchWF,PRWF workflowLayer
-    class AgentScripts,CommitScript,PRScript,DocsScript,Utils,Promptlets agentLayer
-    class GitHub externalLayer
+    %% Required classDef definitions
+    classDef userLayer fill:#e1f5fe
+    classDef agentLayer fill:#f3e5f5
+    classDef automationStep fill:#fff3e0
+    classDef stopNode fill:#ffcdd2
+    classDef successNode fill:#a5d6a7
+    classDef blackBoxStep fill:#f5f5f5
+    classDef entryPoint fill:#e8f5e8
+    classDef subgraphStyle fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
