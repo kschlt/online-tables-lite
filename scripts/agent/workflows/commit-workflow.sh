@@ -179,7 +179,7 @@ execute_staging_workflow() {
             print_color $GREEN "🎯 Relevant files detected for staging:"
             echo "$relevant_files" | sed 's/^/  + /'
 
-            if [ "$auto_stage" = "true" ] || [ "$auto_stage" = "AUTO_STAGE" ]; then
+            if [ "$auto_stage" = "true" ]; then
                 auto_stage_relevant_files "$relevant_files"
                 return $?
             else

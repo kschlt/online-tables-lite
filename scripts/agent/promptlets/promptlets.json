@@ -303,9 +303,8 @@
       "type": "file_staging_decision",
       "instructions": [
         "Review detected relevant files for staging",
-        "Decide which changes are relevant for staging",
-        "This is part of the integrated commit workflow - staging will proceed automatically",
-        "Execute the appropriate next step based on your decision:"
+        "Decide if these files should be auto-staged or require manual staging",
+        "Based on your decision, execute the next step with either 'true' (auto-stage) or 'false' (manual staging)"
       ],
       "context": {
         "total_changes": "${total_changes}",
@@ -313,23 +312,15 @@
         "modified_count": "${modified_count}",
         "untracked_count": "${untracked_count}",
         "relevant_files": "${relevant_files}",
-        "staging_options": {
-          "auto_stage": "Execute: ${auto_stage_command}",
-          "manual_stage": "Use: ${manual_stage_help}"
-        },
         "workflow_context": "${workflow_context}",
         "origin": "${origin}",
         "caller": "${caller}",
-        "auto_stage": "${auto_stage}",
         "workflow_metadata": {
           "chain": "${origin} → ${caller} → staging_logic → agent",
           "return_to": "${caller}"
         }
       },
-      "decision_options": {
-        "auto_stage": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow AUTO_STAGE ${origin}",
-        "manual_stage": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow MANUAL_STAGE ${origin}"
-      }
+      "next_step": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow [YOUR_DECISION: true or false] ${origin}"
     }
   },
   "manual_staging_required": {
