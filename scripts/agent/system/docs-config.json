@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "description": "Documentation paths configuration for agent system",
+  "updated": "2025-09-22",
+  "documentation_paths": {
+    "root_docs": [
+      "README.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "SETUP_DEPENDENCIES.md"
+    ],
+    "app_docs": [
+      "apps/web/DESIGN_SYSTEM.md",
+      "apps/web/src/README.md",
+      "apps/api/README.md"
+    ],
+    "agent_docs": [
+      "scripts/agent/docs/README.md",
+      "scripts/agent/docs/workflows-overview.md",
+      "scripts/agent/docs/diagrams/README.md",
+      ".agent/README.md",
+      ".agent/tech-stack-report.md",
+      ".agent/improvements_backlog.md",
+      ".agent/feature-list.md"
+    ],
+    "scripts_docs": [
+      "scripts/README.md"
+    ],
+    "infrastructure_docs": [
+      "supabase/README.md"
+    ],
+    "config_docs": [
+      ".cursor/instructions.md"
+    ]
+  },
+  "auto_discovery": {
+    "enabled": true,
+    "patterns": [
+      {
+        "pattern": "**/README.md",
+        "description": "Standard README files in any directory"
+      },
+      {
+        "pattern": "**/README",
+        "description": "README files without extension"
+      },
+      {
+        "pattern": "**/*.md",
+        "exclude_patterns": [
+          "**/node_modules/**",
+          "**/venv/**",
+          "**/.git/**",
+          "**/dist/**",
+          "**/build/**",
+          "**/.next/**",
+          "**/coverage/**"
+        ],
+        "description": "All Markdown files excluding dependencies and build artifacts"
+      },
+      {
+        "pattern": "**/CHANGELOG*",
+        "description": "Changelog files"
+      },
+      {
+        "pattern": "**/CONTRIBUTING*",
+        "description": "Contributing guidelines"
+      },
+      {
+        "pattern": "**/DOCS*",
+        "description": "Documentation directories and files"
+      },
+      {
+        "pattern": "**/docs/**/*.md",
+        "description": "Files in docs directories"
+      }
+    ],
+    "watch_directories": [
+      ".",
+      "apps/",
+      "scripts/",
+      ".agent/",
+      "supabase/"
+    ]
+  },
+  "file_types": {
+    "primary": [".md"],
+    "secondary": ["README", "CHANGELOG", "CONTRIBUTING", "DOCS", "LICENSE"]
+  },
+  "categorization": {
+    "project_root": {
+      "patterns": ["README.md", "CHANGELOG.md", "CLAUDE.md", "SETUP_DEPENDENCIES.md"],
+      "priority": 1
+    },
+    "application": {
+      "patterns": ["apps/**/*.md", "apps/**/README*"],
+      "priority": 2
+    },
+    "agent_system": {
+      "patterns": ["scripts/agent/**/*.md", ".agent/**/*.md"],
+      "priority": 3
+    },
+    "infrastructure": {
+      "patterns": ["supabase/**/*.md", "docker/**/*.md", "deployment/**/*.md"],
+      "priority": 4
+    },
+    "development": {
+      "patterns": [".cursor/**/*.md", ".vscode/**/*.md", "scripts/**/*.md"],
+      "priority": 5
+    },
+    "features": {
+      "patterns": ["features/**/*.md", "docs/**/*.md"],
+      "priority": 6
+    }
+  },
+  "metadata": {
+    "last_scan": null,
+    "total_files": 0,
+    "scan_history": []
+  },
+  "validation": {
+    "required_files": [
+      "README.md",
+      "CLAUDE.md"
+    ],
+    "recommended_files": [
+      "CHANGELOG.md",
+      "CONTRIBUTING.md"
+    ]
+  },
+  "output_formats": {
+    "list": {
+      "separator": "\n",
+      "prefix": "- "
+    },
+    "paths_only": {
+      "separator": "\n",
+      "prefix": ""
+    },
+    "json": {
+      "grouped": true,
+      "include_metadata": true
+    }
+  }
+}
