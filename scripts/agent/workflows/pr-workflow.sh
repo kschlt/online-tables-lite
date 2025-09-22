@@ -67,7 +67,10 @@ pr_workflow_orchestrator() {
                 echo "Usage: pr_workflow_orchestrator [--branch BRANCH] [--workflow-origin ORIGIN]"
                 echo "Main orchestrator for PR workflow following 2B pattern"
                 return 0 ;;
-            *) echo "Unknown option: $1" >&2; return 1 ;;
+            *)
+                echo "Unknown option: $1" >&2
+                echo "Use --help to see available options" >&2
+                return 1 ;;
         esac
     done
 
@@ -92,12 +95,7 @@ validate_branch() {
     print_trace "VALIDATE_BRANCH" "Checking if branch is protected: $branch"
 
     if [ "$branch" = "main" ] || [ "$branch" = "production" ]; then
-        print_color $RED "❌ STOP: Protected branch detected"
-        print_color $RED "Terminal: Cannot create PR from main/production"
-        print_color $RED "USER ACTION REQUIRED"
         print_color $BLUE "💡 Create a feature branch first: make branch-new NAME=feat/your-feature"
-
-        # This is a terminal condition per 2B diagram - no promptlet, user must act
         return 1
     fi
 
@@ -122,12 +120,7 @@ check_conflicts() {
     local is_fast_forward=$(echo "$conflict_status" | cut -d'|' -f2)
 
     if [ "$conflicts_exist" = "true" ]; then
-        print_color $YELLOW "⚠️ STOP: Merge conflicts detected"
-        print_color $YELLOW "Terminal: Rebase required before PR"
-        print_color $YELLOW "USER ACTION REQUIRED"
         print_color $BLUE "💡 Resolve with: git rebase main, then retry: make pr-workflow"
-
-        # This is a terminal condition per 2B diagram - no promptlet, user must act
         return 1
     fi
 
@@ -155,8 +148,7 @@ check_commits() {
     local commits_ahead=$(git rev-list --count "$base_branch..$branch" 2>/dev/null || echo "0")
 
     if [ "$commits_ahead" -eq 0 ]; then
-        print_color $BLUE "ℹ️ STOP: No changes to create PR"
-        print_color $BLUE "Terminal: 0 commits ahead of main"
+        print_color $BLUE "ℹ️ No changes to create PR - 0 commits ahead of main"
         print_color $BLUE "WORKFLOW COMPLETE"
         return 0
     fi
@@ -181,7 +173,7 @@ check_uncommitted() {
 
     if [ "$has_uncommitted" = "true" ]; then
         print_color $YELLOW "⚠️ Uncommitted changes detected"
-        print_color $YELLOW "Terminal: Commit changes first"
+        print_color $YELLOW "Commit changes first"
 
         # Generate promptlet for agent to commit changes (UncommittedPromptlet in 2B)
         $PROMPTLET_READER uncommitted_changes \
@@ -226,7 +218,7 @@ push_branch() {
     fi
 
     if [ -z "$branch" ]; then
-        print_color $RED "❌ Error: Could not determine branch name"
+        print_color $RED "❌ ERROR: Could not determine branch name - check if you are in a git repository"
         return 1
     fi
 
@@ -239,7 +231,7 @@ push_branch() {
         # Success: proceed to next step in workflow
         generate_pr_body "$branch" "$workflow_origin"
     else
-        print_color $RED "❌ Failed to push branch"
+        print_color $RED "❌ ERROR: Failed to push branch - check git status and network connectivity"
         return 1
     fi
 }
@@ -285,7 +277,7 @@ generate_pr_body() {
     fi
 
     if [ -z "$changelog_entry" ] || [ "$changelog_entry" = "No unreleased changes detected" ]; then
-        print_color $RED "❌ No changelog content available for PR description"
+        print_color $RED "❌ ERROR: No changelog content available for PR description - check if commits follow conventional format"
         return 1
     fi
 
@@ -323,7 +315,7 @@ create_pr() {
     fi
 
     if [ -z "$branch" ]; then
-        print_color $RED "❌ Error: Could not determine branch name"
+        print_color $RED "❌ ERROR: Could not determine branch name - check if you are in a git repository"
         return 1
     fi
 
@@ -368,7 +360,7 @@ create_pr() {
         # Success: proceed to final step in workflow
         finalize_workflow "$branch" "$pr_url" "$workflow_origin"
     else
-        print_color $RED "❌ Failed to create PR"
+        print_color $RED "❌ ERROR: Failed to create PR - check gh CLI authentication and repository permissions"
         return 1
     fi
 }
@@ -382,7 +374,8 @@ finalize_workflow() {
     print_trace "FINALIZE_WORKFLOW" "Starting workflow finalization"
 
     if [ -z "$branch" ]; then
-        print_color $RED "❌ Error: --branch parameter is required"
+        # Workflow bug - should never happen with proper orchestration
+        return 1
         return 1
     fi
 

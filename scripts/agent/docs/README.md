@@ -2,62 +2,81 @@
 
 ## Overview
 
-The agent system orchestrates development tasks through intelligent ping-pong interactions between Claude and specialized shell scripts. It operates on an **orchestrator-based architecture** where workflows are broken down into focused, single-responsibility functions that chain together seamlessly.
+The agent system orchestrates development tasks through intelligent ping-pong interactions between Claude and specialized shell scripts. It provides a structured, automated workflow framework that scales from simple commits to complex multi-step operations.
+
+**📊 [Complete System Architecture](./diagrams/system-architecture.mmd)**
 
 ## Core Design Principles
 
-1. **Ping-Pong Pattern**: Agent scripts generate promptlets (JSON task instructions) → Claude processes them → Returns to the next logical workflow step
-2. **Separation of Concerns**: Each function handles a single responsibility with clean boundaries
-3. **Workflow Chaining**: Automatic transitions between related workflow steps using `--workflow-origin` parameter tracking
-4. **Graceful Degradation**: Workflows continue with warnings rather than failing completely
+**🔄 Business Logic First**: Automate everything possible with pure business logic (faster, predictable). Only use LLM for generative tasks.
 
-## System Architecture
+**🎯 Single-Purpose Functions**: Each function serves one specific purpose with clean boundaries. Orchestrator functions bundle multiple functions into automated flows.
 
-**📊 [View Complete System Diagram](./diagrams/system-architecture.mmd)**
+**📁 File Organization**: One workflow file per domain (commit, PR, docs, branch). Related functions stay together. Move to `utils/` only when functions are shared across multiple workflows.
+
+**📋 Standardized Promptlets**: Use prompt library pattern with validated JSON schemas. Promptlets follow consistent structure and are validated/linted for compliance.
+
+**🔄 Ping-Pong Pattern**: Business logic handles automation → Generate promptlet for LLM tasks → Claude processes → Return to next logical workflow step
+
+**🔗 Workflow Chaining**: Automatic transitions between related workflow steps using `--workflow-origin` parameter tracking
+
+**🛡️ Graceful Degradation**: Workflows continue with warnings rather than failing completely
+
+## Integration Pattern
+
+```
+User Trigger → CLAUDE.md Detection → Makefile Dispatch → Agent Workflows → GitHub
+```
+
+Claude detects trigger phrases in CLAUDE.md, executes corresponding `make` commands, which dispatch to specialized workflow scripts that handle automation and return control to Claude when human input is needed.
+
+## System Structure
 
 ```
 scripts/agent/
-├── docs/                         # 📚 Documentation hub
-├── workflows/                    # 🔄 Workflow orchestration scripts
-├── promptlets/                   # 📋 Agent task definitions
-├── processors/                   # 🔧 Data processing utilities
-├── system/                       # ⚙️ System configuration & validation
-└── utils/                        # 🛠 Utility functions
+├── docs/          # Documentation and visual diagrams
+├── workflows/     # Domain-specific workflow files (one per workflow type)
+│   └── *.sh       # Contains single-purpose functions + orchestrators
+├── promptlets/    # Standardized prompt library with validation
+│   ├── *.json     # Prompt templates following consistent schema
+│   └── reader.sh  # Prompt loading and validation logic
+├── utils/         # Cross-workflow shared utilities only
+│   └── *.sh       # Functions used by multiple workflows
+└── system/        # System configuration and validation logic
 ```
 
-## Entry Points & Triggers
+**Key Principles**:
+- **Domain Cohesion**: Keep related functions in same workflow file
+- **Utility Promotion**: Move to `utils/` only when shared across workflows
+- **Prompt Standardization**: All LLM interactions use validated promptlet library
 
-The system activates through CLAUDE.md trigger phrases:
+## Adding New Workflows
 
-| User Trigger | Claude Executes | Workflow |
-|-------------|----------------|----------|
-| `"commit"`, `"save changes"` | `make commit` | [📝 Commit](./diagrams/commit-workflow.mmd) |
-| `"push"`, `"create PR"` | `make pr-workflow` | [🚀 PR](./diagrams/pr-workflow.mmd) |
-| `"create branch"` | `make branch-new` | [🌿 Branch](./diagrams/branch-workflow.mmd) |
+Follow established patterns when extending the system:
 
-## Documentation Structure
+1. **Create workflow script** in `workflows/` with:
+   - Single-purpose functions for each step
+   - Orchestrator function bundling automation flow
+   - Business logic handling before LLM calls
 
-- **[📋 Workflows Overview](./workflows-overview.md)** - Detailed workflow descriptions and usage
-- **[🔍 Quick Navigation](./index.md)** - Documentation index and references
-- **[📊 Visual Diagrams](./diagrams/)** - Mermaid workflow diagrams
+2. **Define promptlets** in `promptlets/` for generative tasks:
+   - Follow standard JSON schema pattern
+   - Validate against existing promptlet structure
+   - Use for creative/generative work only
 
-## Integration
+3. **Organize functions properly**:
+   - Keep domain-related functions in same workflow file
+   - Extract to `utils/` only when used across multiple workflows
+   - Maintain clear separation between automation and generation
 
-### Makefile Commands
-```bash
-make pr-workflow    # Complete PR creation pipeline
-make commit         # Conventional commit generation
-make branch-new     # Branch creation with validation
-```
+4. **Add integration points**:
+   - Trigger phrase in CLAUDE.md if user-initiated
+   - Makefile entry for centralized dispatch
+   - Workflow diagram to visualize the flow
+   - Update workflows-overview.md with usage details
 
-### Performance Features
-- **Caching**: Git-cliff data and branch status caching (`workflow-cache.sh`)
-- **Parallel Operations**: Batched git operations and validation checks
-- **Error Recovery**: Graceful degradation with clear resolution guidance
+## Documentation
 
-## Getting Started
-
-1. **Architecture**: Review [System Architecture Diagram](./diagrams/system-architecture.mmd)
-2. **Workflows**: Check [Workflows Overview](./workflows-overview.md) for detailed usage
-3. **Visual Learning**: Explore individual diagrams in `./diagrams/`
-4. **Quick Reference**: Use [Navigation Index](./index.md) for specific topics
+- **[Technical Usage Guide](./workflows-overview.md)** - Detailed workflow usage and parameters
+- **[Visual Diagrams](./diagrams/)** - Mermaid workflow diagrams
+- **Getting Started**: Review system architecture diagram, then explore individual workflow diagrams

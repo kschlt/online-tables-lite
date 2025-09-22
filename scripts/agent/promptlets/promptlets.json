@@ -305,8 +305,7 @@
         "Review detected relevant files for staging",
         "Decide which changes are relevant for staging",
         "This is part of the integrated commit workflow - staging will proceed automatically",
-        "If you want to auto-stage relevant files, respond with: AUTO_STAGE",
-        "If manual staging is needed, respond with: MANUAL_STAGE"
+        "Execute the appropriate next step based on your decision:"
       ],
       "context": {
         "total_changes": "${total_changes}",
@@ -327,7 +326,10 @@
           "return_to": "${caller}"
         }
       },
-      "next_step": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow ${auto_stage} ${origin}"
+      "decision_options": {
+        "auto_stage": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow AUTO_STAGE ${origin}",
+        "manual_stage": "./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow MANUAL_STAGE ${origin}"
+      }
     }
   },
   "manual_staging_required": {

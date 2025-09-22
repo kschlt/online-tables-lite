@@ -1,134 +1,83 @@
-graph TD
-    %% Entry Point
-    UserSays["User: 'push', 'create PR'"]
-    ClaudeDetects["🤖 Claude detects trigger"]
-    ClaudeExec["🤖 Claude executes: make pr-workflow"]
-
-    %% Workflow Steps
-    MakefilePR["Makefile dispatches to pr-workflow"]
-    ValidateChanges["Validate branch changes"]
-
-    %% Validation Decisions
-    CheckBranch{Protected branch?}
-    CheckConflicts{Merge conflicts?}
-    CheckCommits{Commits ahead?}
-    CheckUncommitted{Uncommitted changes?}
-
-    %% Error Promptlets
-    BranchError["Generate branch_protection_error promptlet"]
-    ConflictError["Generate conflict_resolution promptlet"]
-    NoChanges["Generate no_changes promptlet"]
-    UncommittedPromptlet["Generate validation warning promptlet"]
-
-    %% Claude Actions
-    ClaudeCreatesBranch["🤖 Claude: create branch → retry workflow"]
-    ClaudeResolves["🤖 Claude: rebase main → retry workflow"]
-    ClaudeNoOp["🤖 Claude: understand no PR needed"]
-    ClaudeCommitsFirst["🤖 Claude: commit changes → retry workflow"]
-
-    %% Documentation Flow
-    DocsWorkflow["Documentation workflow"]
-    CheckDocNeeded{Doc changes needed?}
-    ApplyDocs["Apply documentation updates"]
-    CommitDocs["Commit documentation"]
-    SkipDocs["Skip documentation"]
-
-    %% Push & PR Creation
-    PushBranch["Push branch"]
-    PrePushHook["Pre-push hook: CHANGELOG update"]
-    GeneratePRBody["Generate PR body"]
-    PRBodyPromptlet["Generate pr_description promptlet"]
-    ClaudeProcessesPR["🤖 Claude: process PR description"]
-    CreatePR["Create/Update PR"]
-    CheckExistingPR{PR exists?}
-    UpdatePR["Update existing PR"]
-    NewPR["Create new PR"]
-
-    %% Finalization
-    FinalizePR["Finalize PR"]
-    CheckCI{CI passing?}
-    WorkflowComplete["Workflow Complete"]
-
-    %% Entry Flow
-    UserSays --> ClaudeDetects
-    ClaudeDetects --> ClaudeExec
-    ClaudeExec --> MakefilePR
-
-    %% Workflow Flow
-    MakefilePR --> ValidateChanges
-
-    %% Validation Flow
-    ValidateChanges --> CheckBranch
-    CheckBranch -->|Yes| BranchError
-    CheckBranch -->|No| CheckConflicts
-    CheckConflicts -->|Yes| ConflictError
-    CheckConflicts -->|No| CheckCommits
-    CheckCommits -->|0| NoChanges
-    CheckCommits -->|>0| CheckUncommitted
-    CheckUncommitted -->|Yes| UncommittedPromptlet
-    CheckUncommitted -->|No| DocsWorkflow
-
-    %% Promptlet to Claude (ping-pong)
-    BranchError -.->|promptlet| ClaudeCreatesBranch
-    ConflictError -.->|promptlet| ClaudeResolves
-    NoChanges -.->|promptlet| ClaudeNoOp
-    UncommittedPromptlet -.->|promptlet| ClaudeCommitsFirst
-
-    %% Claude Re-entry Points
-    ClaudeCreatesBranch --> MakefilePR
-    ClaudeResolves --> MakefilePR
-    ClaudeCommitsFirst --> MakefilePR
-
-    %% Documentation Flow
-    DocsWorkflow --> CheckDocNeeded
-    CheckDocNeeded -->|Yes| ApplyDocs
-    CheckDocNeeded -->|No| SkipDocs
-    ApplyDocs --> CommitDocs
-    CommitDocs --> PushBranch
-    SkipDocs --> PushBranch
-
-    %% Push & PR Flow
-    PushBranch --> PrePushHook
-    PrePushHook --> GeneratePRBody
-    GeneratePRBody --> PRBodyPromptlet
-
-    %% Claude PR Processing (ping-pong)
-    PRBodyPromptlet -.->|promptlet| ClaudeProcessesPR
-    ClaudeProcessesPR --> CreatePR
-
-    %% PR Creation Flow
-    CreatePR --> CheckExistingPR
-    CheckExistingPR -->|Yes| UpdatePR
-    CheckExistingPR -->|No| NewPR
-    UpdatePR --> FinalizePR
+flowchart TD
+ subgraph CommitWorkflowBox["🤖  COMMIT WF<br>📄 <i>See: commit-workflow.mmd</i>"]
+    direction TB
+        CommitEntry["Entry: Agent executes make commit<br>--workflow-origin=pr-workflow"]
+        CommitBlackBox["Agent workflow handling:<br>• Agent stages & commits changes<br>• Pre-commit hooks &amp; validation<br>• Error handling &amp; retries"]
+        CommitExit["Exit: Returns to run_docs_workflow"]
+  end
+ subgraph DocsWorkflowBox["🤖  DOCUMENTATION WF<br>📄 <i>See: docs-workflow.sh</i>"]
+    direction TB
+        DocsEntry["Entry: generate_docs<br>--workflow-origin=pr-workflow"]
+        DocsBlackBox["Agent workflow handling:<br>• Agent analysis of changes<br>• Doc updates &amp; validation<br>• Auto-commit or skip logic"]
+        DocsExit["Exit: Continue to push"]
+  end
+    CommitEntry --> CommitBlackBox
+    CommitBlackBox --> CommitExit
+    DocsEntry --> DocsBlackBox
+    DocsBlackBox --> DocsExit
+    UserSays@{ label: "User: 'push', 'create PR'" } --> ClaudeDetects["🤖 Claude detects trigger"]
+    ClaudeDetects --> ClaudeExec["🤖 Claude executes: make pr-workflow"]
+    ClaudeExec --> MakefilePR["Makefile dispatches to pr-workflow"]
+    MakefilePR --> ValidateChanges["Validate branch changes"]
+    ValidateChanges --> CheckBranch{"Protected branch?"}
+    CheckBranch -- Yes --> ProtectedStop["💡 Create a feature branch first"]
+    CheckBranch -- No --> CheckConflicts{"Merge conflicts?"}
+    CheckConflicts -- Yes --> ConflictStop["💡 Resolve with: git rebase main"]
+    CheckConflicts -- No --> CheckCommits{"Commits ahead?"}
+    CheckCommits -- 0 --> NoChangesStop["ℹ️ No changes to create PR - 0 commits ahead of main<br>WORKFLOW COMPLETE"]
+    CheckCommits -- >0 --> CheckUncommitted{"Uncommitted changes?"}
+    CheckUncommitted -- Yes --> CommitWorkflowBox
+    CheckUncommitted -- No --> DocsWorkflowBox
+    CommitExit --> DocsWorkflowBox
+    DocsExit --> PushBranch["Push branch"]
+    PushBranch --> PrePushHook["Pre-push hook automation<br>📄 <i>See: .git/hooks/pre-push</i>"]
+    PrePushHook --> GeneratePRBody["🤖 Claude generates PR title & body"]
+    GeneratePRBody --> CreatePR["Create/Update PR"]
+    CreatePR --> CheckExistingPR{"PR exists?"}
+    CheckExistingPR -- Yes --> UpdatePR["Update existing PR"]
+    CheckExistingPR -- No --> NewPR["Create new PR"]
+    UpdatePR --> FinalizePR["Finalize PR"]
     NewPR --> FinalizePR
+    FinalizePR --> CheckCI{"CI passing?"}
+    CheckCI --> WorkflowComplete["Workflow Complete"]
 
-    %% Finalization
-    FinalizePR --> CheckCI
-    CheckCI --> WorkflowComplete
-
-    %% Styling - Using Original Color Scheme
+    UserSays@{ shape: rect}
+     CommitEntry:::automationStep
+     CommitBlackBox:::blackBoxStep
+     CommitExit:::automationStep
+     DocsEntry:::automationStep
+     DocsBlackBox:::blackBoxStep
+     DocsExit:::automationStep
+     UserSays:::userLayer
+     ClaudeDetects:::agentLayer
+     ClaudeExec:::agentLayer
+     MakefilePR:::automationStep
+     ValidateChanges:::automationStep
+     CheckBranch:::automationStep
+     ProtectedStop:::stopNode
+     CheckConflicts:::automationStep
+     ConflictStop:::stopNode
+     CheckCommits:::automationStep
+     NoChangesStop:::stopNode
+     CheckUncommitted:::automationStep
+     CommitWorkflowBox:::subgraphStyle
+     DocsWorkflowBox:::subgraphStyle
+     PushBranch:::automationStep
+     PrePushHook:::blackBoxStep
+     GeneratePRBody:::agentLayer
+     CreatePR:::automationStep
+     CheckExistingPR:::automationStep
+     UpdatePR:::automationStep
+     NewPR:::automationStep
+     FinalizePR:::automationStep
+     CheckCI:::automationStep
+     WorkflowComplete:::successNode
     classDef userLayer fill:#e1f5fe
     classDef agentLayer fill:#f3e5f5
-    classDef processStep fill:#e8f5e8
-    classDef decisionNode fill:#fff3e0
-    classDef errorNode fill:#ffcdd2
-    classDef successNode fill:#c8e6c9
+    classDef automationStep fill:#fff3e0
+    classDef stopNode fill:#ffcdd2
+    classDef blackBoxStep fill:#f5f5f5
+    classDef successNode fill:#a5d6a7
+    classDef subgraphStyle fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
 
-    %% User Interaction (Blue)
-    class UserSays userLayer
 
-    %% Claude/Agent Actions (Purple)
-    class ClaudeDetects,ClaudeExec,ClaudeCreatesBranch,ClaudeResolves,ClaudeNoOp,ClaudeCommitsFirst,ClaudeProcessesPR agentLayer
-
-    %% Script Execution (Green)
-    class MakefilePR,ValidateChanges,DocsWorkflow,ApplyDocs,CommitDocs,SkipDocs,PushBranch,PrePushHook,GeneratePRBody,CreatePR,UpdatePR,NewPR,FinalizePR processStep
-
-    %% Decision Points (Yellow)
-    class CheckBranch,CheckConflicts,CheckCommits,CheckUncommitted,CheckDocNeeded,CheckExistingPR,CheckCI decisionNode
-
-    %% Promptlets (Red)
-    class BranchError,ConflictError,NoChanges,UncommittedPromptlet,PRBodyPromptlet errorNode
-
-    %% Success/Complete (Green)
-    class WorkflowComplete successNode

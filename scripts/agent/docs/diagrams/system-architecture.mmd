@@ -1,0 +1,71 @@
+graph TB
+    %% User Interaction Layer
+    User["👤 User"]
+    Claude["🤖 Claude Code"]
+
+    %% Trigger Detection
+    Triggers["📋 CLAUDE.md Triggers<br/>• 'commit' → make commit<br/>• 'push' → make pr-workflow<br/>• 'create branch' → make branch-new"]
+
+    %% Central Dispatcher
+    Makefile["⚙️ Makefile<br/>(Central Dispatcher)"]
+
+    %% Core Workflows
+    CommitWF["🔄 Commit Workflow<br/>make commit"]
+    BranchWF["🌿 Branch Workflow<br/>make branch-new"]
+    PRWF["🚀 PR Workflow<br/>make pr-workflow"]
+
+    %% Agent Scripts Layer
+    AgentScripts["📁 Agent Scripts<br/>./scripts/agent/"]
+
+    %% Workflow Scripts
+    CommitScript["📝 commit-workflow.sh"]
+    PRScript["🔀 pr-workflow.sh"]
+    DocsScript["📚 docs-workflow.sh"]
+
+    %% Utilities & Support
+    Utils["🔧 Utils<br/>• validate-branch-name.sh<br/>• validate-work-context.sh<br/>• workflow-cache.sh"]
+    Promptlets["📋 Promptlets<br/>• promptlet-reader.sh<br/>• promptlets.json"]
+
+    %% GitHub Integration
+    GitHub["🐙 GitHub<br/>• PRs<br/>• CI/CD<br/>• Branch Management"]
+
+    %% Flow Connections
+    User --> Claude
+    Claude --> Triggers
+    Triggers --> Makefile
+
+    Makefile --> CommitWF
+    Makefile --> BranchWF
+    Makefile --> PRWF
+
+    CommitWF --> AgentScripts
+    BranchWF --> AgentScripts
+    PRWF --> AgentScripts
+
+    AgentScripts --> CommitScript
+    AgentScripts --> PRScript
+    AgentScripts --> DocsScript
+
+    AgentScripts --> Utils
+    AgentScripts --> Promptlets
+
+    %% Ping-Pong Returns
+    CommitScript -.->|"Promptlets"| Claude
+    PRScript -.->|"Promptlets"| Claude
+    DocsScript -.->|"Promptlets"| Claude
+
+    %% External Integration
+    PRScript --> GitHub
+
+    %% Styling
+    classDef userLayer fill:#e1f5fe
+    classDef dispatchLayer fill:#f3e5f5
+    classDef workflowLayer fill:#e8f5e8
+    classDef agentLayer fill:#fff3e0
+    classDef externalLayer fill:#fce4ec
+
+    class User,Claude userLayer
+    class Triggers,Makefile dispatchLayer
+    class CommitWF,BranchWF,PRWF workflowLayer
+    class AgentScripts,CommitScript,PRScript,DocsScript,Utils,Promptlets agentLayer
+    class GitHub externalLayer
