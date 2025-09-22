@@ -371,14 +371,8 @@ execute_commit() {
 
     if git commit -m "$message"; then
         print_color $GREEN "✅ Commit successful!"
-
-        # Generate completion promptlet
-        $PROMPTLET_READER commit_complete \
-            message="$message" \
-            status="success" \
-            next_step="WORKFLOW_COMPLETE"
-
-        print_trace "OUTPUT" "Generated commit completion promptlet"
+        print_trace "WORKFLOW_COMPLETE" "Commit workflow completed successfully"
+        return 0
     else
         print_color $RED "❌ Commit failed!"
 
