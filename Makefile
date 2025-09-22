@@ -136,7 +136,14 @@ fix:
 # Commit workflow (Agent Workflow)
 commit:
 	@echo "🤖 Starting integrated commit workflow..."
-	@./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow false commit
+	@./scripts/agent/workflows/commit-workflow.sh integrated_commit_workflow false commit; \
+	exit_code=$$?; \
+	if [ $$exit_code -eq 2 ]; then \
+		echo "✅ Workflow handed off to agent successfully"; \
+		exit 0; \
+	else \
+		exit $$exit_code; \
+	fi
 
 # PR Workflow (Agent Workflow)
 pr-workflow:
