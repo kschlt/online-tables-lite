@@ -84,15 +84,12 @@ call_agent_staging_decision() {
 
     print_color $BLUE "🤖 Agent staging decision required..."
 
-    # Generate staging decision promptlet
-    $PROMPTLET_READER file_staging_decision \
+    # Generate staging decision promptlet using new format
+    $PROMPTLET_READER commit-wf.staging \
         total_changes="$total_changes" \
         staged_count="$staged_count" \
-        unstaged_count="$unstaged_count" \
         untracked_count="$untracked_count" \
         relevant_files="$(echo "$relevant_files" | tr '\n' '|' | sed 's/|$//')" \
-        auto_stage_command="./scripts/agent/workflows/commit-workflow.sh auto_stage_files \"$relevant_files\"" \
-        manual_stage_help="git add <specific-files>" \
         workflow_context="$workflow_context" \
         origin="$origin" \
         caller="$caller" \
@@ -275,15 +272,13 @@ integrated_commit_workflow() {
 
     print_trace "COMMIT_CONTEXT" "Generated context for commit message generation"
 
-    # Call the conventional commit generation promptlet
-    $PROMPTLET_READER conventional_commit_generation \
+    # Call the conventional commit generation promptlet using new format
+    $PROMPTLET_READER commit-wf.conventionalmessage \
         staged_files="$final_staged_count" \
         suggested_version="$PREVIEW" \
         diff_summary="$DIFF_SUMMARY" \
         git_cliff_config="$CLIFF_CONFIG_STATUS" \
-        allowed_types="$COMMIT_TYPES" \
-        sample_analysis="$SAMPLE_ANALYSIS" \
-        workflow_starter="$workflow_starter"
+        allowed_types="$COMMIT_TYPES"
 
     print_trace "INTEGRATED_WORKFLOW_COMPLETE" "Handed off to agent for commit message generation and execution"
 }
@@ -304,14 +299,13 @@ validate_commit_message_format() {
         print_color $BLUE "Expected format: type(scope): description"
         print_color $BLUE "Examples: feat(ui): add dashboard, fix(api): resolve auth issue"
 
-        # Generate format feedback promptlet for agent to fix message (validation loop)
-        $PROMPTLET_READER commit_message_validation_failed \
-            original_message="$message" \
-            error="Invalid conventional commit format" \
-            expected_format="type(scope): description" \
-            workflow_starter="$workflow_starter"
+        # Direct error feedback - no agent needed for simple validation errors
+        print_color $RED "❌ Commit message validation failed"
+        print_color $YELLOW "→ Message: '$message'"
+        print_color $YELLOW "→ Error: Invalid conventional commit format"
+        print_color $YELLOW "→ Expected format: type(scope): description"
 
-        print_trace "VALIDATION_FAILED" "Generated format feedback promptlet for message correction"
+        print_trace "VALIDATION_FAILED" "Commit message format validation failed"
         return 1
     fi
 }
@@ -376,13 +370,13 @@ execute_commit() {
     else
         print_color $RED "❌ Commit failed!"
 
-        # Generate error promptlet
-        $PROMPTLET_READER commit_error \
-            message="$message" \
-            error="commit_failed" \
-            next_step="MANUAL_INTERVENTION_REQUIRED"
+        # Direct error handling - no agent needed for commit failures
+        print_color $RED "❌ Git commit execution failed"
+        print_color $YELLOW "→ Message: '$message'"
+        print_color $YELLOW "→ Manual intervention required"
+        print_color $BLUE "→ Check git status and resolve any issues"
 
-        print_trace "OUTPUT" "Generated commit error promptlet"
+        print_trace "OUTPUT" "Commit execution failed, manual intervention required"
         return 1
     fi
 }

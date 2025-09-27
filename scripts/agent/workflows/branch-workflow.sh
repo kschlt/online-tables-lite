@@ -181,10 +181,10 @@ suggest_branch_name() {
     fi
 
     # Generate promptlet for agent decision
-    $PROMPTLET_READER branch_name_generation \
+    $PROMPTLET_READER branch-wf.generation \
         open_prs="$pr_count" \
         suggested_name="$suggested" \
-        workflow_origin="$workflow_origin"
+        origin="$workflow_origin"
 
     print_trace "SUGGEST_BRANCH" "Generated branch name suggestion promptlet"
 }
@@ -201,9 +201,9 @@ validate_branch_name() {
         return 1
     fi
 
-    # Check for required prefix
-    if [[ ! "$branch_name" =~ ^(feat|fix|docs|refactor|chore|test|ci|build|perf)/ ]]; then
-        print_color $RED "❌ Branch name must start with: feat/ fix/ docs/ refactor/ chore/ test/ ci/ build/ perf/"
+    # Check for required prefix (simplified to feat/ and fix/ only)
+    if [[ ! "$branch_name" =~ ^(feat|fix)/ ]]; then
+        print_color $RED "❌ Branch name must start with: feat/ (for features) or fix/ (for bug fixes)"
         return 1
     fi
 
@@ -233,7 +233,7 @@ auto_fix_branch_name() {
     local clean_name=$(echo "$branch_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9/_-]/-/g' | sed 's/--\+/-/g' | sed 's/^-\+\|-\+$//g')
 
     # Add feat/ prefix if missing
-    if [[ ! "$clean_name" =~ ^(feat|fix|docs|refactor|chore|test|ci|build|perf)/ ]]; then
+    if [[ ! "$clean_name" =~ ^(feat|fix)/ ]]; then
         clean_name="feat/$clean_name"
     fi
 
@@ -278,10 +278,10 @@ handle_provided_branch_name() {
             print_color $RED "❌ Cannot auto-fix branch name"
 
             # Generate promptlet for agent to provide better name
-            $PROMPTLET_READER branch_name_compliance \
+            $PROMPTLET_READER branch-wf.compliance \
                 original_name="$branch_name" \
                 validation_errors="Invalid format, see naming policy" \
-                workflow_origin="$workflow_origin"
+                origin="$workflow_origin"
 
             print_trace "HANDLE_PROVIDED" "Generated naming compliance promptlet"
             return 1

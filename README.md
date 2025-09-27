@@ -145,7 +145,12 @@ The application supports English and German with:
 ### Git Workflow
 - **`main`** - Development branch
 - **`production`** - Deployment branch (triggers auto-deploy)
-- **`feature/*`** - Feature branches (merge to main, then delete)
+- **`feat/*`** - Feature branches (new functionality)
+- **`fix/*`** - Bug fix branches (bug fixes only)
+
+**Naming Standards:**
+- **Branch Names**: Only `feat/` and `fix/` prefixes allowed
+- **Commit Messages**: Full conventional commit types supported (feat, fix, docs, refactor, chore, test, ci, build, perf, revert)
 
 ### GitHub Actions CI/CD
 The application uses GitHub Actions for automated deployment:
@@ -176,10 +181,16 @@ Configure these secrets in your GitHub repository settings:
 
 ## 🔄 Development Workflow
 
-1. Create feature branch: `git checkout -b feature/feature-name`
-2. Develop and test locally
+1. Create feature branch: `git checkout -b feat/feature-name` or `git checkout -b fix/bug-name`
+2. Develop and test locally using conventional commits
 3. Merge to `main`, delete feature branch
 4. When stable: merge `main` → `production` (triggers deployment)
+
+**Branch Naming Examples:**
+- `feat/user-dashboard` - New user dashboard feature
+- `feat/table-export` - CSV export functionality
+- `fix/login-bug` - Fix authentication issue
+- `fix/api-timeout` - Fix API timeout handling
 
 ## 🗄️ Database Architecture
 

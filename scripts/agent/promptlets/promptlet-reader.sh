@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Promptlet Reader - Single Source of Truth for Agent Tasks
-# Reads promptlets from JSON library and performs variable substitution
+# Promptlet Reader - Agent Task Generation System
+# Reads promptlets from promptlets.json and provides minimal runtime view
+
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPTLETS_FILE="$SCRIPT_DIR/promptlets.json"
@@ -10,6 +12,7 @@ PROMPTLETS_FILE="$SCRIPT_DIR/promptlets.json"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 print_color() {
@@ -18,152 +21,152 @@ print_color() {
     echo -e "${color}${message}${NC}"
 }
 
-# Read promptlet from library and substitute variables
+# Check if jq is available
+check_jq() {
+    if ! command -v jq &> /dev/null; then
+        print_color $RED "❌ jq is required but not installed. Please install jq to use this script."
+        exit 1
+    fi
+}
+
+# Read promptlet from promptlets library
 read_promptlet() {
-    local promptlet_name="$1"
-    shift # Remove first argument, remaining are variable assignments
-    
-    # Check if promptlets file exists
+    local promptlet_id="$1"
+    shift
+
     if [ ! -f "$PROMPTLETS_FILE" ]; then
-        print_color $RED "❌ Promptlets library not found: $PROMPTLETS_FILE"
-        return 1
+        print_color $RED "❌ Promptlets file not found: $PROMPTLETS_FILE"
+        exit 1
     fi
-    
-    # Check if promptlet exists in library
-    if ! grep -q "\"$promptlet_name\":" "$PROMPTLETS_FILE"; then
-        print_color $RED "❌ Promptlet '$promptlet_name' not found in library"
-        print_color $YELLOW "→ Add promptlet to $PROMPTLETS_FILE"
-        print_color $YELLOW "→ Available promptlets: $(list_promptlets)"
-        return 1
-    fi
-    
-    # Extract promptlet JSON block using basic parsing (avoiding jq dependency)
+
+    check_jq
+
+    # Find promptlet by ID in array
     local promptlet_json
-    promptlet_json=$(extract_promptlet_json "$promptlet_name")
-    
-    if [ $? -ne 0 ] || [ -z "$promptlet_json" ]; then
-        print_color $RED "❌ Failed to extract promptlet '$promptlet_name' from library"
-        return 1
+    promptlet_json=$(jq --arg id "$promptlet_id" '.[] | select(.id == $id)' "$PROMPTLETS_FILE" 2>/dev/null)
+
+    if [ -z "$promptlet_json" ]; then
+        print_color $RED "❌ Promptlet '$promptlet_id' not found"
+        print_color $YELLOW "→ Available promptlets: $(list_promptlets)"
+        exit 1
     fi
-    
-    # Perform variable substitution using Python (most robust approach)
-    local substituted_json="$promptlet_json"
+
+    # Extract prompt payload first
+    local prompt_payload
+    prompt_payload=$(echo "$promptlet_json" | jq '.prompt_payload')
+
+    # Parse input variables and substitute them
     while [ $# -gt 0 ]; do
         local var_assignment="$1"
         if [[ "$var_assignment" =~ ^([^=]+)=(.*)$ ]]; then
             local var_name="${BASH_REMATCH[1]}"
             local var_value="${BASH_REMATCH[2]}"
-            # Use Python for safe string replacement (handles all content types)
-            substituted_json=$(VAR_NAME="$var_name" VAR_VALUE="$var_value" python3 -c "
+
+            # Use Python for safe variable substitution
+            prompt_payload=$(VAR_NAME="$var_name" VAR_VALUE="$var_value" python3 -c "
 import sys
 import os
 content = sys.stdin.read()
 var_name = os.environ['VAR_NAME']
-var_value = os.environ['VAR_VALUE'] 
+var_value = os.environ['VAR_VALUE']
 print(content.replace('\${' + var_name + '}', var_value), end='')
-" <<< "$substituted_json")
+" <<< "$prompt_payload")
         fi
         shift
     done
-    
-    # Output the substituted JSON
-    echo "$substituted_json"
-    return 0
+
+    # Create minimal runtime view (task format compatible with agent expectations)
+    local runtime_view
+    runtime_view=$(echo "$prompt_payload" | jq '{
+        task: {
+            type: .mode,
+            instructions: .instructions,
+            context: .context,
+            next: .next
+        }
+    }')
+
+    echo "$runtime_view"
 }
 
-# Extract promptlet JSON block from library file
-extract_promptlet_json() {
-    local promptlet_name="$1"
-    local in_promptlet=false
-    local brace_count=0
-    local json_block=""
-    
-    while IFS= read -r line; do
-        # Check if we found the start of our promptlet
-        if echo "$line" | grep -q "\"$promptlet_name\"[[:space:]]*:[[:space:]]*{"; then
-            in_promptlet=true
-            brace_count=1
-            json_block="{"
-            continue
-        fi
-        
-        # If we're inside our promptlet, collect lines and count braces
-        if [ "$in_promptlet" = true ]; then
-            json_block="$json_block"$'\n'"$line"
-            
-            # Count opening and closing braces
-            local open_braces=$(echo "$line" | grep -o '{' | wc -l | tr -d ' ')
-            local close_braces=$(echo "$line" | grep -o '}' | wc -l | tr -d ' ')
-            brace_count=$((brace_count + open_braces - close_braces))
-            
-            # If brace count reaches 0, we've found the end of this promptlet
-            if [ $brace_count -eq 0 ]; then
-                echo "$json_block"
-                return 0
-            fi
-        fi
-    done < "$PROMPTLETS_FILE"
-    
-    return 1
-}
-
-# List available promptlets in library
+# List available promptlets
 list_promptlets() {
-    grep -o '"[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/"//g' | sed 's/[[:space:]]*:[[:space:]]*{//' | tr '\n' ', ' | sed 's/,$//'
+    if [ -f "$PROMPTLETS_FILE" ]; then
+        check_jq && jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null | sort | tr '\n' ', ' | sed 's/,$//'
+    else
+        echo "No promptlets file found"
+    fi
 }
 
-# Validate that promptlet exists and has valid structure
+# Validate promptlet format and inputs
 validate_promptlet() {
-    local promptlet_name="$1"
-    
-    # Check if promptlet exists
-    if ! grep -q "\"$promptlet_name\":" "$PROMPTLETS_FILE"; then
+    local promptlet_id="$1"
+
+    if [ ! -f "$PROMPTLETS_FILE" ]; then
+        print_color $RED "❌ Promptlets file not found: $PROMPTLETS_FILE"
         return 1
     fi
-    
-    # Extract and validate structure
+
+    check_jq
+
     local promptlet_json
-    promptlet_json=$(extract_promptlet_json "$promptlet_name")
-    
-    if [ $? -ne 0 ]; then
+    promptlet_json=$(jq --arg id "$promptlet_id" '.[] | select(.id == $id)' "$PROMPTLETS_FILE" 2>/dev/null)
+
+    if [ -z "$promptlet_json" ]; then
+        print_color $RED "❌ Promptlet not found: $promptlet_id"
         return 1
     fi
-    
-    # Check required structure: task.type and task.instructions
-    if ! echo "$promptlet_json" | grep -q '"task"[[:space:]]*:[[:space:]]*{'; then
-        return 1
-    fi
-    
-    if ! echo "$promptlet_json" | grep -q '"type"[[:space:]]*:[[:space:]]*"'; then
-        return 1
-    fi
-    
-    if ! echo "$promptlet_json" | grep -q '"instructions"[[:space:]]*:[[:space:]]*\['; then
-        return 1
-    fi
-    
+
+    print_color $GREEN "✅ Valid promptlet: $promptlet_id"
     return 0
 }
 
 # Show usage information
 show_usage() {
-    echo "Usage: read_promptlet <promptlet_name> [variable=value ...]"
+    echo "Promptlet Reader - Agent Task Generation System"
+    echo ""
+    echo "Usage: $0 <promptlet_id> [variable=value ...]"
     echo ""
     echo "Examples:"
-    echo "  read_promptlet branch_evaluation current_branch=\"feat/new-feature\" suggested_name=\"feat/better-name\""
-    echo "  read_promptlet documentation_update diff_base=\"abc123\" branch=\"feat/docs\""
+    echo "  $0 pr-wf.description branch=\"feat/new-feature\" base=\"main\" cliff=\"changelog content\""
+    echo "  $0 commit-wf.conventionalmessage staged_files=\"2\" diff_summary=\"Added new feature\""
+    echo "  $0 docs-wf.update branch=\"feat/docs\" base=\"main\" changelog=\"Updated docs\""
+    echo "  $0 commit-wf.staging total_changes=\"5\" staged_count=\"0\" untracked_count=\"3\""
+    echo ""
+    echo "Commands:"
+    echo "  list       Show all available promptlets"
+    echo "  validate   Validate a promptlet exists and is well-formed"
     echo ""
     echo "Available promptlets: $(list_promptlets)"
 }
 
-# Main function for command line usage
+# Main execution logic
 main() {
     if [ $# -eq 0 ]; then
         show_usage
         exit 1
     fi
-    
-    read_promptlet "$@"
+
+    local command="$1"
+
+    case "$command" in
+        "list")
+            echo "Available promptlets: $(list_promptlets)"
+            ;;
+        "validate")
+            if [ $# -lt 2 ]; then
+                echo "Usage: $0 validate <promptlet_id>"
+                exit 1
+            fi
+            validate_promptlet "$2"
+            ;;
+        "help"|"-h"|"--help")
+            show_usage
+            ;;
+        *)
+            read_promptlet "$@"
+            ;;
+    esac
 }
 
 # Only run main if script is executed directly (not sourced)

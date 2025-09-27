@@ -76,13 +76,16 @@ validate_makefile_compliance() {
         local line_num=$(echo "$line" | cut -d: -f1)
         local content=$(echo "$line" | cut -d: -f2-)
         
-        # Extract promptlet name from the call
+        # Extract promptlet name from the call (support both direct calls and $PROMPTLET_READER variable)
         local promptlet_name
         promptlet_name=$(echo "$content" | sed -n 's/.*promptlet-reader\.sh[[:space:]]\+\([^[:space:]]\+\).*/\1/p')
+        if [ -z "$promptlet_name" ]; then
+            promptlet_name=$(echo "$content" | sed -n 's/.*\$PROMPTLET_READER \([^ \\]*\).*/\1/p')
+        fi
         
-        if [ -n "$promptlet_name" ]; then
+        if [ -n "$promptlet_name" ] && [ "$promptlet_name" != "PROMPTLET_READER" ]; then
             # Check if promptlet exists in library
-            if ! grep -q "\"$promptlet_name\":" "$PROMPTLETS_FILE" 2>/dev/null; then
+            if ! jq -e --arg id "$promptlet_name" '.[] | select(.id == $id)' "$PROMPTLETS_FILE" >/dev/null 2>&1; then
                 print_color $RED "❌ Line $line_num: Referenced promptlet '$promptlet_name' not found in library"
                 print_color $YELLOW "→ Add promptlet to $PROMPTLETS_FILE"
                 print_color $YELLOW "→ Or fix reference: available promptlets are $(list_available_promptlets)"
@@ -91,7 +94,7 @@ validate_makefile_compliance() {
                 print_color $GREEN "✅ Line $line_num: Valid promptlet reference '$promptlet_name'"
             fi
         fi
-    done < <(grep -n "promptlet-reader\.sh" "$PROJECT_ROOT/Makefile" 2>/dev/null || true)
+    done < <(grep -n "\$PROMPTLET_READER\|promptlet-reader\.sh" "$PROJECT_ROOT/Makefile" 2>/dev/null || true)
     
     if [ $issues -eq 0 ]; then
         print_color $GREEN "✅ Stage 1: Makefile compliance verified"
@@ -113,58 +116,58 @@ validate_library_consistency() {
         return 1
     fi
     
-    # Get list of promptlets in library (top-level keys only - indented with 2 spaces)
+    # Get list of promptlets in new array-based library
     local promptlets
-    promptlets=$(grep '^  "[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/^  "//; s/"[[:space:]]*:[[:space:]]*{.*//')
+    promptlets=$(jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null || echo "")
     
     for promptlet in $promptlets; do
         print_color $BLUE "  Validating promptlet: $promptlet"
         
-        # Extract promptlet JSON
+        # Extract promptlet from new array format
         local promptlet_json
-        promptlet_json=$(extract_promptlet_json "$promptlet")
-        
-        if [ $? -ne 0 ] || [ -z "$promptlet_json" ]; then
-            print_color $RED "❌ Promptlet '$promptlet': Failed to extract JSON"
-            print_color $YELLOW "→ Check JSON syntax in $PROMPTLETS_FILE"
+        promptlet_json=$(jq --arg id "$promptlet" '.[] | select(.id == $id) | .prompt_payload' "$PROMPTLETS_FILE" 2>/dev/null)
+
+        if [ $? -ne 0 ] || [ -z "$promptlet_json" ] || [ "$promptlet_json" = "null" ]; then
+            print_color $RED "❌ Promptlet '$promptlet': Failed to extract prompt_payload"
+            print_color $YELLOW "→ Check promptlet exists in $PROMPTLETS_FILE"
             ((issues++))
             continue
         fi
         
-        # Validate required structure against template
-        if ! echo "$promptlet_json" | grep -q '"task"[[:space:]]*:[[:space:]]*{'; then
-            print_color $RED "❌ Promptlet '$promptlet': Missing required 'task' object"
-            print_color $YELLOW "→ Structure must be: { \"task\": { ... } }"
+        # Validate required structure for new array-based format
+        if ! echo "$promptlet_json" | grep -q '"mode"[[:space:]]*:[[:space:]]*"[^"]*"'; then
+            print_color $RED "❌ Promptlet '$promptlet': Missing required 'mode' field"
+            print_color $YELLOW "→ Add: \"mode\": \"generate\" or \"analyze\""
             ((issues++))
             continue
         fi
         
-        if ! echo "$promptlet_json" | grep -q '"type"[[:space:]]*:[[:space:]]*"[^"]*"'; then
-            print_color $RED "❌ Promptlet '$promptlet': Missing required 'task.type' field"
-            print_color $YELLOW "→ Add: \"type\": \"descriptive_name\""
+        if ! echo "$promptlet_json" | grep -q '"context"[[:space:]]*:[[:space:]]*{'; then
+            print_color $RED "❌ Promptlet '$promptlet': Missing required 'context' object"
+            print_color $YELLOW "→ Add: \"context\": { ... }"
             ((issues++))
             continue
         fi
         
         if ! echo "$promptlet_json" | grep -q '"instructions"[[:space:]]*:[[:space:]]*\['; then
-            print_color $RED "❌ Promptlet '$promptlet': Missing required 'task.instructions' array"
+            print_color $RED "❌ Promptlet '$promptlet': Missing required 'instructions' array"
             print_color $YELLOW "→ Add: \"instructions\": [\"step1\", \"step2\"]"
             ((issues++))
             continue
         fi
         
-        # Validate type naming convention (snake_case)
-        local task_type
-        task_type=$(echo "$promptlet_json" | grep -o '"type"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/')
-        
-        if ! echo "$task_type" | grep -q '^[a-z][a-z0-9_]*$'; then
-            print_color $RED "❌ Promptlet '$promptlet': Invalid type format '$task_type'"
-            print_color $YELLOW "→ Use snake_case: letters, numbers, underscores only"
+        # Validate mode naming convention
+        local promptlet_mode
+        promptlet_mode=$(echo "$promptlet_json" | grep -o '"mode"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/')
+
+        if ! echo "$promptlet_mode" | grep -qE '^(generate|analyze|validate|process|decide)$'; then
+            print_color $RED "❌ Promptlet '$promptlet': Invalid mode '$promptlet_mode'"
+            print_color $YELLOW "→ Use valid mode: generate, analyze, validate, process, or decide"
             ((issues++))
             continue
         fi
-        
-        print_color $GREEN "✅ Promptlet '$promptlet': Valid structure ($task_type)"
+
+        print_color $GREEN "✅ Promptlet '$promptlet': Valid structure ($promptlet_mode)"
     done
     
     if [ $issues -eq 0 ]; then
@@ -188,17 +191,20 @@ validate_reference_integrity() {
         local content=$(echo "$line" | cut -d: -f2-)
         local promptlet_name
         promptlet_name=$(echo "$content" | sed -n 's/.*promptlet-reader\.sh[[:space:]]\+\([^[:space:]]\+\).*/\1/p')
+        if [ -z "$promptlet_name" ]; then
+            promptlet_name=$(echo "$content" | sed -n 's/.*\$PROMPTLET_READER \([^ \\]*\).*/\1/p')
+        fi
         if [ -n "$promptlet_name" ]; then
             referenced_promptlets+=("$promptlet_name")
         fi
-    done < <(grep -n "promptlet-reader\.sh" "$PROJECT_ROOT/Makefile" 2>/dev/null || true)
+    done < <(grep -n "\$PROMPTLET_READER\|promptlet-reader\.sh" "$PROJECT_ROOT/Makefile" 2>/dev/null || true)
     
-    # Get all promptlets defined in library
+    # Get all promptlets defined in new array-based library
     local defined_promptlets=()
     if [ -f "$PROMPTLETS_FILE" ]; then
         while IFS= read -r promptlet; do
             defined_promptlets+=("$promptlet")
-        done < <(grep '^  "[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/^  "//; s/"[[:space:]]*:[[:space:]]*{.*//')
+        done < <(jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null || echo "")
     fi
     
     # Check for missing definitions (referenced but not defined)
@@ -277,7 +283,7 @@ extract_promptlet_json() {
 # Helper function to list available promptlets
 list_available_promptlets() {
     if [ -f "$PROMPTLETS_FILE" ]; then
-        grep -o '"[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/"//g' | sed 's/[[:space:]]*:[[:space:]]*{//' | tr '\n' ', ' | sed 's/,$//'
+        jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null | tr '\n' ', ' | sed 's/,$//' || echo "none (parsing error)"
     else
         echo "none (file not found)"
     fi

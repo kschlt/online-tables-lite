@@ -39,7 +39,8 @@ This document tracks all dependencies and setup requirements for the modern git-
 ### 2. `/commitlint.config.js`
 - **Purpose**: Commit message validation rules
 - **Rules**: Enforces conventional commit format
-- **Types**: feat, fix, docs, refactor, chore, test, ci, build, perf, revert
+- **Commit Types**: feat, fix, docs, refactor, chore, test, ci, build, perf, revert
+- **Branch Names**: Only feat/ and fix/ prefixes allowed (simplified workflow)
 - **Status**: ✅ Created
 
 ### 3. `/CHANGELOG.md`

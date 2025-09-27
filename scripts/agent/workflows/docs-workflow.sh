@@ -100,13 +100,24 @@ generate_docs() {
         print_color $BLUE "🎯 Complex changes detected - running full agent analysis"
     fi
 
-    # Generate documentation update promptlet for complex changes
-    $PROMPTLET_READER documentation_update \
-        diff_base="$base" \
+    # Discover current documentation files dynamically
+    local docs_discovery_script="$AGENT_BASE/system/docs-discovery.sh"
+    local current_docs=""
+    if [ -f "$docs_discovery_script" ]; then
+        current_docs=$($docs_discovery_script discover paths_only | tr '\n' '|' | sed 's/|$//')
+        print_color $BLUE "📋 Discovered $(echo "$current_docs" | tr '|' '\n' | wc -l | tr -d ' ') documentation files"
+    else
+        print_color $YELLOW "⚠️  Documentation discovery script not found, using fallback"
+        current_docs="README.md|CHANGELOG.md|CLAUDE.md|scripts/README.md|apps/web/DESIGN_SYSTEM.md"
+    fi
+
+    # Generate documentation update promptlet using new format with dynamic discovery
+    $PROMPTLET_READER docs-wf.update \
         branch="$branch" \
-        workflow_origin="$workflow_origin" \
-        changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
-        next_step="./scripts/agent/workflows/docs-workflow.sh apply_docs --workflow-origin $workflow_origin"
+        base="$base" \
+        changelog="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
+        origin="$workflow_origin" \
+        discovered_docs="$current_docs"
 
     print_trace "OUTPUT" "Generated documentation update promptlet"
 }
@@ -153,16 +164,14 @@ apply_docs() {
             print_color $BLUE "🔗 Chaining back to PR workflow..."
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-            # Generate promptlet to continue PR workflow at push step
-            $PROMPTLET_READER documentation_no_changes \
-                workflow_origin="$workflow_origin" \
-                next_step="./scripts/agent/workflows/pr-workflow.sh push_branch $BRANCH $workflow_origin"
-            return 0
+            # Direct chaining back to PR workflow - no agent needed
+            print_color $GREEN "✅ Documentation workflow complete (no changes needed)"
+            print_color $BLUE "→ Continuing to PR workflow push step"
+            exec ./scripts/agent/workflows/pr-workflow.sh push_branch "$BRANCH" "$workflow_origin"
         else
             # Standalone execution - workflow is complete
-            $PROMPTLET_READER documentation_no_changes \
-                workflow_origin="$workflow_origin" \
-                next_step="WORKFLOW_COMPLETE"
+            print_color $GREEN "✅ Documentation workflow complete (no changes needed)"
+            print_color $BLUE "→ No documentation updates required"
         fi
     fi
 
@@ -194,11 +203,9 @@ commit_docs() {
         print_color $YELLOW "⚠️  No changes to commit"
         print_color $GREEN "✅ Documentation workflow complete"
 
-        $PROMPTLET_READER workflow_complete \
-            status="no_changes" \
-            next_step="WORKFLOW_COMPLETE"
-
-        print_trace "OUTPUT" "Generated no-changes completion promptlet"
+        # Direct completion - no agent needed for no-changes scenario
+        print_color $GREEN "✅ Documentation workflow complete (no changes)"
+        print_trace "OUTPUT" "Documentation workflow completed - no changes detected"
         return 0
     fi
     
@@ -218,27 +225,23 @@ commit_docs() {
             print_color $BLUE "🔗 Chaining back to PR workflow..."
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-            # Generate promptlet to continue PR workflow at push step
-            $PROMPTLET_READER workflow_complete \
-                status="success" \
-                workflow_origin="$workflow_origin" \
-                commit_message="$commit_message" \
-                next_step="./scripts/agent/workflows/pr-workflow.sh push_branch $BRANCH $workflow_origin"
+            # Direct chaining back to PR workflow - no agent needed
+            print_color $GREEN "✅ Documentation workflow complete - chaining to PR workflow"
+            exec ./scripts/agent/workflows/pr-workflow.sh push_branch "$BRANCH" "$workflow_origin"
             return 0
         else
             # Standalone execution - workflow is complete
-            $PROMPTLET_READER workflow_complete \
-                status="success" \
-                workflow_origin="$workflow_origin" \
-                commit_message="$commit_message" \
-                next_step="WORKFLOW_COMPLETE"
+            print_color $GREEN "✅ Documentation workflow complete"
+            print_trace "OUTPUT" "Standalone documentation workflow completed successfully"
         fi
     else
         print_color $RED "❌ Failed to commit documentation changes"
         
-        $PROMPTLET_READER workflow_error \
-            error="commit_failed" \
-            next_step="MANUAL_INTERVENTION_REQUIRED"
+        # Direct error handling - no agent needed for commit failures
+        print_color $RED "❌ Documentation commit failed"
+        print_color $YELLOW "→ Message: '$commit_message'"
+        print_color $YELLOW "→ Manual intervention required"
+        print_color $BLUE "→ Check git status and resolve any issues"
     fi
     
     print_trace "OUTPUT" "Generated commit completion promptlet"

@@ -95,7 +95,8 @@ get_all_docs() {
         "config_docs"
     )
 
-    declare -A all_files
+    # Create temporary file to store file mappings
+    local temp_files=$(mktemp)
 
     # Add static files from config
     for category in "${categories[@]}"; do
@@ -105,7 +106,7 @@ get_all_docs() {
         if [[ -n "$files" ]]; then
             while IFS= read -r file; do
                 if [[ -n "$file" && -f "$file" ]]; then
-                    all_files["$file"]="$category"
+                    echo "$file|$category" >> "$temp_files"
                 fi
             done <<< "$files"
         fi
@@ -144,7 +145,7 @@ get_all_docs() {
                         done <<< "$cat_patterns"
                     done <<< "$cats"
 
-                    all_files["$file"]="$category"
+                    echo "$file|$category" >> "$temp_files"
                 fi
             done <<< "$discovered_files"
         fi
@@ -153,25 +154,30 @@ get_all_docs() {
     # Output results
     case "$output_format" in
         "list")
-            for file in $(printf '%s\n' "${!all_files[@]}" | sort); do
-                echo "- $file (${all_files[$file]})"
-            done
+            while IFS='|' read -r file category; do
+                echo "- $file ($category)"
+            done < "$temp_files" | sort
             ;;
         "paths_only")
-            printf '%s\n' "${!all_files[@]}" | sort
+            cut -d'|' -f1 "$temp_files" | sort
             ;;
         "json")
+            echo "{"
+            echo '  "discovered_files": {'
+            local categories_seen=()
             local first=true
-            for category in $(printf '%s\n' "${all_files[@]}" | sort -u); do
+
+            for category in $(cut -d'|' -f2 "$temp_files" | sort -u); do
                 if [[ "$first" == true ]]; then
                     first=false
                 else
                     echo ","
                 fi
                 echo -n "    \"$category\": ["
+
                 local cat_first=true
-                for file in $(printf '%s\n' "${!all_files[@]}" | sort); do
-                    if [[ "${all_files[$file]}" == "$category" ]]; then
+                while IFS='|' read -r file cat; do
+                    if [[ "$cat" == "$category" ]]; then
                         if [[ "$cat_first" == true ]]; then
                             cat_first=false
                         else
@@ -179,27 +185,30 @@ get_all_docs() {
                         fi
                         echo -n "\"$file\""
                     fi
-                done
+                done < "$temp_files"
                 echo -n "]"
             done
             echo ""
             echo "  },"
-            echo "  \"total_files\": $(printf '%s\n' "${!all_files[@]}" | wc -l | tr -d ' '),"
+            echo "  \"total_files\": $(wc -l < "$temp_files" | tr -d ' '),"
             echo "  \"scan_timestamp\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\""
             echo "}"
             ;;
         "categories")
-            for category in $(printf '%s\n' "${all_files[@]}" | sort -u); do
+            for category in $(cut -d'|' -f2 "$temp_files" | sort -u); do
                 echo "## $category"
-                for file in $(printf '%s\n' "${!all_files[@]}" | sort); do
-                    if [[ "${all_files[$file]}" == "$category" ]]; then
+                while IFS='|' read -r file cat; do
+                    if [[ "$cat" == "$category" ]]; then
                         echo "- $file"
                     fi
-                done
+                done < "$temp_files"
                 echo ""
             done
             ;;
     esac
+
+    # Cleanup temporary file
+    rm -f "$temp_files"
 }
 
 # Function to validate required files

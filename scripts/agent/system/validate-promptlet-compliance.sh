@@ -168,32 +168,48 @@ validate_promptlet_references() {
         local content=$(echo "$line" | cut -d: -f2-)
         local promptlet_name
         promptlet_name=$(echo "$content" | sed 's/.*promptlet-reader\.sh \([^ ]*\).*/\1/')
+        if [ -z "$promptlet_name" ]; then
+            # Handle $PROMPTLET_READER followed by promptlet name (stop at space or backslash)
+            promptlet_name=$(echo "$content" | sed 's/.*\$PROMPTLET_READER \([^ \\]*\).*/\1/')
+        fi
         if [ -n "$promptlet_name" ]; then
             referenced_promptlets+=("$promptlet_name")
         fi
-    done < <(grep -n "promptlet-reader\.sh" "$PROJECT_ROOT/Makefile" 2>/dev/null || true)
+    done < <(grep -n "\$PROMPTLET_READER\|promptlet-reader\.sh" "$PROJECT_ROOT/Makefile" 2>/dev/null || true)
     
     # Check git scripts
     local files
     while IFS= read -r file; do
-        if [ -n "$file" ] && [ -f "$PROJECT_ROOT/$file" ]; then
+        if [ -n "$file" ] && [ -f "$file" ]; then
             while IFS= read -r line; do
                 local content=$(echo "$line" | cut -d: -f2-)
-                local promptlet_name
-                promptlet_name=$(echo "$content" | sed 's/.*promptlet-reader\.sh \([^ ]*\).*/\1/')
-                if [ -n "$promptlet_name" ]; then
+                local promptlet_name=""
+
+                # Skip variable definitions
+                if echo "$content" | grep -q 'PROMPTLET_READER='; then
+                    continue
+                fi
+
+                # Extract promptlet name from actual calls
+                if echo "$content" | grep -q '\$PROMPTLET_READER [a-z]'; then
+                    promptlet_name=$(echo "$content" | sed 's/.*\$PROMPTLET_READER \([^ \\]*\).*/\1/')
+                elif echo "$content" | grep -q 'promptlet-reader\.sh [a-z]'; then
+                    promptlet_name=$(echo "$content" | sed 's/.*promptlet-reader\.sh \([^ \\]*\).*/\1/')
+                fi
+
+                if [ -n "$promptlet_name" ] && [ "$promptlet_name" != "$content" ]; then
                     referenced_promptlets+=("$promptlet_name")
                 fi
-            done < <(grep -n "promptlet-reader\.sh" "$PROJECT_ROOT/$file" 2>/dev/null || true)
+            done < <(grep -n "\$PROMPTLET_READER\|promptlet-reader\.sh" "$file" 2>/dev/null || true)
         fi
     done < <(get_monitored_files "git_scripts")
     
-    # Get all defined promptlets
+    # Get all defined promptlets from new array-based format
     local defined_promptlets=()
     if [ -f "$PROMPTLETS_FILE" ]; then
         while IFS= read -r promptlet; do
             defined_promptlets+=("$promptlet")
-        done < <(grep '^  "[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/^  "//; s/"[[:space:]]*:[[:space:]]*{.*//')
+        done < <(jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null || echo "")
     fi
     
     # Check for missing definitions
@@ -245,12 +261,13 @@ validate_no_duplicates() {
     print_color $BLUE "🔍 Stage 4: Validating no duplicate promptlet definitions..."
     local issues=0
     
-    # Get list of promptlet names from library
+    # Get list of promptlet names from new array-based library
     local defined_promptlets=()
     if [ -f "$PROMPTLETS_FILE" ]; then
+        # New format: array of objects with "id" field
         while IFS= read -r promptlet; do
             defined_promptlets+=("$promptlet")
-        done < <(grep '^  "[^"]*"[[:space:]]*:[[:space:]]*{' "$PROMPTLETS_FILE" | sed 's/^  "//; s/"[[:space:]]*:[[:space:]]*{.*//')
+        done < <(jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null || echo "")
     fi
     
     # Check for forbidden duplicate definitions

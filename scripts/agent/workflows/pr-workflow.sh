@@ -175,11 +175,11 @@ check_uncommitted() {
         print_color $YELLOW "⚠️ Uncommitted changes detected"
         print_color $YELLOW "Commit changes first"
 
-        # Generate promptlet for agent to commit changes (UncommittedPromptlet in 2B)
-        $PROMPTLET_READER uncommitted_changes \
-            branch="$branch" \
-            workflow_origin="$workflow_origin" \
-            next_step="./scripts/agent/workflows/pr-workflow.sh run_docs_workflow $branch $workflow_origin"
+        # Direct guidance - no agent needed for uncommitted changes
+        print_color $RED "❌ Cannot proceed with PR creation - uncommitted changes detected"
+        print_color $YELLOW "→ Run: make commit"
+        print_color $YELLOW "→ Then retry: make pr-workflow"
+        print_color $BLUE "→ Workflow will resume from docs step after commit"
         return 0
     fi
 
@@ -287,15 +287,14 @@ generate_pr_body() {
     local suggested_title=$(suggest_pr_title)
     print_color $BLUE "💡 Suggested PR title: $suggested_title"
 
-    # Generate PR description promptlet (PRBodyPromptlet in 2B)
-    $PROMPTLET_READER pr_description \
-        branch_name="$branch" \
-        base_branch="main" \
-        diff_base="$base" \
-        suggested_title="$suggested_title" \
-        changelog_content="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
-        workflow_origin="$workflow_origin" \
-        next_step="./scripts/agent/workflows/pr-workflow.sh create_pr $branch $workflow_origin"
+    # Generate PR description promptlet using new format
+    $PROMPTLET_READER pr-wf.description \
+        branch="$branch" \
+        base="main" \
+        title="$suggested_title" \
+        cliff="$(echo "$changelog_entry" | tr '\n' ' ' | sed 's/"/\\"/g')" \
+        origin="$workflow_origin" \
+        caller="pr_body_generate"
 
     print_trace "GENERATE_PR_BODY" "Generated PR description promptlet for agent processing"
 }
