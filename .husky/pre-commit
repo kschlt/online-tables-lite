@@ -62,7 +62,7 @@ $AGENT_SYSTEM/validate-agent-system.sh
 if [ $? -ne 0 ]; then
     echo "❌ Agent system validation failed!"
     echo "💡 Check diagram compliance: $AGENT_SYSTEM/validate-diagrams.sh"
-    echo "💡 Check promptlet compliance: $AGENT_SYSTEM/validate-promptlet-system.sh"
+    echo "💡 Check promptlet compliance: $AGENT_SYSTEM/validate-promptlet-compliance.sh"
     echo "💡 Force validation: $AGENT_SYSTEM/validate-agent-system.sh --force"
     exit 1
 fi

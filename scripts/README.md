@@ -23,9 +23,7 @@ scripts/
 │   └── system/            # System maintenance
 │       ├── promptlet-sources.json         # Promptlet compliance configuration
 │       ├── promptlet-template.json        # Template structure for validation
-│       ├── validate-promptlet-compliance.sh   # 4-stage promptlet validation
-│       ├── validate-promptlet-patterns.sh     # Pattern validation
-│       └── validate-promptlet-system.sh       # System validation
+│       └── validate-promptlet-compliance.sh   # Unified 5-stage promptlet validation
 ├── dev/                   # Development environment scripts
 │   ├── setup-dev.sh       # Development environment setup
 │   └── start-dev.sh       # Development server startup

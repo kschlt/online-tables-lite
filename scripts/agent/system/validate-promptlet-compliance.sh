@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Comprehensive Promptlet Compliance Validator
-# Uses configuration-driven approach to validate all promptlet sources across the codebase
+# Unified Promptlet Validation System
+# Comprehensive validator combining compliance, system structure, and pattern validation
+# Replaces validate-promptlet-system.sh and validate-promptlet-patterns.sh for single source of truth
 
 set -e
 
@@ -256,6 +257,80 @@ validate_promptlet_references() {
     return $issues
 }
 
+# Stage 5: Library Structure Validation (from validate-promptlet-system.sh)
+# Validates that each promptlet in the library has proper structure
+validate_library_structure() {
+    print_color $BLUE "🔍 Stage 5: Validating library structure..."
+    local issues=0
+
+    if [ ! -f "$PROMPTLETS_FILE" ]; then
+        print_color $RED "❌ Promptlets library not found: $PROMPTLETS_FILE"
+        return 1
+    fi
+
+    # Get list of promptlets in new array-based library
+    local promptlets
+    promptlets=$(jq -r '.[].id' "$PROMPTLETS_FILE" 2>/dev/null || echo "")
+
+    for promptlet in $promptlets; do
+        print_color $BLUE "  Validating promptlet: $promptlet"
+
+        # Extract promptlet from new array format
+        local promptlet_json
+        promptlet_json=$(jq --arg id "$promptlet" '.[] | select(.id == $id) | .prompt_payload' "$PROMPTLETS_FILE" 2>/dev/null)
+
+        if [ $? -ne 0 ] || [ -z "$promptlet_json" ] || [ "$promptlet_json" = "null" ]; then
+            print_color $RED "❌ Promptlet '$promptlet': Failed to extract prompt_payload"
+            print_color $YELLOW "→ Check promptlet exists in $PROMPTLETS_FILE"
+            ((issues++))
+            continue
+        fi
+
+        # Validate required structure for new array-based format
+        if ! echo "$promptlet_json" | grep -q '"mode"[[:space:]]*:[[:space:]]*"[^"]*"'; then
+            print_color $RED "❌ Promptlet '$promptlet': Missing required 'mode' field"
+            print_color $YELLOW "→ Add: \"mode\": \"generate\" or \"analyze\""
+            ((issues++))
+            continue
+        fi
+
+        if ! echo "$promptlet_json" | grep -q '"context"[[:space:]]*:[[:space:]]*{'; then
+            print_color $RED "❌ Promptlet '$promptlet': Missing required 'context' object"
+            print_color $YELLOW "→ Add: \"context\": { ... }"
+            ((issues++))
+            continue
+        fi
+
+        if ! echo "$promptlet_json" | grep -q '"instructions"[[:space:]]*:[[:space:]]*\['; then
+            print_color $RED "❌ Promptlet '$promptlet': Missing required 'instructions' array"
+            print_color $YELLOW "→ Add: \"instructions\": [\"step1\", \"step2\"]"
+            ((issues++))
+            continue
+        fi
+
+        # Validate mode naming convention
+        local promptlet_mode
+        promptlet_mode=$(echo "$promptlet_json" | grep -o '"mode"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)".*/\1/')
+
+        if ! echo "$promptlet_mode" | grep -qE '^(generate|analyze|validate|process|decide)$'; then
+            print_color $RED "❌ Promptlet '$promptlet': Invalid mode '$promptlet_mode'"
+            print_color $YELLOW "→ Use valid mode: generate, analyze, validate, process, or decide"
+            ((issues++))
+            continue
+        fi
+
+        print_color $GREEN "✅ Promptlet '$promptlet': Valid structure ($promptlet_mode)"
+    done
+
+    if [ $issues -eq 0 ]; then
+        print_color $GREEN "✅ Stage 5: Library structure verified"
+    else
+        print_color $RED "❌ Stage 5: $issues structure violations found"
+    fi
+
+    return $issues
+}
+
 # Validate no duplicate definitions
 validate_no_duplicates() {
     print_color $BLUE "🔍 Stage 4: Validating no duplicate promptlet definitions..."
@@ -366,7 +441,12 @@ main() {
     validate_no_duplicates
     total_issues=$((total_issues + $?))
     echo
-    
+
+    # Stage 5: Library structure validation
+    validate_library_structure
+    total_issues=$((total_issues + $?))
+    echo
+
     # Final summary
     if [ $total_issues -eq 0 ]; then
         print_color $GREEN "✅ All validation stages passed! Comprehensive promptlet compliance verified."

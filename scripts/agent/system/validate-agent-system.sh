@@ -29,7 +29,7 @@ PROJECT_ROOT="$(cd "$AGENT_DIR/.." && pwd)"
 
 # Validation scripts
 VALIDATE_DIAGRAMS="$SCRIPT_DIR/validate-diagrams.sh"
-VALIDATE_PROMPTLETS="$SCRIPT_DIR/validate-promptlet-system.sh"
+VALIDATE_PROMPTLETS="$SCRIPT_DIR/validate-promptlet-compliance.sh"
 
 # Paths to validate
 DIAGRAMS_DIR="$AGENT_DIR/docs/diagrams"

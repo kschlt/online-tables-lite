@@ -60,7 +60,8 @@ auto_stage_relevant_files() {
     fi
 
     print_color $GREEN "⚡ Auto-staging relevant files..."
-    echo "$relevant_files" | while IFS= read -r file; do
+    # Convert pipe-separated files to newline-separated and process
+    echo "$relevant_files" | tr '|' '\n' | while IFS= read -r file; do
         if [ -n "$file" ]; then
             echo "  + $file"
             git add "$file"
