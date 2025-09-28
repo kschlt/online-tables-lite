@@ -191,11 +191,14 @@ validate_promptlet_references() {
                     continue
                 fi
 
-                # Extract promptlet name from actual calls
-                if echo "$content" | grep -q '\$PROMPTLET_READER [a-z]'; then
+                # Extract promptlet name from actual calls (not commands or help messages)
+                if echo "$content" | grep -q '\$PROMPTLET_READER [a-z]' && ! echo "$content" | grep -q 'print_color\|echo.*Try'; then
                     promptlet_name=$(echo "$content" | sed 's/.*\$PROMPTLET_READER \([^ \\]*\).*/\1/')
-                elif echo "$content" | grep -q 'promptlet-reader\.sh [a-z]'; then
-                    promptlet_name=$(echo "$content" | sed 's/.*promptlet-reader\.sh \([^ \\]*\).*/\1/')
+                elif echo "$content" | grep -q 'promptlet-reader\.sh [a-z]' && ! echo "$content" | grep -q 'print_color\|echo.*Try'; then
+                    # Skip command calls like "promptlet-reader.sh list" or "promptlet-reader.sh help"
+                    if ! echo "$content" | grep -qE 'promptlet-reader\.sh (list|help|validate)'; then
+                        promptlet_name=$(echo "$content" | sed 's/.*promptlet-reader\.sh \([^ \\]*\).*/\1/')
+                    fi
                 fi
 
                 if [ -n "$promptlet_name" ] && [ "$promptlet_name" != "$content" ]; then

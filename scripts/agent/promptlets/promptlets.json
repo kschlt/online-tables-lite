@@ -222,7 +222,12 @@
                 "- Sensitive files present (env, keys, credentials)",
                 "- Binary files or large assets present",
                 "- User explicitly requested manual control",
-                "Output format: Return exactly 'true' or 'false' with no additional text.",
+                "CRITICAL OUTPUT REQUIREMENTS:",
+                "1. For decision: Return exactly 'true' or 'false' with no additional text",
+                "2. For file staging instructions: When auto-staging is chosen, provide file list in this format:",
+                "   - JSON array: [\"file1.txt\", \"file2.txt\", \"file3.txt\"]",
+                "3. Use exact file paths from the relevant_files input without modification",
+                "4. Do not include quotes around individual filenames unless using JSON array format",
                 "Be conservative: when in doubt, choose manual staging for user safety."
             ],
             "next": {

@@ -29,6 +29,30 @@ print_trace() {
     echo -e "${PURPLE}🔍 TRACE [$step]: ${message}${NC}" >&2
 }
 
+# Sanitize text for safe JSON processing
+sanitize_for_json() {
+    local input="$1"
+    local max_length="${2:-500}"  # Default max length to prevent huge JSON strings
+
+    # Remove ANSI escape sequences and color codes
+    local cleaned=$(echo "$input" | sed 's/\x1b\[[0-9;]*m//g')
+
+    # Replace problematic characters for JSON
+    cleaned=$(echo "$cleaned" | tr -d '\000-\037' | tr -d '\177-\377')  # Remove control chars
+    cleaned=$(echo "$cleaned" | sed 's/"/\\"/g')  # Escape quotes
+    cleaned=$(echo "$cleaned" | sed 's/\\/\\\\/g')  # Escape backslashes
+    cleaned=$(echo "$cleaned" | tr '\n' ' ')  # Convert newlines to spaces
+    cleaned=$(echo "$cleaned" | sed 's/\t/ /g')  # Convert tabs to spaces
+    cleaned=$(echo "$cleaned" | sed 's/  */ /g')  # Collapse multiple spaces
+
+    # Truncate if too long
+    if [ ${#cleaned} -gt $max_length ]; then
+        cleaned="${cleaned:0:$max_length}... (truncated)"
+    fi
+
+    echo "$cleaned"
+}
+
 # Integrated staging functions (from staging-logic.sh)
 analyze_changes() {
     local staged_count=$(git diff --staged --name-only | wc -l | tr -d ' ')
@@ -60,16 +84,43 @@ auto_stage_relevant_files() {
     fi
 
     print_color $GREEN "⚡ Auto-staging relevant files..."
-    # Convert pipe-separated files to newline-separated and process
-    echo "$relevant_files" | tr '|' '\n' | while IFS= read -r file; do
-        if [ -n "$file" ]; then
-            echo "  + $file"
-            git add "$file"
-        fi
-    done
 
-    print_color $GREEN "✅ Relevant files staged automatically"
-    return 0
+    # Parse JSON array format: ["file1.txt", "file2.txt", "file3.txt"]
+    local normalized_files
+    if echo "$relevant_files" | grep -q '^\[.*\]$'; then
+        # Parse JSON array to newline-separated files
+        normalized_files=$(echo "$relevant_files" | sed 's/^\[//' | sed 's/\]$//' | sed 's/", */\n/g' | sed 's/"//g')
+        print_trace "AUTO_STAGE" "Parsed JSON array format"
+    else
+        # Invalid format - expected JSON array
+        print_color $RED "❌ Invalid file list format. Expected JSON array: [\"file1.txt\", \"file2.txt\"]"
+        print_color $YELLOW "→ Received: $relevant_files"
+        return 1
+    fi
+
+    # Process normalized file list
+    local staged_count=0
+    while IFS= read -r file; do
+        # Clean up file path (remove quotes, trim whitespace)
+        file=$(echo "$file" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
+
+        if [ -n "$file" ] && [ "$file" != "null" ] && [ "$file" != "undefined" ]; then
+            if [ -f "$file" ] || git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+                echo "  + $file"
+                git add "$file" && ((staged_count++))
+            else
+                print_color $YELLOW "  ⚠️  Skipping non-existent file: $file"
+            fi
+        fi
+    done <<< "$normalized_files"
+
+    if [ $staged_count -gt 0 ]; then
+        print_color $GREEN "✅ $staged_count file(s) staged automatically"
+        return 0
+    else
+        print_color $YELLOW "⚠️ No valid files were staged"
+        return 1
+    fi
 }
 
 call_agent_staging_decision() {
@@ -260,26 +311,59 @@ integrated_commit_workflow() {
     # Now proceed with commit message generation and execution
     print_trace "COMMIT_GENERATION" "Starting commit message generation phase"
 
-    # Generate commit context (similar to Makefile logic)
+    # Generate commit context (similar to Makefile logic) with sanitization
     local BASE=$(git merge-base origin/main HEAD 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n1)
     local PREVIEW=$(git-cliff --unreleased --bump 2>/dev/null | head -5 | tail -1 | sed 's/^## \[//' | sed 's/\].*//' || echo "preview unavailable")
-    local DIFF_SUMMARY=$(git diff --staged --stat | head -10)
+
+    # Sanitize git diff output to prevent JSON parsing errors
+    local DIFF_SUMMARY_RAW=$(git diff --staged --stat 2>/dev/null | head -10 || echo "No diff available")
+    local DIFF_SUMMARY=$(sanitize_for_json "$DIFF_SUMMARY_RAW" 300)
+
     local COMMIT_TYPES=$(grep -E '^\s*\{\s*message\s*=\s*"\^[a-z]+' cliff.toml 2>/dev/null | sed -E 's/.*"\^([a-z]+).*/\1/' | tr '\n' '|' | sed 's/|$//' || echo "feat|fix|docs|refactor|chore|test|ci|build|perf")
-    local CLIFF_CONFIG_STATUS=$(if [ -f "cliff.toml" ]; then echo "✅ Using cliff.toml configuration"; else echo "⚠️ cliff.toml not found, using defaults"; fi)
-    local SAMPLE_ANALYSIS=$(git-cliff --unreleased --context 2>/dev/null | jq -r '.commits[0].message // "No recent commits"' 2>/dev/null || echo "No context available")
+    local CLIFF_CONFIG_STATUS=$(if [ -f "cliff.toml" ]; then echo "Using cliff.toml configuration"; else echo "cliff.toml not found, using defaults"; fi)
+
+    # Sanitize git-cliff analysis output
+    local SAMPLE_ANALYSIS_RAW=$(git-cliff --unreleased --context 2>/dev/null | jq -r '.commits[0].message // "No recent commits"' 2>/dev/null || echo "No context available")
+    local SAMPLE_ANALYSIS=$(sanitize_for_json "$SAMPLE_ANALYSIS_RAW" 200)
 
     # Get current staged file count for promptlet
     local final_staged_count=$(git diff --staged --name-only | wc -l | tr -d ' ')
 
     print_trace "COMMIT_CONTEXT" "Generated context for commit message generation"
 
-    # Call the conventional commit generation promptlet using new format
-    $PROMPTLET_READER commit-wf.conventionalmessage \
+    # Add fallback validation for critical variables
+    if [ -z "$final_staged_count" ] || [ "$final_staged_count" -eq 0 ]; then
+        print_color $RED "❌ No staged files detected for commit message generation"
+        print_color $BLUE "→ Run 'git status' to check repository state"
+        return 1
+    fi
+
+    if [ -z "$DIFF_SUMMARY" ]; then
+        DIFF_SUMMARY="No diff summary available"
+        print_color $YELLOW "⚠️ Using fallback diff summary"
+    fi
+
+    if [ -z "$COMMIT_TYPES" ]; then
+        COMMIT_TYPES="feat|fix|docs|refactor|chore|test|ci|build|perf"
+        print_color $YELLOW "⚠️ Using fallback commit types"
+    fi
+
+    print_trace "COMMIT_PROMPTLET" "Calling commit message generation with sanitized context"
+
+    # Call the conventional commit generation promptlet using new format with error handling
+    if ! $PROMPTLET_READER commit-wf.conventionalmessage \
         staged_files="$final_staged_count" \
         suggested_version="$PREVIEW" \
         diff_summary="$DIFF_SUMMARY" \
         git_cliff_config="$CLIFF_CONFIG_STATUS" \
-        allowed_types="$COMMIT_TYPES"
+        allowed_types="$COMMIT_TYPES"; then
+
+        print_color $RED "❌ Failed to generate commit message promptlet"
+        print_color $YELLOW "→ Possible causes: JSON parsing error, missing promptlet, invalid context"
+        print_color $BLUE "→ Try: ./scripts/agent/promptlets/promptlet-reader.sh list (to see available promptlets)"
+        print_color $BLUE "→ Try: git status (to check repository state)"
+        return 1
+    fi
 
     print_trace "INTEGRATED_WORKFLOW_COMPLETE" "Handed off to agent for commit message generation and execution"
 }
