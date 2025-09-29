@@ -1,10 +1,13 @@
 """Configuration service for app-wide settings."""
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 from app.core.database import get_supabase_client
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigService:
@@ -30,7 +33,7 @@ class ConfigService:
             self._config_cache = config
             return config
         except Exception as e:
-            print(f"Warning: Failed to load configuration from database: {e}")
+            logger.warning(f"Failed to load configuration from database: {e}")
             return {}
 
     async def get_config_value(self, key: str, locale: str = "en") -> str | None:
@@ -66,7 +69,7 @@ class ConfigService:
                 self._app_config = json.load(f)
                 return self._app_config
         except Exception as e:
-            print(f"Warning: Failed to load app config from JSON: {e}")
+            logger.warning(f"Failed to load app config from JSON: {e}")
             # Return default config
             self._app_config = {
                 "table": {"defaultRows": 10, "defaultCols": 5, "defaultColumns": []}
@@ -97,7 +100,7 @@ class ConfigService:
                 )
             return localized_columns
         except Exception as e:
-            print(f"Warning: Invalid column config: {e}")
+            logger.warning(f"Invalid column config: {e}")
             return self._get_fallback_columns(locale)
 
     async def get_default_table_rows(self) -> int:

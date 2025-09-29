@@ -1,5 +1,6 @@
 """Table business logic service."""
 
+import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
@@ -22,6 +23,8 @@ from app.models.table import (
     TableConfigRequest,
     TableResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TableService:
@@ -80,15 +83,14 @@ class TableService:
                 raise Exception("Failed to create table - no data returned")
             table_id = table_result.data[0]["id"]
         except Exception as e:
-            print(f"Database error creating table: {e}")
-            print(f"Table data: {table_data}")
+            logger.error(f"Database error creating table: {e}", extra={"table_data": table_data})
             raise
 
         # Create default columns using configuration
         try:
             default_columns = await self.config_service.get_default_column_config(locale)
         except Exception as e:
-            print(f"Warning: Failed to load column config, using fallbacks: {e}")
+            logger.warning(f"Failed to load column config, using fallbacks: {e}")
             default_columns = []
 
         columns_data = []
